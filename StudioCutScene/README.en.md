@@ -13,8 +13,6 @@ matching config.
 > **Requires the Timeline plugin** (Joan6694's). This plugin is built entirely around Timeline
 > and does almost nothing without it.
 
-<!-- demo video coming later -->
-
 ## Requirements
 
 Only the **mandatory** ones are listed. Common plugins nearly everyone already has (KKAPI, More Accessories, ABMX…) are not listed separately.

@@ -1628,6 +1628,12 @@ namespace StudioCharTools
             A("，{0} 套碰不到",
               ", {0} outfits unreachable",
               "、{0} 着は触れません");
+            A("這張不是人物卡，請拖人物卡進來",
+              "That is not a character card. Drop a character card.",
+              "キャラカードではありません。キャラカードをドロップしてください");
+            A("這張不是服裝卡，請拖服裝卡進來",
+              "That is not a coordinate card. Drop a coordinate card.",
+              "コーデカードではありません。コーデカードをドロップしてください");
             A("沒有角色可以替換",
               "No characters to swap",
               "入れ替えるキャラがいません");

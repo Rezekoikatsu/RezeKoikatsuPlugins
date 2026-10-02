@@ -438,6 +438,9 @@ namespace StudioCharTools
         // finished setting itself up by the time this patch is applied.
         void Start()
         {
+            // 要放在最前面：下面那段找不到 HSPE 會直接 return
+            InstallDropPickHook();
+
             try
             {
                 var harmony = new Harmony("com.yourname.studiotoolbox.hspeblendlinknullfix");
@@ -527,6 +530,9 @@ namespace StudioCharTools
             // 會把例外吃掉，log 裡什麼都看不到。所以各自包，錯一次記一次。
             try { SyncSettings(); ApplyToolbarButton(); TickToolbarTint(); }
             catch (Exception e) { Warn("SyncSettings", e); }
+
+            try { PumpDroppedCard(); }
+            catch (Exception e) { Warn("DropPick", e); }
 
             try
             {
@@ -2577,6 +2583,7 @@ namespace StudioCharTools
                                    bool returnToCharList, bool skippable = false)
         {
             genericCardSkippable = skippable;
+            genericCardWantsCoord = IsUnderFolder(rootFolder, GetCoordinateFolder());
             showBlendLock = false;
             showAccPanel = false;
             // 角色清單保持開著，選卡視窗停在旁邊，選完可以直接換下一個角色
@@ -2800,6 +2807,164 @@ namespace StudioCharTools
             }
 
             GUILayout.EndVertical();
+        }
+
+        // =============================================================
+        // 拖放選卡
+        //
+        // 選卡視窗開著的時候，把卡片檔拖進遊戲視窗 = 在視窗裡點了那張卡，
+        // 流程照常往下走（例如「① 選人物卡」拖完就跳到「② 選頭髮飾品的服裝卡」，
+        // 第二步也一樣可以用拖的）。這樣外部的卡片管理工具就能直接配合使用。
+        //
+        // 遊戲視窗的拖放是 DragAndDrop 插件（keelhauled）在處理的：它收到檔案
+        // 會直接對選取的角色換人／換裝。所以這裡不自己掛 Windows hook
+        // （兩個 hook 會搶同一個 HDROP，先拿到的 DragFinish 之後另一個就讀不到了），
+        // 而是用 Harmony 在它的 OnFiles 前面攔：選卡視窗開著就由我們接手、
+        // 它那邊不動；視窗沒開就完全不干涉，它照原本的方式運作。
+        // 沒裝 DragAndDrop 就只是沒有這個功能，其他都不受影響。
+        // =============================================================
+
+        /// <summary>這一步的選卡視窗要的是服裝卡（true）還是人物卡（false）。</summary>
+        private bool genericCardWantsCoord;
+
+        /// <summary>拖進來、等 Update 處理的卡片路徑。</summary>
+        private static volatile string droppedCardPath;
+
+        /// <summary>選卡視窗現在是不是開著等人選卡。</summary>
+        internal static bool DropPickWanted
+        {
+            get
+            {
+                CharToolsPlugin p = Instance;
+                return p != null && p.showGenericCardPicker && p.genericCardOnPicked != null;
+            }
+        }
+
+        void InstallDropPickHook()
+        {
+            try
+            {
+                Type t = AccessTools.TypeByName("DragAndDrop.DragAndDrop");
+                if (t == null)
+                {
+                    Logger.LogInfo("[DropPick] 沒有 DragAndDrop 插件，選卡視窗不支援拖放（其他功能不受影響）");
+                    return;
+                }
+                MethodInfo original = AccessTools.Method(t, "OnFiles");
+                if (original == null)
+                {
+                    Logger.LogWarning("[DropPick] 找不到 DragAndDrop.OnFiles，選卡視窗不支援拖放");
+                    return;
+                }
+                if (_harmony == null) _harmony = new Harmony(GUID);
+                MethodInfo prefix = AccessTools.Method(typeof(DropPickPatch), "OnFilesPrefix");
+                _harmony.Patch(original, new HarmonyMethod(prefix), null);
+                Logger.LogInfo("[DropPick] 選卡視窗可以用拖放選卡了");
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("[DropPick] 掛不上（不影響主功能）: " + e.Message);
+            }
+        }
+
+        private static class DropPickPatch
+        {
+            // DragAndDrop.DragAndDrop.OnFiles(List<string> aFiles, POINT aPos)
+            // 回傳 false = 這次拖放由選卡視窗接手，DragAndDrop 不要再自己換人／換裝。
+            public static bool OnFilesPrefix(List<string> aFiles)
+            {
+                try
+                {
+                    if (aFiles == null || !DropPickWanted) return true;
+                    for (int i = 0; i < aFiles.Count; i++)
+                    {
+                        string f = aFiles[i];
+                        if (f != null && f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                        {
+                            droppedCardPath = f;
+                            return false;
+                        }
+                    }
+                }
+                catch { }
+                return true;
+            }
+        }
+
+        /// <summary>每個 frame 看一次有沒有卡片被拖進來，有的話當成在選卡視窗裡點了它。</summary>
+        void PumpDroppedCard()
+        {
+            string path = droppedCardPath;
+            if (path == null) return;
+            droppedCardPath = null;
+
+            if (!showGenericCardPicker || genericCardOnPicked == null) return;
+
+            int kind = CardKindOf(path);
+            if (genericCardWantsCoord && kind != 2)
+            {
+                SetStatus(false, "這張不是服裝卡，請拖服裝卡進來");
+                return;
+            }
+            if (!genericCardWantsCoord && kind != 1)
+            {
+                SetStatus(false, "這張不是人物卡，請拖人物卡進來");
+                return;
+            }
+
+            Logger.LogInfo("[DropPick] 拖放選卡: " + path);
+            Action<string> callback = genericCardOnPicked;
+            CloseGenericCardPicker();
+            if (callback != null) callback(path);
+        }
+
+        /// <summary>folder 是不是 root 本身或它底下的資料夾。</summary>
+        static bool IsUnderFolder(string folder, string root)
+        {
+            if (string.IsNullOrEmpty(folder) || string.IsNullOrEmpty(root)) return false;
+            try
+            {
+                string a = Path.GetFullPath(folder).TrimEnd('\\', '/');
+                string b = Path.GetFullPath(root).TrimEnd('\\', '/');
+                if (string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return true;
+                return a.StartsWith(b + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                    || a.StartsWith(b + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
+        /// <summary>讀 PNG 後面的卡片標記：1＝人物卡、2＝服裝卡、0＝都不是（或讀不了）。</summary>
+        static int CardKindOf(string path)
+        {
+            try
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    byte[] sig = new byte[8];
+                    if (fs.Read(sig, 0, 8) != 8 || sig[0] != 0x89 || sig[1] != 0x50) return 0;
+
+                    // 一個 chunk 一個 chunk 跳到 IEND 後面，卡片資料從那裡開始
+                    byte[] ch = new byte[8];
+                    while (true)
+                    {
+                        if (fs.Read(ch, 0, 8) != 8) return 0;
+                        long len = ((long)ch[0] << 24) | ((long)ch[1] << 16) | ((long)ch[2] << 8) | ch[3];
+                        bool iend = ch[4] == (byte)'I' && ch[5] == (byte)'E' && ch[6] == (byte)'N' && ch[7] == (byte)'D';
+                        fs.Seek(len + 4, SeekOrigin.Current);       // 資料 + CRC
+                        if (iend) break;
+                        if (fs.Position >= fs.Length) return 0;
+                    }
+
+                    byte[] buf = new byte[96];
+                    int n = fs.Read(buf, 0, buf.Length);
+                    if (n <= 0) return 0;
+                    string s = System.Text.Encoding.UTF8.GetString(buf, 0, n);
+                    if (s.IndexOf("KoiKatuClothes", StringComparison.Ordinal) >= 0) return 2;
+                    if (s.IndexOf("KoiKatuChara", StringComparison.Ordinal) >= 0) return 1;
+                    return 0;
+                }
+            }
+            catch { return 0; }
         }
 
         // 讀取一張服裝卡 (.png)，套用到指定角色身上 (只換服裝，不動臉/身材)。

@@ -8,8 +8,6 @@ A scene-character manager for CharaStudio. Press **F6** to open the character li
 one row per character on stage — and swap cards, change outfits, manage accessories,
 lock blendshapes, repair colliders, and capture thumbnails, all from one place.
 
-<!-- demo video coming later -->
-
 ## Requirements
 
 Only the **mandatory** ones are listed. Common plugins nearly everyone already has (KKAPI, More Accessories, ABMX…) are not listed separately.
@@ -48,6 +46,18 @@ first choose how to handle the body:
 **Swap keeping outfit** uses the same four modes, then puts the original clothes back on (optionally
 bringing hair accessories from another outfit card).
 
+> [!IMPORTANT]
+> "Swap keeping outfit", "bring back hair accessories after changing outfit" and "Add accessories" all rely on
+> `kkbridge.exe` to merge cards, so **start `kkbridge.exe` before using them** (see [Card merging](#card-merging-needs-kkbridge) below).
+> Without it these features wait until they time out; everything else keeps working.
+
+> [!TIP]
+> Before "Swap keeping outfit", **remove the original character's hair** first (accessory slots → Remove).
+> The original hair accessories are part of the outfit, so otherwise they stay on the new character along with the clothes.
+
+<!-- video:f6-swap-normal -->
+<!-- video:f6-swap-keep -->
+
 Swapping can automatically keep the character name, reapply the pose, restore collider bindings and apply a
 same-name blendshape preset (each toggled in Settings). The "ABMX bones kept by Keep new body" rule is
 editable in Settings: comma-separated wildcards, a leading `-` excludes. Bones outside the rule (face, chest)
@@ -55,6 +65,17 @@ use the new card's own ABMX instead of being cleared.
 
 By default a swap keeps the scene's expression (eyebrows / eyes / mouth, open amount, blink, blush, tears, gaze).
 To use the expression saved in the new card instead, turn off "Keep expression when swapping" in Settings.
+
+### Changing outfit and hair accessories (bringing hair back needs kkbridge)
+
+Press "Change outfit" on a character's row and pick an outfit card. Many characters have hair built from accessories;
+put on a different outfit card and the whole accessory set is replaced, so the hair disappears.
+That is why, after the outfit card, you are asked whether to **bring the hair back**: pick an outfit card that only
+contains hair / hair accessories and its accessories are merged back onto the character.
+This step is done by `kkbridge.exe`, which has to be running.
+
+<!-- video:f6-outfit-nohair -->
+<!-- video:f6-outfit-hair -->
 
 ### Carrying the scene's shaders over on swap (needs MaterialEditor)
 

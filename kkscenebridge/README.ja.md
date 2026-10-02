@@ -60,7 +60,7 @@ Studio で手作業だと一晩かかる作業（カメラ削除、フォルダ�
 - **カット済み音声から対応点を逆算** — 以前 VNGE で作ったカードは音声がシーンごとにカットされています。元の音声と照合して対応点を自動で測ります
 - **ボイス対応** — あるボイスだけ編集が違う（オープニングがない等）場合に換算表を測り、F7 でボイスを切り替えた時にその場で換算します
 
-上記の動画・音声処理には **ffmpeg** が必要です。同梱していないので各自インストールしてください —— 下の [ffmpeg](#ffmpeg各自でインストール) を参照。
+上記の動画・音声処理には **ffmpeg** が必要です —— `kkscenebridge_ffmpeg.zip` には同梱済み。それ以外は下の [ffmpeg](#ffmpeg) を参照。
 
 ## VNGE 音声
 
@@ -85,9 +85,22 @@ Studio で手作業だと一晩かかる作業（カメラ削除、フォルダ�
 
 設定は exe の横の `kkscenebridge_settings.json` に保存されます。
 
-## ffmpeg（各自でインストール）
+## ffmpeg
 
-kkscenebridge には **ffmpeg を同梱していません**。なくても使えなくなるのは「ムービー音声」タブの動画・音声処理だけで、
+Releases には 2 種類あり、違いは ffmpeg を同梱しているかどうかだけです：
+
+| ダウンロード | 内容 | 向いている人 |
+|---|---|---|
+| **`kkscenebridge_ffmpeg.zip`** | `kkscenebridge.exe` ＋ `ffmpeg\`（`ffmpeg.exe`・`ffprobe.exe`） | 解凍してすぐ使いたい、ffmpeg を自分で入れたくない |
+| **`kkscenebridge.zip`** | `kkscenebridge.exe` のみ | 既に ffmpeg がある、または動画・音声処理を使わない（かなり小さい） |
+
+どちらも解凍すると `kkscenebridge` フォルダが 1 つできます。置き場所は自由です。新しい版が出たときは
+`kkscenebridge.exe` だけ差し替え、`ffmpeg` フォルダはそのまま使えます（更新時は小さい `kkscenebridge.zip` で十分です）。
+
+同梱の ffmpeg は無改変のサードパーティ製ビルドで、kkscenebridge 本体の一部ではなく、MIT ライセンスの対象外です。
+ライセンス（GPL）とソースへのリンクは `ffmpeg\README_ffmpeg.txt` にあります。別の版を使いたい場合は `ffmpeg` フォルダを差し替えてください。
+
+ffmpeg がなくても、使えなくなるのは「ムービー音声」タブの動画・音声処理だけで、
 **シーン結合・VNGE 音声・整理・設定にはまったく影響しません**。
 
 ### ffmpeg がないと使えない機能（すべて「ムービー音声」タブ）
@@ -111,7 +124,7 @@ kkscenebridge には **ffmpeg を同梱していません**。なくても使え
 内蔵プレーヤー、手動での対応点取得、`pairs.txt` の読み書き、**`cutscene.json` の生成**。
 ボイスを自分で wav にしておけば（他のソフトで動画から変換）、作業の流れはそのまま最後まで進められます。
 
-### インストール方法（どちらか）
+### ffmpeg を自分で入れる場合（`kkscenebridge.zip` を使う人向け、どちらか）
 
 **方法 A：winget（Windows 10 / 11 標準、いちばん簡単）**
 
@@ -135,8 +148,8 @@ kkscenebridge には **ffmpeg を同梱していません**。なくても使え
 
 ## 必要なもの
 
-- Windows。Releases の `kkscenebridge.exe` なら Python のインストールは不要です
-- 「ムービー音声」タブの動画・音声処理には [ffmpeg](https://ffmpeg.org/) を各自インストールする必要があります。上の [ffmpeg](#ffmpeg各自でインストール) を参照
+- Windows。Releases の zip なら Python のインストールは不要です
+- 「ムービー音声」タブの動画・音声処理には [ffmpeg](https://ffmpeg.org/) が必要です：`kkscenebridge_ffmpeg.zip` に同梱、または各自インストール。上の [ffmpeg](#ffmpeg) を参照
 - 結合カードのムービーとマップ切替には、ゲーム側に **F7（Studio CutScene）** が必要。VNGE 音声には VNGE が必要
 
 ## 注意

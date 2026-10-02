@@ -67,7 +67,7 @@ Helpers:
 - **Voice mapping** — when one voice version has a different edit (missing intro, etc.), measure a
   conversion table so F7 converts on the fly when switching voices
 
-The video/audio processing above uses **ffmpeg**, which is not included — install it yourself; see [ffmpeg](#ffmpeg-install-it-yourself) below.
+The video/audio processing above uses **ffmpeg** — `kkscenebridge_ffmpeg.zip` already includes it; otherwise see [ffmpeg](#ffmpeg) below.
 
 ## VNGE audio
 
@@ -93,9 +93,23 @@ absolute path, or embedded in the card.
 
 Settings are saved in `kkscenebridge_settings.json` next to the exe.
 
-## ffmpeg (install it yourself)
+## ffmpeg
 
-kkscenebridge **does not ship ffmpeg**. Without it, only the video/audio processing in the Cutscene audio tab
+Releases has two downloads; the only difference is whether ffmpeg is included:
+
+| Download | Contains | For |
+|---|---|---|
+| **`kkscenebridge_ffmpeg.zip`** | `kkscenebridge.exe` + `ffmpeg\` (`ffmpeg.exe`, `ffprobe.exe`) | Works right after extracting; you don't want to install ffmpeg yourself |
+| **`kkscenebridge.zip`** | `kkscenebridge.exe` only | You already have ffmpeg, or don't need the video/audio processing (much smaller) |
+
+Both extract to a single `kkscenebridge` folder that can live anywhere. For later versions just replace
+`kkscenebridge.exe` and keep the `ffmpeg` folder (so the small `kkscenebridge.zip` is enough for updates).
+
+The bundled ffmpeg is an unmodified third-party build. It is not part of kkscenebridge and not covered by its
+MIT license; its license (GPL) and source links are in `ffmpeg\README_ffmpeg.txt`. To use another version,
+just replace the `ffmpeg` folder.
+
+Without ffmpeg, only the video/audio processing in the Cutscene audio tab
 stops working — **Merge scenes, VNGE audio, Organize and Settings are unaffected**.
 
 ### Features that need ffmpeg (all in the Cutscene audio tab)
@@ -119,7 +133,7 @@ stops working — **Merge scenes, VNGE audio, Organize and Settings are unaffect
 The built-in player, capturing sync points by hand, reading/writing `pairs.txt`, and **generating `cutscene.json`**.
 Prepare the voices as wav files yourself (converted from the video with any other software) and the whole workflow still works.
 
-### Installing (pick one)
+### Installing ffmpeg yourself (for `kkscenebridge.zip`; pick one)
 
 **Option A: winget (built into Windows 10 / 11, easiest)**
 
@@ -143,8 +157,8 @@ Prepare the voices as wav files yourself (converted from the video with any othe
 
 ## Requirements
 
-- Windows. The `kkscenebridge.exe` from Releases needs no Python install
-- The video/audio processing in the Cutscene audio tab needs [ffmpeg](https://ffmpeg.org/) installed separately; see [ffmpeg](#ffmpeg-install-it-yourself) above
+- Windows. The zips from Releases need no Python install
+- The video/audio processing in the Cutscene audio tab needs [ffmpeg](https://ffmpeg.org/): included in `kkscenebridge_ffmpeg.zip`, or install it yourself; see [ffmpeg](#ffmpeg) above
 - Cutscene videos and map switching in merged cards need **F7 (Studio CutScene)** in the game;
   VNGE audio needs VNGE
 

@@ -116,9 +116,11 @@ CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面
 
 把服裝卡的飾品合併進人物卡，靠配套的外部工具 **kkbridge** 完成。
 
-- `kkbridge.exe`（監看工單資料夾）和 `kkmerge.exe`（實際合併）都在 [Releases](../../../releases) 頁面，跟 dll 放在一起
+- `kkbridge.exe` 已經包在 `StudioCharTools.zip` 裡，在遊戲根目錄解壓縮後就在根目錄（跟 `BepInEx` 同一層）
+- 用合卡功能前先把 `kkbridge.exe` 開著，在「監看工單」分頁開始監看；它沒開的話合卡會逾時，其他功能不受影響
+- 工單資料夾預設是 `UserData\chara\female\Temp`，兩邊都用預設就不用設定；要改的話 F6 的設置和 kkbridge 要指到同一個資料夾
+- kkbridge 會自己找常見的安裝位置（`C:`～`F:` 的 `\Koikatu`）；遊戲裝在別的地方的話，第一次開啟時到它的「設定」分頁填一次遊戲根目錄
 - 原始碼在這個 repo 的 [`kkbridge/`](../kkbridge/)
-- 在 F6 的設置裡指定 exe 路徑和工單資料夾即可；沒設定的話這一區不會有作用
 
 ## 設定
 

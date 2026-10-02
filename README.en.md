@@ -48,10 +48,10 @@ Everything for using CharaStudio in VR.
 - Sorts out cameras, wraps folders, shifts Timeline, hands cameras over, de-duplicates textures, remaps plugin data
 - Generates F7's `.cutscene.json`: built-in player for sync points, wav extraction, loudness matching, deriving points from pre-cut audio
 - VNGE audio, and an object tree editor (drag, rename, delete with automatic reference fixes)
-- Video/audio processing needs ffmpeg installed separately (without it only that part is missing — [which features, how to install](kkscenebridge/README.en.md#ffmpeg-install-it-yourself))
+- Video/audio processing uses ffmpeg: `kkscenebridge_ffmpeg.zip` already includes it; `kkscenebridge.zip` does not, so install it yourself (without it only that part is missing — [which features, how to install](kkscenebridge/README.en.md#ffmpeg))
 
-### 🔗 kkbridge / kkmerge (tool)
-Offline character card merging: add accessories, transfer outfits, repair cards. F6's merge feature uses it.
+### 🔗 kkbridge (tool)
+Offline character card merging: add accessories, transfer outfits, repair cards. F6's merge feature uses it, so `kkbridge.exe` ships inside `StudioCharTools.zip`.
 
 ---
 
@@ -68,7 +68,7 @@ Offline character card merging: add accessories, transfer outfits, repair cards.
 | Optional | [MaterialEditor (KK_Plugins)](https://github.com/IllusionMods/KK_Plugins) | F6's scene shader carry-over on swap |
 | Optional | [KKABMX](https://github.com/ManlyMarco/KKABMX), KKPE | F6's "keep new body", collider repair |
 | Optional | VNGE | kkscenebridge's VNGE audio |
-| Optional | [ffmpeg](https://ffmpeg.org/) (install yourself, [steps](kkscenebridge/README.en.md#ffmpeg-install-it-yourself)) | wav extraction, loudness matching, silent video conversion and sync-point derivation in kkscenebridge's Cutscene audio tab |
+| Optional | [ffmpeg](https://ffmpeg.org/) (included in `kkscenebridge_ffmpeg.zip`; otherwise install it yourself, [steps](kkscenebridge/README.en.md#ffmpeg)) | wav extraction, loudness matching, silent video conversion and sync-point derivation in kkscenebridge's Cutscene audio tab |
 
 > [!IMPORTANT]
 > In desktop mode F9 stays completely silent — no errors without a VR plugin. A missing optional plugin only disables that feature.
@@ -77,10 +77,20 @@ Offline character card merging: add accessories, transfer outfits, repair cards.
 
 ## 🛠️ Installation
 
-1. Download what you need from **[Releases](../../releases)**
-2. Plugins: put the `.dll` files into the game's `BepInEx\plugins\`
-3. Tools: put `kkscenebridge.exe`, `kkbridge.exe` and `kkmerge.exe` anywhere and double-click
+1. Download the zips you need from **[Releases](../../releases)** (each one installs on its own)
+2. **Extract the plugin zips in the game's root folder** (the one that contains `BepInEx`); the DLLs land in `BepInEx\plugins\` by themselves
+3. Extract a `kkscenebridge` zip anywhere and run the `kkscenebridge.exe` inside
 4. In CharaStudio press **F6 / F7 / F9** to open the panels
+
+| Download | Contains | Extract to |
+|---|---|---|
+| `StudioCharTools.zip` | F6 plugin + `kkbridge.exe` (card-merge tool, placed in the game root) | game root |
+| `StudioCutScene.zip` | F7 plugin | game root |
+| `StudioVrTools.zip` | F9 plugin | game root |
+| `kkscenebridge_ffmpeg.zip` | kkscenebridge + ffmpeg, works right after extracting | anywhere |
+| `kkscenebridge.zip` | kkscenebridge only (small; for when you already have ffmpeg, or just want to update the exe later) | anywhere |
+
+Pick one of the two kkscenebridge zips.
 
 Settings live in `BepInEx\config\reze.studio.*.cfg`. To reset everything, run `重置插件設定.bat` from the repo root
 (it only moves the config files; nothing is deleted).
@@ -100,7 +110,7 @@ Everything supports **Traditional Chinese / English / Japanese**:
 | F7 Studio CutScene | [說明](StudioCutScene/README.md) | [Docs](StudioCutScene/README.en.md) | [説明](StudioCutScene/README.ja.md) |
 | F9 Studio VR Tools | [說明](StudioVrTools/README.md) | [Docs](StudioVrTools/README.en.md) | [説明](StudioVrTools/README.ja.md) |
 | kkscenebridge | [說明](kkscenebridge/README.md) | [Docs](kkscenebridge/README.en.md) | [説明](kkscenebridge/README.ja.md) |
-| kkbridge / kkmerge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
+| kkbridge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
 
 ## 👨‍💻 Building
 
@@ -116,7 +126,7 @@ Everything supports **Traditional Chinese / English / Japanese**:
 - [Ermin610/KK_VR](https://github.com/Ermin610/KK_VR) and [YukyoMoe/KK_VR_CameraSync](https://github.com/YukyoMoe/KK_VR_CameraSync) — F9 builds on these
 - [BepInEx](https://github.com/BepInEx/BepInEx), [IllusionMods](https://github.com/IllusionMods)' ModdingAPI and KK_Plugins, Joan6694's Timeline
 - [kkloader](https://pypi.org/project/kkloader/) — scene card I/O in kkscenebridge
-- [FFmpeg](https://ffmpeg.org/) — video/audio processing in kkscenebridge (installed separately, not distributed with this project)
+- [FFmpeg](https://ffmpeg.org/) — video/audio processing in kkscenebridge. `kkscenebridge_ffmpeg.zip` bundles an unmodified third-party build (GPL, not covered by this project's MIT license); its license and source links are in `ffmpeg\README_ffmpeg.txt` inside the zip
 
 ## 📄 License
 

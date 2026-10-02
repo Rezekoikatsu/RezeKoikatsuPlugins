@@ -129,9 +129,11 @@ Settings has buttons that do the same thing to **every** character in the scene:
 Merges a coordinate card's accessories into a character card using the companion external
 tool **kkbridge**.
 
-- `kkbridge.exe` (watches the job folder) and `kkmerge.exe` (does the merging) are both on the [Releases](../../../releases) page, next to the DLLs
-- Their source is in this repo under [`kkbridge/`](../kkbridge/)
-- Point F6's Settings at the exe and a working folder; without that, this section simply does nothing
+- `kkbridge.exe` ships inside `StudioCharTools.zip`; after extracting in the game root it sits there, next to `BepInEx`
+- Before merging, start `kkbridge.exe` and begin watching in its **Watch jobs** tab; if it isn't running, merges time out and everything else keeps working
+- The job folder defaults to `UserData\chara\female\Temp`; with defaults on both sides there is nothing to set. If you change it, F6's Settings and kkbridge must point at the same folder
+- kkbridge looks for the game in the usual places (`\Koikatu` on `C:`–`F:`); if yours is elsewhere, set the game root once in kkbridge's **Settings** tab
+- Its source is in this repo under [`kkbridge/`](../kkbridge/)
 
 ## Settings
 

@@ -47,10 +47,10 @@ CharaStudio 在 VR 裡的操作總成。
 - 自動整理相機、包資料夾、平移 Timeline、接相機、貼圖去重，外掛資料一起重新對應編號
 - 產生 F7 用的 `.cutscene.json`：內建播放器抓對應點、抽 wav、音量對齊、從切好的音頻反推
 - VNGE 音頻、物件樹整理（拖曳、改名、刪除並自動修正參照）
-- 影片／音訊處理要自己安裝 ffmpeg（沒裝的話只少這部分，[哪些功能、怎麼裝](kkscenebridge/README.md#ffmpeg需要自己安裝)）
+- 影片／音訊處理要用 ffmpeg：下載 `kkscenebridge_ffmpeg.zip` 就已經附好；`kkscenebridge.zip` 不含，要自己安裝（沒有的話只少這部分，[哪些功能、怎麼裝](kkscenebridge/README.md#ffmpeg)）
 
-### 🔗 kkbridge / kkmerge（工具）
-角色卡離線合卡：附加飾品、移植整套換裝、修卡。F6 的合卡功能靠它。
+### 🔗 kkbridge（工具）
+角色卡離線合卡：附加飾品、移植整套換裝、修卡。F6 的合卡功能靠它，所以 `kkbridge.exe` 直接包在 `StudioCharTools.zip` 裡。
 
 ---
 
@@ -67,7 +67,7 @@ CharaStudio 在 VR 裡的操作總成。
 | 選配 | [MaterialEditor（KK_Plugins）](https://github.com/IllusionMods/KK_Plugins) | F6 換人時帶入場景的著色器 |
 | 選配 | [KKABMX](https://github.com/ManlyMarco/KKABMX)、KKPE | F6 的「維持新卡身材」、碰撞器修復 |
 | 選配 | VNGE | kkscenebridge 的 VNGE 音頻 |
-| 選配 | [ffmpeg](https://ffmpeg.org/)（自己安裝，[步驟](kkscenebridge/README.md#ffmpeg需要自己安裝)） | kkscenebridge「添加動畫音頻」分頁的抽 wav、音量對齊、轉無聲影片、反推對應點 |
+| 選配 | [ffmpeg](https://ffmpeg.org/)（`kkscenebridge_ffmpeg.zip` 已附；用不含的版本就自己安裝，[步驟](kkscenebridge/README.md#ffmpeg)） | kkscenebridge「添加動畫音頻」分頁的抽 wav、音量對齊、轉無聲影片、反推對應點 |
 
 > [!IMPORTANT]
 > 桌面模式下 F9 完全安靜，沒裝 VR 外掛也不會有任何錯誤。缺選配外掛只是少那個功能，不會壞。
@@ -76,10 +76,20 @@ CharaStudio 在 VR 裡的操作總成。
 
 ## 🛠️ 安裝
 
-1. 到 **[Releases](../../releases)** 下載需要的檔案
-2. 外掛：把 `.dll` 放進遊戲的 `BepInEx\plugins\`
-3. 工具：`kkscenebridge.exe`、`kkbridge.exe`、`kkmerge.exe` 放在任何地方，雙擊就能用
+1. 到 **[Releases](../../releases)** 下載需要的 zip（每一個都可以單獨安裝）
+2. **外掛的 zip 在遊戲根目錄解壓縮**（有 `BepInEx` 資料夾的那一層），dll 會自己進到 `BepInEx\plugins\`
+3. `kkscenebridge` 的 zip 解壓到任何地方，執行裡面的 `kkscenebridge.exe`
 4. 進 CharaStudio，按 **F6 / F7 / F9** 開面板
+
+| 下載 | 內容 | 解壓到 |
+|---|---|---|
+| `StudioCharTools.zip` | F6 外掛 ＋ `kkbridge.exe`（合卡工具，會放在遊戲根目錄） | 遊戲根目錄 |
+| `StudioCutScene.zip` | F7 外掛 | 遊戲根目錄 |
+| `StudioVrTools.zip` | F9 外掛 | 遊戲根目錄 |
+| `kkscenebridge_ffmpeg.zip` | kkscenebridge ＋ ffmpeg，解壓就能用 | 任何地方 |
+| `kkscenebridge.zip` | 只有 kkscenebridge（檔案小；已經有 ffmpeg，或之後只更新 exe 時用） | 任何地方 |
+
+兩個 kkscenebridge 的 zip 二選一即可。
 
 設定檔在 `BepInEx\config\reze.studio.*.cfg`。要全部回到預設，執行根目錄的 `重置插件設定.bat`（只會搬移設定檔，不刪任何東西）。
 
@@ -98,7 +108,7 @@ CharaStudio 在 VR 裡的操作總成。
 | F7 Studio CutScene | [說明](StudioCutScene/README.md) | [Docs](StudioCutScene/README.en.md) | [説明](StudioCutScene/README.ja.md) |
 | F9 Studio VR Tools | [說明](StudioVrTools/README.md) | [Docs](StudioVrTools/README.en.md) | [説明](StudioVrTools/README.ja.md) |
 | kkscenebridge | [說明](kkscenebridge/README.md) | [Docs](kkscenebridge/README.en.md) | [説明](kkscenebridge/README.ja.md) |
-| kkbridge / kkmerge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
+| kkbridge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
 
 ## 👨‍💻 自己編譯
 
@@ -114,7 +124,7 @@ CharaStudio 在 VR 裡的操作總成。
 - [Ermin610/KK_VR](https://github.com/Ermin610/KK_VR)、[YukyoMoe/KK_VR_CameraSync](https://github.com/YukyoMoe/KK_VR_CameraSync) —— F9 建立在這兩支之上
 - [BepInEx](https://github.com/BepInEx/BepInEx)、[IllusionMods](https://github.com/IllusionMods) 的 ModdingAPI 與 KK_Plugins、Joan6694 的 Timeline
 - [kkloader](https://pypi.org/project/kkloader/) —— kkscenebridge 讀寫場景卡
-- [FFmpeg](https://ffmpeg.org/) —— kkscenebridge 的影片／音訊處理（需另外安裝，不隨本專案散佈）
+- [FFmpeg](https://ffmpeg.org/) —— kkscenebridge 的影片／音訊處理。`kkscenebridge_ffmpeg.zip` 附的是未修改的第三方編譯版（GPL，不適用本專案的 MIT），授權與原始碼連結在壓縮檔的 `ffmpeg\README_ffmpeg.txt`
 
 ## 📄 授權
 

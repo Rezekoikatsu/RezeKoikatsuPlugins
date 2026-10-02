@@ -59,7 +59,7 @@
 - **從切好的音頻反推對應點** —— 以前用 VNGE 做的卡，音檔是一段段切好的，拿去跟原始音檔比對就能自動量出對應點
 - **配音對照** —— 某一版配音的剪輯跟其他版不同（少了開場等）時，量一層換算表，F7 切換配音時即時換算
 
-上面這些影片／音訊處理要用 **ffmpeg**，工具沒有附，要自己安裝 —— 見下方 [ffmpeg](#ffmpeg需要自己安裝)。
+上面這些影片／音訊處理要用 **ffmpeg** —— 下載 `kkscenebridge_ffmpeg.zip` 就已經附好，其餘見下方 [ffmpeg](#ffmpeg)。
 
 ## VNGE音頻
 
@@ -84,9 +84,22 @@
 
 設定存在 exe 旁邊的 `kkscenebridge_settings.json`。
 
-## ffmpeg（需要自己安裝）
+## ffmpeg
 
-kkscenebridge **沒有附 ffmpeg**。沒裝的話，只有「添加動畫音頻」分頁的影片／音訊處理不能用，
+Releases 有兩個版本，差別只在有沒有附 ffmpeg：
+
+| 下載 | 內容 | 適合 |
+|---|---|---|
+| **`kkscenebridge_ffmpeg.zip`** | `kkscenebridge.exe` ＋ `ffmpeg\`（`ffmpeg.exe`、`ffprobe.exe`） | 解壓就能用，不想自己裝 ffmpeg |
+| **`kkscenebridge.zip`** | 只有 `kkscenebridge.exe` | 電腦已經有 ffmpeg，或用不到影片／音訊處理（檔案小很多） |
+
+兩個解壓出來都是一個 `kkscenebridge` 資料夾，放哪裡都可以。之後出新版時只要換掉 `kkscenebridge.exe`，
+`ffmpeg` 資料夾留著繼續用（所以更新時下載小的 `kkscenebridge.zip` 就好）。
+
+附的 ffmpeg 是未修改的第三方編譯版，不屬於 kkscenebridge、也不適用它的 MIT 授權；
+授權（GPL）與原始碼連結寫在 `ffmpeg\README_ffmpeg.txt`。想換版本直接換掉 `ffmpeg` 資料夾即可。
+
+沒有 ffmpeg 的話，只有「添加動畫音頻」分頁的影片／音訊處理不能用，
 **合併場景、VNGE音頻、整理、設定完全不受影響**。
 
 ### 沒有 ffmpeg 不能用的功能（都在「添加動畫音頻」分頁）
@@ -110,7 +123,7 @@ kkscenebridge **沒有附 ffmpeg**。沒裝的話，只有「添加動畫音頻�
 內建播放器、手動抓對應點、讀寫 `pairs.txt`、**產生 `cutscene.json`**。
 只要配音自己準備成 wav（用其他軟體從影片轉出來），整個流程照樣走得完。
 
-### 安裝方法（任選一種）
+### 自己安裝 ffmpeg（用 `kkscenebridge.zip` 的人，任選一種）
 
 **方法 A：winget（Windows 10 / 11 內建，最簡單）**
 
@@ -134,8 +147,8 @@ kkscenebridge **沒有附 ffmpeg**。沒裝的話，只有「添加動畫音頻�
 
 ## 需求
 
-- Windows。用 Releases 的 `kkscenebridge.exe` 不需要安裝 Python
-- 「添加動畫音頻」分頁的影片／音訊處理需要自己安裝 [ffmpeg](https://ffmpeg.org/)，見上方 [ffmpeg](#ffmpeg需要自己安裝)
+- Windows。用 Releases 的 zip 不需要安裝 Python
+- 「添加動畫音頻」分頁的影片／音訊處理需要 [ffmpeg](https://ffmpeg.org/)：`kkscenebridge_ffmpeg.zip` 已附，或自己安裝，見上方 [ffmpeg](#ffmpeg)
 - 合併卡的過場影片、地圖切換要在遊戲裡裝 **F7（Studio CutScene）**；VNGE 音頻要裝 VNGE
 
 ## 注意事項

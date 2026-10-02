@@ -5,6 +5,10 @@
 Offline character card merging for Koikatsu. `kkbridge.exe` is the GUI; `kkmerge.exe` is the same engine
 as a command-line tool. F6 (Studio Character Tools) uses it for its card-merging features.
 
+**Download**: `kkbridge.exe` ships inside `StudioCharTools.zip` on the Releases page (it ends up in the game root).
+F6 works through the job folder and only needs `kkbridge.exe`; `kkmerge.exe` is not in Releases — build it yourself
+(see Building) if you want the command-line version.
+
 ## What it does
 
 | Tab | |
@@ -25,8 +29,8 @@ or takes `--lang 0|1|2` (0 = Chinese, 1 = English, 2 = Japanese).
 
 ## Using it with F6
 
-In F6's settings, point it at `kkmerge.exe` (or run `kkbridge.exe` and start watching) and set the job
-folder. F6 saves the character, drops a job, waits for the result and loads it back. If kkbridge isn't
+Run `kkbridge.exe` and start watching in the **Watch jobs** tab. The job folder defaults to
+`UserData\chara\female\Temp` on both sides; if you change it, set the same folder in F6's settings. F6 saves the character, drops a job, waits for the result and loads it back. If kkbridge isn't
 running, jobs stay in the folder and are processed the next time it starts.
 
 ## Job format (short)
@@ -46,5 +50,5 @@ A `*.done.json` appears next to it with `{"ok": true, "out": ..., "warnings": [.
 ## Building
 
 Put `kkmerge.py`, `kkbridge.py`, `kklang.py`, `kkbridge.ico` and `build.bat` in one folder and double-click
-`build.bat` (Python 3.11+). Output: `dist\kkmerge.exe` (~9 MB, command line, what the plugin calls) and
-`dist\kkbridge.exe` (~40 MB, same engine + PyQt6 GUI).
+`build.bat` (Python 3.11+). Output: `dist\kkmerge.exe` (~9 MB, command line, for your own scripts) and
+`dist\kkbridge.exe` (~40 MB, same engine + PyQt6 GUI, what F6 uses).

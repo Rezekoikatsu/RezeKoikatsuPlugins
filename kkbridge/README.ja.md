@@ -5,6 +5,10 @@
 コイカツのキャラカードをオフラインで合成するツールです。`kkbridge.exe` が GUI、`kkmerge.exe` は同じエンジンの
 コマンドライン版です。F6（Studio Character Tools）のカード合成機能はこれを使います。
 
+**ダウンロード**：`kkbridge.exe` は Releases の `StudioCharTools.zip` に同梱しています（解凍するとゲームのルートに置かれます）。
+F6 はジョブフォルダ経由で動くので必要なのは `kkbridge.exe` だけです。`kkmerge.exe` は Releases にはありません。
+コマンドライン版が必要な場合は「ビルド」の手順で作成してください。
+
 ## できること
 
 | タブ | |
@@ -24,7 +28,8 @@
 
 ## F6 との連携
 
-F6 の設定で `kkmerge.exe` を指定する（または `kkbridge.exe` を起動して監視を開始する）と、ジョブフォルダを設定します。
+`kkbridge.exe` を起動し、「ジョブ監視」タブで監視を開始します。ジョブフォルダの既定はどちらも
+`UserData\chara\female\Temp` で、変える場合は F6 の設定でも同じフォルダを指定してください。
 F6 はキャラを保存 → ジョブを置く → 結果を待つ → 読み戻す、という流れで動きます。kkbridge が起動していなければ
 ジョブはフォルダに残り、次回起動時に処理されます。
 
@@ -45,5 +50,5 @@ F6 はキャラを保存 → ジョブを置く → 結果を待つ → 読み�
 ## ビルド
 
 `kkmerge.py`・`kkbridge.py`・`kklang.py`・`kkbridge.ico`・`build.bat` を同じフォルダに置き、`build.bat` をダブルクリック
-（Python 3.11 以上）。出力：`dist\kkmerge.exe`（約 9 MB、コマンドライン、プラグインが呼ぶもの）と
-`dist\kkbridge.exe`（約 40 MB、同じエンジン＋PyQt6 GUI）。
+（Python 3.11 以上）。出力：`dist\kkmerge.exe`（約 9 MB、コマンドライン、自作スクリプト向け）と
+`dist\kkbridge.exe`（約 40 MB、同じエンジン＋PyQt6 GUI、F6 が使うもの）。

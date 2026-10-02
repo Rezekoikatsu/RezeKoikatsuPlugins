@@ -4,6 +4,9 @@
 
 恋活角色卡的離線合卡工具。`kkbridge.exe` 是介面,`kkmerge.exe` 是同一套引擎的命令列版。
 
+**下載**:`kkbridge.exe` 包在 Releases 的 `StudioCharTools.zip` 裡(解壓後在遊戲根目錄)。
+F6 走的是工單資料夾,只需要 `kkbridge.exe`;`kkmerge.exe` 沒有放在 Releases,要用命令列版的話照下面「打包」自己做。
+
 ## 語言 / Language / 言語
 
 介面有 **繁體中文 / English / 日本語** 三種。在「設定」分頁最下面的
@@ -31,8 +34,8 @@ is remembered in `kkbridge_settings.json`.
 
 | | 大小 | 用途 |
 |---|---|---|
-| `dist\kkmerge.exe` | 約 9 MB | 引擎本體,命令列介面。**插件呼叫的是這個** |
-| `dist\kkbridge.exe` | 約 40 MB | 同一套引擎 + PyQt6 介面。手動合卡、監看工單用 |
+| `dist\kkmerge.exe` | 約 9 MB | 引擎本體,命令列介面。給自己寫腳本、直接下命令的人用(Releases 沒有附) |
+| `dist\kkbridge.exe` | 約 40 MB | 同一套引擎 + PyQt6 介面。手動合卡、監看工單用。**F6 用的是這個** |
 
 兩個 exe 的圖示都是 `kkbridge.ico`,跟 F6(StudioCharTools)工具列上那顆是同一個
 圖案。想重新產生的話:`python make_icon.py`(需要 Pillow)。它另外會產生
@@ -40,9 +43,8 @@ is remembered in `kkbridge_settings.json`.
 檔案總管的白底資料夾裡幾乎看不見,所以預設用的是有深色底板的那顆。
 要換的話把 `build.bat` 和兩個 `.spec` 裡的檔名改掉就好。
 
-兩個都含完整引擎,功能一樣,差別只在有沒有介面。如果插件直接呼叫 `kkmerge.exe`
-(沒開就當場失敗的做法),`kkbridge.exe` 就不是必要的——但留著仍然有用:
-不想開遊戲時可以手動合卡、看卡片資訊、修老卡。
+兩個都含完整引擎,功能一樣,差別只在有沒有介面。F6 是把工單丟進資料夾、等 `kkbridge.exe`
+處理,所以只要 `kkbridge.exe` 開著並在監看就夠了;不開遊戲時也可以用它手動合卡、看卡片資訊、修老卡。
 
 ## 介面怎麼用
 

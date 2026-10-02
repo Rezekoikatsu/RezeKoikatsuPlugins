@@ -55,8 +55,13 @@ bringing hair accessories from another outfit card).
 > Before "Swap keeping outfit", **remove the original character's hair** first (accessory slots → Remove).
 > The original hair accessories are part of the outfit, so otherwise they stay on the new character along with the clothes.
 
-<!-- video:f6-swap-normal -->
-<!-- video:f6-swap-keep -->
+**Normal swap (for comparison)** — the new card is taken as is, clothes included:
+
+https://github.com/user-attachments/assets/38b70f6f-660b-4db0-b33a-892750e46128
+
+**Swap keeping outfit** — remove the original hair first; after the swap the original clothes stay, then pick a hair-accessory outfit card:
+
+https://github.com/user-attachments/assets/143a75f5-b566-49cb-a443-9aa0bca7b2f8
 
 Swapping can automatically keep the character name, reapply the pose, restore collider bindings and apply a
 same-name blendshape preset (each toggled in Settings). The "ABMX bones kept by Keep new body" rule is
@@ -74,8 +79,13 @@ That is why, after the outfit card, you are asked whether to **bring the hair ba
 contains hair / hair accessories and its accessories are merged back onto the character.
 This step is done by `kkbridge.exe`, which has to be running.
 
-<!-- video:f6-outfit-nohair -->
-<!-- video:f6-outfit-hair -->
+**Change outfit without bringing hair back** — the hair disappears along with the old accessories:
+
+https://github.com/user-attachments/assets/5fb94abf-7755-4896-8dbe-58878e5be7cc
+
+**Change outfit and bring hair back** — after the outfit card, pick a hair-accessory outfit card and the hair returns:
+
+https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 
 ### Carrying the scene's shaders over on swap (needs MaterialEditor)
 

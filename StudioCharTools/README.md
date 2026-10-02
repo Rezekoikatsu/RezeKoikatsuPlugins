@@ -51,8 +51,13 @@ CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面
 > 用「保持服裝換人」之前，建議先把場景裡原角色的**頭髮移除**（飾品欄 → 移除）。
 > 原角色的頭髮飾品是服裝的一部分，不先拿掉的話會跟著衣服一起留在新角色身上。
 
-<!-- video:f6-swap-normal -->
-<!-- video:f6-swap-keep -->
+**一般換人（對照）** —— 整張卡照搬，衣服也換成新卡的：
+
+https://github.com/user-attachments/assets/38b70f6f-660b-4db0-b33a-892750e46128
+
+**保持服裝換人** —— 先移除原角色的頭髮，換人後原本的衣服留著，再選一張髮飾服裝卡：
+
+https://github.com/user-attachments/assets/143a75f5-b566-49cb-a443-9aa0bca7b2f8
 
 換人時可以自動：保留角色名稱、重新套用姿勢、還原碰撞器綁定、帶入同名的型態鍵預設（都在設置裡開關）。
 「維持新卡身材要留的 ABMX 骨頭」那條規則可以在設置裡改，語法是逗號分隔的萬用字元，`-` 開頭表示排除。
@@ -67,8 +72,13 @@ CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面
 所以選完服裝卡會接著問要不要**帶回髮飾**：再選一張只有頭髮／髮飾的服裝卡，把它的飾品合併回角色身上。
 這一步靠 `kkbridge.exe` 完成，要先把它開著。
 
-<!-- video:f6-outfit-nohair -->
-<!-- video:f6-outfit-hair -->
+**換衣服，不帶回髮飾** —— 頭髮跟著原本的飾品一起不見：
+
+https://github.com/user-attachments/assets/5fb94abf-7755-4896-8dbe-58878e5be7cc
+
+**換衣服，帶回髮飾** —— 選完服裝卡再選一張髮飾服裝卡，頭髮回來了：
+
+https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 
 ### 換人時帶入場景的著色器（需要 MaterialEditor）
 

@@ -1,12 +1,18 @@
 # Studio VR Tools (F9)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+[繁體中文](README.md) ・ [English](README.en.md) ・ **日本語**
+
+> 🤖 **Created by Claude AI** —— 本プロジェクトのコードとドキュメントは Claude（Anthropic の AI）が書きました。Reze は発案・指示・ゲーム内での動作確認を担当しています。
 
 CharaStudio の VR 操作一式。**F9** でパネルが開きます。
 
-> VRGIN 系の VR プラグイン（KKCharaStudioVRPlugin など）が必要です。
+> CharaStudio 用 VR プラグイン [Ermin610/KK_VR](https://github.com/Ermin610/KK_VR)（VRGIN 系）が必要です。詳しくは下の「前提条件」を参照。
 > **デスクトップモードでは本プラグインは完全に沈黙します** —— VR 機能はすべて自動で
 > 無効になり、エラーも出ません。
+
+> [!WARNING]
+> **Meta Quest 3 でしか試していません**（SteamVR 経由）。ボタン名（X／Y、グリップ、トリガー、スティック）は Quest コントローラー基準です。
+> 他のヘッドセットやコントローラー（Index、Vive、WMR、Pico など）は未検証で、**動作は保証できません** —— ボタンが合わない場合は「コントローラー設定」で割り当て直してみてください。
 
 ## 前提条件
 

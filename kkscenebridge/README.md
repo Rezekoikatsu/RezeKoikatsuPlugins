@@ -2,6 +2,8 @@
 
 **繁體中文** ・ [English](README.en.md) ・ [日本語](README.ja.md)
 
+> 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
+
 把多張 CharaStudio 場景卡照順序接成一張，並處理接完之後的配音、過場影片與物件整理。
 原本要在 Studio 裡手動做一整晚的事（刪相機、包資料夾、平移 Timeline、接相機、配 VNGE 音頻），
 在這裡是加卡、排順序、按一次執行。

@@ -2,6 +2,8 @@
 
 [繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
 
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
+
 Offline character card merging for Koikatsu. `kkbridge.exe` is the GUI; `kkmerge.exe` is the same engine
 as a command-line tool. F6 (Studio Character Tools) uses it for its card-merging features.
 

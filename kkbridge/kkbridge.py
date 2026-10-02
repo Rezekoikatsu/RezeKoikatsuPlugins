@@ -52,7 +52,11 @@ OUTPUT_SUB = "UserData/chara/female/Temp"    # 產出與工單都在這裡
 
 
 def guess_game_root() -> str:
-    """猜遊戲根目錄：常見安裝位置裡找得到 UserData 就算數。"""
+    """猜遊戲根目錄：先看自己所在的資料夾（發佈的 zip 是解壓在遊戲根目錄），
+    再看常見安裝位置；找得到 UserData 就算數。"""
+    here = app_dir()
+    if (here / "UserData").is_dir():
+        return str(here)
     for d in ("C:/Koikatu", "D:/Koikatu", "E:/Koikatu", "F:/Koikatu",
               "C:/Illusion/Koikatu", "D:/Illusion/Koikatu"):
         if (Path(d) / "UserData").is_dir():
@@ -567,6 +571,15 @@ class MainWindow(QMainWindow):
         self.vthread.start()
 
         if self.settings.get("autostart") and self.settings.get("watch_dir"):
+            # 預設的工單資料夾第一次用時還沒建：遊戲根目錄認得的話就自己建起來
+            wd = Path(self.settings["watch_dir"])
+            root = self.settings.get("game_root") or ""
+            if (not wd.is_dir() and root and (Path(root) / "UserData").is_dir()
+                    and wd == Path(root) / OUTPUT_SUB):
+                try:
+                    wd.mkdir(parents=True, exist_ok=True)
+                except OSError:
+                    pass
             if Path(self.settings["watch_dir"]).is_dir():
                 self.btn_watch.setChecked(True)
             else:

@@ -1,14 +1,18 @@
 # Studio CutScene (F7)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+**繁體中文** ・ [English](README.en.md) ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
 
 讓過場影片和配音跟著 **Timeline** 走。按 **F7** 開面板。
 
 做法是每張場景卡配一份 `.cutscene.json`，裡面寫好「時間軸第幾秒要播哪支影片」
 和「哪一段時間配哪個音檔」。載入場景卡時會自動找同名的設定檔套上。
 
-> **需要 Timeline 外掛**（Nedo 的那支）。這支插件整個是圍著 Timeline 做的，
+> **需要 Timeline 外掛**（Joan6694 的那支）。這支插件整個是圍著 Timeline 做的，
 > 沒有它幾乎沒有功能。
+
+<!-- 示範影片之後補上 -->
 
 ## 前置需求
 

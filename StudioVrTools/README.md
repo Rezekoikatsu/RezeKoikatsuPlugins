@@ -1,11 +1,17 @@
 # Studio VR Tools (F9)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+**繁體中文** ・ [English](README.en.md) ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
 
 CharaStudio 在 VR 裡的操作總成。按 **F9** 開面板。
 
-> 需要 VRGIN 系的 VR 外掛（例如 KKCharaStudioVRPlugin）。
+> 需要 CharaStudio 的 VR 外掛 [Ermin610/KK_VR](https://github.com/Ermin610/KK_VR)（VRGIN 系），詳見下方「前置需求」。
 > **桌面模式下這支插件完全安靜** —— 所有 VR 功能自動停用，不會有任何錯誤。
+
+> [!WARNING]
+> **只在 Meta Quest 3 上試用過**（經 SteamVR 連接）。按鍵名稱（X／Y、握把、扳機、搖桿）都是以 Quest 手柄為準；
+> 其他頭顯或手柄（Index、Vive、WMR、Pico 等）沒有測過，**不保證適配** —— 按鍵對不上時可以試試「手柄設置」裡的重新綁鍵。
 
 ## 前置需求
 

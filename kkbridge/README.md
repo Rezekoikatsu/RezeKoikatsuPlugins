@@ -2,6 +2,8 @@
 
 **繁體中文** ・ [English](README.en.md) ・ [日本語](README.ja.md)
 
+> 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
+
 恋活角色卡的離線合卡工具。`kkbridge.exe` 是介面,`kkmerge.exe` 是同一套引擎的命令列版。
 
 **下載**:`kkbridge.exe` 包在 Releases 的 `StudioCharTools.zip` 裡(解壓後在遊戲根目錄)。

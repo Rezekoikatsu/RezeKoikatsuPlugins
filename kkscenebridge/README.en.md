@@ -2,6 +2,8 @@
 
 [繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
 
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
+
 Joins several CharaStudio scene cards into one card, in order, and then handles the voices,
 cutscene videos and object tree of the result. What used to take a whole evening by hand in Studio
 (deleting cameras, wrapping folders, shifting Timeline, handing cameras over, wiring VNGE audio)

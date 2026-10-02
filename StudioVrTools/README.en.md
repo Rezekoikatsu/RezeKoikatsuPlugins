@@ -1,12 +1,18 @@
 # Studio VR Tools (F9)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+[繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
 
 Everything CharaStudio needs in VR. Press **F9** for the panel.
 
-> Requires a VRGIN-family VR plugin (e.g. KKCharaStudioVRPlugin).
+> Requires the CharaStudio VR plugin [Ermin610/KK_VR](https://github.com/Ermin610/KK_VR) (VRGIN family); see Requirements below.
 > **In desktop mode this plugin is completely silent** — every VR feature disables itself
 > and nothing errors.
+
+> [!WARNING]
+> **Only tried on a Meta Quest 3** (connected through SteamVR). Button names (X / Y, grip, trigger, stick) follow the Quest controllers.
+> Other headsets and controllers (Index, Vive, WMR, Pico…) are untested and **not guaranteed to work** — if the buttons don't line up, try rebinding them under **Controls**.
 
 ## Requirements
 

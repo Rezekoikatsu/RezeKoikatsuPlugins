@@ -2,11 +2,11 @@
 
 [繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
 
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
+
 A set of BepInEx plugins for Koikatsu **CharaStudio**, plus a few companion Windows tools.
 From swapping characters, changing outfits and saving cards, to joining several scene cards into one piece with
 cutscene videos and voices — and then watching it in a headset — the whole pipeline is here. Author: **Reze**
-
-<!-- demo video coming later -->
 
 > [!TIP]
 > Each one installs on its own. Installed together they connect automatically (watch F7's cutscenes in the headset,
@@ -36,7 +36,7 @@ Keeps cutscene videos, voices and maps in sync with **Timeline**.
 - Desktop hotkeys, remembered VR viewpoints, controller transport (with F9)
 
 ### 🥽 F9 — Studio VR Tools
-Everything for using CharaStudio in VR.
+Everything for using CharaStudio in VR. **Only tried on a Meta Quest 3; other headsets/controllers are not guaranteed to work.**
 - Stick locomotion, turning, up/down, orbiting; left and right hand speeds set separately
 - **Bind controls by pressing the combination right in the headset**, with conflict warnings
 - Panels mounted on your hand with an opaque backing, readable in the headset

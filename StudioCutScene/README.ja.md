@@ -1,6 +1,8 @@
 # Studio CutScene (F7)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+[繁體中文](README.md) ・ [English](README.en.md) ・ **日本語**
+
+> 🤖 **Created by Claude AI** —— 本プロジェクトのコードとドキュメントは Claude（Anthropic の AI）が書きました。Reze は発案・指示・ゲーム内での動作確認を担当しています。
 
 過場ムービーとボイスを **Timeline** に同期して再生します。**F7** でパネルが開きます。
 
@@ -8,8 +10,10 @@
 再生するか、どの区間にどの音声を当てるかを記述します。シーンカードを読み込むと、
 同名の設定ファイルが自動的に適用されます。
 
-> **Timeline プラグイン（Nedo 版）が必要です。** 本プラグインは Timeline を前提に
+> **Timeline プラグイン（Joan6694 版）が必要です。** 本プラグインは Timeline を前提に
 > 作られており、無い場合はほぼ機能しません。
+
+<!-- デモ動画は後日追加 -->
 
 ## 前提条件
 

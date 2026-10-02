@@ -1,9 +1,13 @@
 # Studio Character Tools (F6)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+**繁體中文** ・ [English](README.en.md) ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
 
 CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面板，場上每個角色一列，
 換人、換裝、管飾品、鎖形態鍵、修碰撞器、拍縮圖存卡，全部在同一個地方。
+
+<!-- 示範影片之後補上 -->
 
 ## 前置需求
 
@@ -119,7 +123,7 @@ CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面
 - `kkbridge.exe` 已經包在 `StudioCharTools.zip` 裡，在遊戲根目錄解壓縮後就在根目錄（跟 `BepInEx` 同一層）
 - 用合卡功能前先把 `kkbridge.exe` 開著，在「監看工單」分頁開始監看；它沒開的話合卡會逾時，其他功能不受影響
 - 工單資料夾預設是 `UserData\chara\female\Temp`，兩邊都用預設就不用設定；要改的話 F6 的設置和 kkbridge 要指到同一個資料夾
-- kkbridge 會自己找常見的安裝位置（`C:`～`F:` 的 `\Koikatu`）；遊戲裝在別的地方的話，第一次開啟時到它的「設定」分頁填一次遊戲根目錄
+- kkbridge 放在遊戲根目錄時會自己認得遊戲位置並開始監看，不用另外設定；放在別的地方的話，到它的「設定」分頁填一次遊戲根目錄
 - 原始碼在這個 repo 的 [`kkbridge/`](../kkbridge/)
 
 ## 設定

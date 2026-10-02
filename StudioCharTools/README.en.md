@@ -1,10 +1,14 @@
 # Studio Character Tools (F6)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+[繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
 
 A scene-character manager for CharaStudio. Press **F6** to open the character list —
 one row per character on stage — and swap cards, change outfits, manage accessories,
 lock blendshapes, repair colliders, and capture thumbnails, all from one place.
+
+<!-- demo video coming later -->
 
 ## Requirements
 
@@ -132,7 +136,7 @@ tool **kkbridge**.
 - `kkbridge.exe` ships inside `StudioCharTools.zip`; after extracting in the game root it sits there, next to `BepInEx`
 - Before merging, start `kkbridge.exe` and begin watching in its **Watch jobs** tab; if it isn't running, merges time out and everything else keeps working
 - The job folder defaults to `UserData\chara\female\Temp`; with defaults on both sides there is nothing to set. If you change it, F6's Settings and kkbridge must point at the same folder
-- kkbridge looks for the game in the usual places (`\Koikatu` on `C:`–`F:`); if yours is elsewhere, set the game root once in kkbridge's **Settings** tab
+- When kkbridge sits in the game root it recognises the game by itself and starts watching — nothing to set up; if you keep it elsewhere, set the game root once in its **Settings** tab
 - Its source is in this repo under [`kkbridge/`](../kkbridge/)
 
 ## Settings

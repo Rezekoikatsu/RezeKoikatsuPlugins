@@ -1,6 +1,8 @@
 # Studio CutScene (F7)
 
-[繁體中文](README.md) ・ [English](README.en.md) ・ [日本語](README.ja.md)
+[繁體中文](README.md) ・ **English** ・ [日本語](README.ja.md)
+
+> 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
 
 Plays transition videos and voice tracks in sync with **Timeline**. Press **F7** for the panel.
 
@@ -8,8 +10,10 @@ Each scene card gets a `.cutscene.json` describing which video plays at which po
 timeline, and which audio file covers which stretch. Loading a scene card auto-loads the
 matching config.
 
-> **Requires the Timeline plugin** (Nedo's). This plugin is built entirely around Timeline
+> **Requires the Timeline plugin** (Joan6694's). This plugin is built entirely around Timeline
 > and does almost nothing without it.
+
+<!-- demo video coming later -->
 
 ## Requirements
 

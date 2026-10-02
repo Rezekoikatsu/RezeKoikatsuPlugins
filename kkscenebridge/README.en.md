@@ -9,8 +9,6 @@ cutscene videos and object tree of the result. What used to take a whole evening
 (deleting cameras, wrapping folders, shifting Timeline, handing cameras over, wiring VNGE audio)
 becomes: add cards, set the order, press Merge.
 
-<!-- demo video coming later -->
-
 ## Tabs
 
 | Tab | What it does |

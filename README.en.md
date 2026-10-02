@@ -45,6 +45,7 @@ Everything for using CharaStudio in VR. **Only tried on a Meta Quest 3; other he
 
 ### 🧩 kkscenebridge (tool)
 **Joins several scene cards into one**, in order.
+- ⚠️ **Do not merge too many scenes at once** — the game may run out of memory while loading the result
 - Sorts out cameras, wraps folders, shifts Timeline, hands cameras over, de-duplicates textures, remaps plugin data
 - Generates F7's `.cutscene.json`: built-in player for sync points, wav extraction, loudness matching, deriving points from pre-cut audio
 - VNGE audio, and an object tree editor (drag, rename, delete with automatic reference fixes)

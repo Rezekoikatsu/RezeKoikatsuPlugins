@@ -9,6 +9,9 @@ cutscene videos and object tree of the result. What used to take a whole evening
 (deleting cameras, wrapping folders, shifting Timeline, handing cameras over, wiring VNGE audio)
 becomes: add cards, set the order, press Merge.
 
+> [!CAUTION]
+> **Do not merge too many scenes at once.** The merged card gets very large and the game may run out of memory while loading it, freezing or crashing.
+
 ## Tabs
 
 | Tab | What it does |

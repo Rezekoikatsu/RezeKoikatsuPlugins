@@ -1,0 +1,45 @@
+# ---- 建置輸出 / build output ----
+bin/
+obj/
+.vs/
+*.user
+*.suo
+build/
+dist/
+__pycache__/
+*.pyc
+
+# ---- 發佈檔：放到 GitHub 的 Releases 頁面，不進版控 ----
+# ---- binaries go to the GitHub Releases page, not into git ----
+releases/
+*.dll
+*.pdb
+*.exe
+*.zip
+*.7z
+
+# ---- 各人機器上的設定與紀錄 / per-machine settings and logs ----
+*.cfg
+_reze_backup/
+*_settings.json
+*_crash.log
+*.log
+*.bak
+
+# ---- 個人素材（場景卡、影片、音檔、各卡的設定檔）/ personal assets ----
+*.png
+*.jpg
+*.mp4
+*.mkv
+*.wav
+*.ogg
+*.mp3
+*.json
+!example.cutscene.json
+*.pairs.txt
+
+# ---- kkscenebridge 用的 ffmpeg（發佈時跟 exe 一起打包，不進版控）----
+ffmpeg/
+
+# ---- 目前不公開的工具、只給自己用的發佈腳本 / not shared for now ----
+github_tools/

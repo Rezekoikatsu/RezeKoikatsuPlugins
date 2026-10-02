@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  遊戲路徑只改這裡一個地方，所有專案都會跟著。
+  Set your game path here once; every project follows.
+  ゲームのパスはここ一か所だけ変更すれば、すべてのプロジェクトに反映されます。
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <KoikatuDir Condition="'$(KoikatuDir)' == ''">D:\Koikatu\</KoikatuDir>
+    <KoikatuManagedDir>$(KoikatuDir)CharaStudio_Data\Managed\</KoikatuManagedDir>
+    <KoikatuBepInExDir>$(KoikatuDir)BepInEx\</KoikatuBepInExDir>
+    <KoikatuPluginDir>$(KoikatuDir)BepInEx\plugins\</KoikatuPluginDir>
+  </PropertyGroup>
+</Project>

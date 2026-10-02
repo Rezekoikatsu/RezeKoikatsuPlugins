@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1A7C4E10-9B2D-4C33-91A7-6D5E0F2B7C01}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>StudioCharTools</RootNamespace>
+    <AssemblyName>StudioCharTools</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(KoikatuBepInExDir)core\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(KoikatuBepInExDir)core\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(KoikatuManagedDir)Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(KoikatuManagedDir)Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(KoikatuManagedDir)UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx.Harmony">
+      <HintPath>$(KoikatuBepInExDir)core\BepInEx.Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(KoikatuManagedDir)UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="KKAPI">
+      <HintPath>$(KoikatuPluginDir)KKAPI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ExtensibleSaveFormat">
+      <HintPath>$(KoikatuPluginDir)KK_BepisPlugins\ExtensibleSaveFormat.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CharTools.cs" />
+    <Compile Include="Lang.cs" />
+    <Compile Include="VrSkin.cs" />
+    <Compile Include="ToolbarButton.cs" />
+    <Compile Include="BlendShapeLock.cs" />
+    <Compile Include="KKMergeBridge.cs" />
+    <Compile Include="PoseFix.cs" />
+    <Compile Include="DBColliderFix.cs" />
+    <Compile Include="PushupFix.cs" />
+    <Compile Include="AbmxFilter.cs" />
+    <Compile Include="AccessoryTools.cs" />
+    <Compile Include="ShaderCarry.cs" />
+    <Compile Include="ScreenGrab.cs" />
+    <Compile Include="BlendShapeLockSceneController.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- 遊戲路徑改這裡就好，兩個專案各自獨立 -->
+  <PropertyGroup>
+    <!-- 路徑在根目錄的 Directory.Build.props -->
+  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(KoikatuPluginDir)" ContinueOnError="true" />
+  </Target>
+</Project>

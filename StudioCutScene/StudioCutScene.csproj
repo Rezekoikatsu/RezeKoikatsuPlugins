@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C41E9A2-5B3D-4F18-9A6C-2D71B0E45F33}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>StudioCutScene</RootNamespace>
+    <AssemblyName>StudioCutScene</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- SceneLoadWatch 需要。0Harmony 是 BepInEx 自帶的，不必另外安裝 -->
+    <Reference Include="0Harmony">
+      <HintPath>$(KoikatuBepInExDir)core\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(KoikatuManagedDir)Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(KoikatuBepInExDir)core\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(KoikatuManagedDir)UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- Unity 5.6 的 UnityEngine.dll 是單一大組件，UnityEngine.Video 就在裡面。
+         如果編譯報找不到 VideoPlayer，把下面這段取消註解：
+    <Reference Include="UnityEngine.Video">
+      <HintPath>$(KoikatuManagedDir)UnityEngine.Video.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    -->
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CutScenePlugin.cs" />
+    <Compile Include="Lang.cs" />
+    <Compile Include="VrSkin.cs" />
+    <Compile Include="VrLink.cs" />
+    <Compile Include="ViewStore.cs" />
+    <Compile Include="TimelineBridge.cs" />
+    <Compile Include="CutOverlay.cs" />
+    <Compile Include="MapSwitch.cs" />
+    <Compile Include="EnvSwitch.cs" />
+    <Compile Include="TrackPlayer.cs" />
+    <Compile Include="MiniJson.cs" />
+    <Compile Include="ScenePathProbe.cs" />
+    <Compile Include="SceneLoadWatch.cs" />
+    <Compile Include="ToolbarButton.cs" />
+    <Compile Include="Icons.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- 遊戲路徑改這裡就好 -->
+  <PropertyGroup>
+    <!-- 路徑在根目錄的 Directory.Build.props -->
+  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(KoikatuPluginDir)" ContinueOnError="true" />
+  </Target>
+</Project>

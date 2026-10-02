@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "enabled": true,
+  "colorMode": 3,
+  "pathMode": "abs",
+  "audioRoot": "UserData\\audio",
+  "videoRoot": "UserData\\cutscene",
+  "variantNames": [
+    "JPN",
+    "ENG-A",
+    "ENG-B"
+  ],
+  "variantFiles": [
+    "D:/Koikatu/UserData/audio/MyScene/voice_JPN.wav",
+    "D:/Koikatu/UserData/audio/MyScene/voice_ENG_A.wav",
+    "D:/Koikatu/UserData/audio/MyScene/voice_ENG_B.wav"
+  ],
+  "activeVariant": "JPN",
+  "tracksEnabled": true,
+  "trackVolume": 1.0,
+  "tracks": [
+    {
+      "from": 0.0,
+      "to": 61.1,
+      "audio": "@",
+      "volume": 1.0,
+      "mute": false,
+      "anchors": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          30.0,
+          30.0
+        ],
+        [
+          61.1,
+          61.1
+        ]
+      ]
+    },
+    {
+      "from": 61.1,
+      "to": 80.87,
+      "audio": "@",
+      "volume": 1.0,
+      "mute": false,
+      "anchors": [
+        [
+          61.1,
+          64.5
+        ],
+        [
+          70.0,
+          73.4
+        ],
+        [
+          80.87,
+          84.27
+        ]
+      ]
+    },
+    {
+      "from": 80.87,
+      "to": 265.25,
+      "audio": "@",
+      "volume": 1.0,
+      "mute": false,
+      "anchors": [
+        [
+          80.87,
+          87.3
+        ],
+        [
+          120.0,
+          131.6
+        ],
+        [
+          180.0,
+          199.4
+        ],
+        [
+          265.25,
+          283.0
+        ]
+      ]
+    },
+    {
+      "from": 265.25,
+      "to": 454.02,
+      "audio": "@",
+      "volume": 1.0,
+      "mute": false,
+      "anchors": [
+        [
+          265.25,
+          275.0
+        ],
+        [
+          350.0,
+          364.2
+        ],
+        [
+          454.02,
+          474.77
+        ]
+      ]
+    }
+  ],
+  "fadeIn": 0.25,
+  "fadeOut": 0.35,
+  "preloadLead": 3.0,
+  "window": 0.5,
+  "freezeTimeScale": true,
+  "videoWidth": 1920,
+  "videoHeight": 1080,
+  "cuts": [
+    {
+      "t": 61.1,
+      "video": "D:/Koikatu/UserData/cutscene/MyScene/cut1.mp4",
+      "audio": "D:/Koikatu/UserData/cutscene/MyScene/cut1.wav",
+      "skip": false,
+      "maxSeconds": 0,
+      "durationSec": 3.4
+    }
+  ],
+  "hardSeek": 0.35,
+  "slewDeadzone": 0.03,
+  "slewMax": 0.02,
+  "slewGain": 0.15
+}

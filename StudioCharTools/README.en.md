@@ -48,7 +48,7 @@ bringing hair accessories from another outfit card).
 
 > [!IMPORTANT]
 > "Swap keeping outfit", "bring back hair accessories after changing outfit" and "Add accessories" all rely on
-> `kkbridge.exe` to merge cards, so **start `kkbridge.exe` before using them** (see [Card merging](#card-merging-needs-kkbridge) below).
+> the "Chara card merge" tab of `kkscenebridge.exe`, so **start `kkscenebridge.exe` before using them** (see [Card merging](#card-merging-needs-kkscenebridge) below).
 > Without it these features wait until they time out; everything else keeps working.
 
 > [!TIP]
@@ -71,13 +71,13 @@ use the new card's own ABMX instead of being cleared.
 By default a swap keeps the scene's expression (eyebrows / eyes / mouth, open amount, blink, blush, tears, gaze).
 To use the expression saved in the new card instead, turn off "Keep expression when swapping" in Settings.
 
-### Changing outfit and hair accessories (bringing hair back needs kkbridge)
+### Changing outfit and hair accessories (bringing hair back needs kkscenebridge)
 
 Press "Change outfit" on a character's row and pick an outfit card. Many characters have hair built from accessories;
 put on a different outfit card and the whole accessory set is replaced, so the hair disappears.
 That is why, after the outfit card, you are asked whether to **bring the hair back**: pick an outfit card that only
 contains hair / hair accessories and its accessories are merged back onto the character.
-This step is done by `kkbridge.exe`, which has to be running.
+This step is done by `kkscenebridge.exe`, which has to be running.
 
 **Change outfit without bringing hair back** — the hair disappears along with the old accessories:
 
@@ -159,16 +159,16 @@ Settings has buttons that do the same thing to **every** character in the scene:
 - Repair collider bindings
 - Add accessories (one outfit card applied to everyone)
 
-## Card merging (needs kkbridge)
+## Card merging (needs kkscenebridge)
 
-Merges a coordinate card's accessories into a character card using the companion external
-tool **kkbridge**.
+Merges a coordinate card's accessories into a character card using the "Chara card merge" tab of the
+companion external tool **kkscenebridge** (the formerly separate `kkbridge.exe` is now part of
+`kkscenebridge.exe`; the features are the same).
 
-- `kkbridge.exe` ships inside `StudioCharTools.zip`; after extracting in the game root it sits there, next to `BepInEx`
-- Before merging, start `kkbridge.exe` and begin watching in its **Watch jobs** tab; if it isn't running, merges time out and everything else keeps working
-- The job folder defaults to `UserData\chara\female\Temp`; with defaults on both sides there is nothing to set. If you change it, F6's Settings and kkbridge must point at the same folder
-- When kkbridge sits in the game root it recognises the game by itself and starts watching — nothing to set up; if you keep it elsewhere, set the game root once in its **Settings** tab
-- Its source is in this repo under [`kkbridge/`](../kkbridge/)
+- Before merging, start `kkscenebridge.exe`; "Chara card merge → Watch jobs" must be watching (by default it starts with the program). If it isn't running, merges time out and everything else keeps working
+- The job folder defaults to `UserData\chara\female\Temp`; with defaults on both sides there is nothing to set. If you change it, F6's Settings and kkscenebridge must point at the same folder
+- Set the game root once in kkscenebridge's **Settings** tab and the folders used for merging are filled in automatically
+- See [`kkscenebridge/`](../kkscenebridge/README.en.md#chara-card-merge-formerly-kkbridge)
 
 ## Settings
 

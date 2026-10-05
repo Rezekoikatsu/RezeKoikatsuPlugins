@@ -642,9 +642,9 @@ namespace StudioCharTools
             A("工具列按鈕：",
               "Toolbar button: ",
               "ツールバーボタン：");
-            A("工單資料夾（kkbridge 監看的那個，留空就用預設）",
-              "Job folder (the one kkbridge watches; blank = default)",
-              "作業フォルダ（kkbridge が監視するもの。空欄で既定）");
+            A("工單資料夾（kkscenebridge 監看的那個，留空就用預設）",
+              "Job folder (the one kkscenebridge watches; blank = default)",
+              "作業フォルダ（kkscenebridge が監視するもの。空欄で既定）");
             A("已播",
               "played",
               "再生済み");
@@ -1394,9 +1394,9 @@ namespace StudioCharTools
             A("已中止等待，工單已刪除",
               "Stopped waiting; job deleted",
               "待機を中止し、ジョブを削除しました");
-            A("kkbridge 沒有回應——請確認它開著且正在監看 ",
-              "kkbridge isn't responding — make sure it's running and watching ",
-              "kkbridge が応答しません — 起動して次を監視しているか確認してください ");
+            A("kkscenebridge 沒有回應——請確認它開著，而且「人物卡合卡 → 監看工單」正在監看 ",
+              "kkscenebridge isn't responding — make sure it's running and \"Chara card merge → Watch jobs\" is watching ",
+              "kkscenebridge が応答しません — 起動して「キャラカード合成 → ジョブ監視」が次を監視しているか確認してください ");
             A("{0} 逾時（{1}s）",
               "{0} timed out ({1}s)",
               "{0} タイムアウト（{1}s）");

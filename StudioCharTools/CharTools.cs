@@ -292,7 +292,7 @@ namespace StudioCharTools
                 new BepInEx.Configuration.KeyboardShortcut(KeyCode.F6),
                 "在這裡改，改完立刻生效，不用重開遊戲");
             cfgJobFolder = Config.Bind("Merge", "Job Folder", "",
-                "kkbridge 監看的資料夾。留空就用 UserData\\chara\\female\\Temp");
+                "kkscenebridge（人物卡合卡分頁）監看的資料夾。留空就用 UserData\\chara\\female\\Temp");
             cfgKeepName = Config.Bind("Swap", "Keep Original Name", false, "");
             cfgAutoFixDbCollider = Config.Bind("Swap", "Auto Fix Colliders", true,
                 "換人後把 KKPE 的 Dynamic Bone Collider 綁定還原成換人前的樣子。"
@@ -1842,7 +1842,7 @@ namespace StudioCharTools
                 int waited = Mathf.RoundToInt(Time.realtimeSinceStartup - start);
                 if (waited >= 8)
                     SetStatus(false, what + "... [" + waited + "s] "
-                              + Lang.T("kkbridge 沒有回應——請確認它開著且正在監看 ")
+                              + Lang.T("kkscenebridge 沒有回應——請確認它開著，而且「人物卡合卡 → 監看工單」正在監看 ")
                               + KKMerge.JobFolder());
                 else
                     SetStatus(true, what + "... [" + waited + "s]");
@@ -2165,7 +2165,7 @@ namespace StudioCharTools
                 GUIStyle.none, GUI.skin.verticalScrollbar, GUI.skin.scrollView);
 
             GUILayout.Label(Lang.T("── 合卡 ──"));
-            GUILayout.Label(Lang.T("工單資料夾（kkbridge 監看的那個，留空就用預設）"),
+            GUILayout.Label(Lang.T("工單資料夾（kkscenebridge 監看的那個，留空就用預設）"),
                             Wrap(), GUILayout.Width(contentW));
             jobFolder = GUILayout.TextField(jobFolder ?? "", GUILayout.Width(contentW));
             GUILayout.BeginHorizontal();

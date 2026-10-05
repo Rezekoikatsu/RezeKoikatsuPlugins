@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.1";
 
         internal static CharToolsPlugin Instance;
 
@@ -3404,6 +3404,15 @@ namespace StudioCharTools
                 // 緊接著的第二次才是有效的。協程被殺掉不影響換人流程，動骨設定有套上，
                 // 所以刻意不去擋它 —— 留著當訊號，哪天 DBDE 真的壞了才看得出來。
 
+                // ---- 換之前先把失效的 FK 節點清掉 ----
+                // 上一次換上來的卡如果用了植入骨頭的頭模／髮型，listBones 裡會留著
+                // 已經被銷毀的 FK 操作點，ChangeChara 走到 InitFK 就丟例外、換到一半。
+                // 詳見 PoseFix.CleanFkBones。
+                int fkDup;
+                int fkDead = PoseFix.CleanFkBones(ofem, false, out fkDup);
+                if (fkDead > 0)
+                    Logger.LogInfo("[KeepBody] 換人前清掉 " + fkDead + " 筆已失效的 FK 節點");
+
                 // ---- Full native replace (reflection-based, tolerant of
                 // whichever ChangeChara overload exists) ----
                 bool changed = false;
@@ -3417,16 +3426,30 @@ namespace StudioCharTools
                     args[0] = path;
                     for (int i = 1; i < ps.Length; i++)
                         args[i] = ps[i].ParameterType.IsValueType ? Activator.CreateInstance(ps[i].ParameterType) : null;
-                    try
+                    // 換到一半丟例外的話，清一次 FK 清單再整個重換一次。
+                    // 不重換的話卡片雖然讀進去了，但 ChangeChara 的後半段和掛在它後面的
+                    // 外掛（KKPE 的型態鍵、動骨、碰撞器…）都沒跑到，角色是半套的狀態。
+                    for (int attempt = 0; attempt < 2 && !changed; attempt++)
                     {
-                        m.Invoke(ofem, args);
-                        changed = true;
-                        break;
+                        try
+                        {
+                            m.Invoke(ofem, args);
+                            changed = true;
+                        }
+                        catch (Exception exChange)
+                        {
+                            Logger.LogWarning("[KeepBody] ChangeChara overload " + m + " failed"
+                                              + (attempt == 0 ? " (retrying once)" : "") + ": " + exChange);
+                            if (attempt == 0)
+                            {
+                                int dup2;
+                                int dead2 = PoseFix.CleanFkBones(ofem, true, out dup2);
+                                Logger.LogInfo("[KeepBody] 重試前清掉 " + dead2 + " 筆失效、"
+                                               + dup2 + " 筆重複的 FK 節點");
+                            }
+                        }
                     }
-                    catch (Exception exChange)
-                    {
-                        Logger.LogWarning("[KeepBody] ChangeChara overload " + m + " failed: " + exChange);
-                    }
+                    if (changed) break;
                 }
 
                 if (!changed)
@@ -3653,6 +3676,12 @@ namespace StudioCharTools
             if (savedPose != null)
             {
                 yield return new WaitForSeconds(0.3f);
+                // 新卡的植入骨頭這時已經被收過一輪，失效的 FK 節點不清掉的話
+                // 讀姿勢會在 BoneInfo.set_active 丟例外（「姿勢還原失敗」）。
+                int poseDup;
+                int poseDead = PoseFix.CleanFkBones(ofem, false, out poseDup);
+                if (poseDead > 0)
+                    Logger.LogInfo("[KeepBody] 還原姿勢前清掉 " + poseDead + " 筆已失效的 FK 節點");
                 if (PoseFix.RestoreAndCleanup(ofem, savedPose))
                     statusMsg = string.Format(Lang.T("✅ 換人成功（{0}），姿勢已還原"), SwapModeName(mode));
                 else

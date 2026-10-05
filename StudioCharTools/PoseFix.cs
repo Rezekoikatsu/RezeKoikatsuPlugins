@@ -250,6 +250,62 @@ namespace StudioCharTools
             }
         }
 
+        /// <summary>
+        /// 把角色 FK 清單（OCIChar.listBones）裡已經失效的節點拿掉。
+        ///
+        /// 用了「植入骨頭」的頭模／髮型／飾品（Mod Bone Implantor）的卡，換上去之後
+        /// 外掛會把沒用到的植入骨頭收掉，連帶那幾根骨頭的 FK 操作點也被銷毀，
+        /// 但 listBones 裡還留著它們。工作室之後只要掃一次這份清單就會炸：
+        ///   * 讀姿勢（PauseCtrl.Load → BoneInfo.set_active）→「姿勢還原失敗」
+        ///   * 再換一次人（OCIChar.ChangeChara → InitFK）→ 換到一半丟例外。
+        ///     卡片已經讀進去了，但後半段沒跑、掛在 ChangeChara 後面的外掛也都沒被通知 ——
+        ///     KKPE 還抓著舊的那顆頭，Timeline 的型態鍵軌道從此不作用（嘴巴不會動）。
+        ///
+        /// dedupe：同一根骨頭出現兩筆時只留第一筆（只在換人失敗後重試前用；
+        /// 有重複的話 KKPE 的 RefreshFKBones 會丟「同樣的 key」而整個不更新）。
+        /// 只把清單裡的項目拿掉，不銷毀任何物件。回傳拿掉幾筆失效的。
+        /// </summary>
+        public static int CleanFkBones(OCIChar oci, bool dedupe, out int duplicates)
+        {
+            duplicates = 0;
+            int dead = 0;
+            if (oci == null) return 0;
+            try
+            {
+                List<OCIChar.BoneInfo> list = oci.listBones;
+                if (list == null || list.Count == 0) return 0;
+
+                List<OCIChar.BoneInfo> keep = new List<OCIChar.BoneInfo>(list.Count);
+                Dictionary<Transform, bool> seen = new Dictionary<Transform, bool>();
+                foreach (OCIChar.BoneInfo b in list)
+                {
+                    // guideObject 被銷毀之後 Unity 的 == null 會是 true
+                    if (b == null || b.guideObject == null) { dead++; continue; }
+                    if (dedupe)
+                    {
+                        Transform t = b.guideObject.transformTarget;
+                        if (t != null)
+                        {
+                            if (seen.ContainsKey(t)) { duplicates++; continue; }
+                            seen[t] = true;
+                        }
+                    }
+                    keep.Add(b);
+                }
+
+                if (dead > 0 || duplicates > 0)
+                {
+                    list.Clear();
+                    list.AddRange(keep);
+                }
+            }
+            catch (Exception e)
+            {
+                LastReport = "清理 FK 清單失敗: " + e.GetBaseException();
+            }
+            return dead;
+        }
+
         /// <summary>讀回指定的姿勢檔。</summary>
         public static bool LoadPoseFile(OCIChar oci, string path)
         {

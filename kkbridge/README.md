@@ -4,10 +4,13 @@
 
 > 🤖 **Created by Claude AI** —— 這個專案的程式碼與說明文件都是由 Claude（Anthropic 的 AI）寫的；Reze 負責發想、提需求、在遊戲裡實測。
 
+> [!NOTE]
+> **v1.0.1 起 kkbridge 已經併進 [kkscenebridge](../kkscenebridge/README.md#人物卡合卡原本的-kkbridge) 的「人物卡合卡」分頁**，功能和工單格式都沒變。
+> Releases 不再附 `kkbridge.exe`，F6 的合卡功能請改開 `kkscenebridge.exe`。這裡是獨立版的原始碼與說明，留著給想自己打包的人。
+
 恋活角色卡的離線合卡工具。`kkbridge.exe` 是介面,`kkmerge.exe` 是同一套引擎的命令列版。
 
-**下載**:`kkbridge.exe` 包在 Releases 的 `StudioCharTools.zip` 裡(解壓後在遊戲根目錄)。
-F6 走的是工單資料夾,只需要 `kkbridge.exe`;`kkmerge.exe` 沒有放在 Releases,要用命令列版的話照下面「打包」自己做。
+**下載**:v1.0.0 的 `StudioCharTools.zip` 裡有 `kkbridge.exe`;之後的版本請用 `kkscenebridge.exe`,或照下面「打包」自己做。
 
 ## 語言 / Language / 言語
 

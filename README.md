@@ -24,7 +24,7 @@
 - **帶入場景的著色器**：換人時把場景原角色的著色器（MaterialEditor）套到新角色，只換著色器、不動參數（關／詢問／自動）
 - **型態鍵鎖定**、**碰撞器綁定修復**（換人後頭髮被吸走的問題）、**一鍵重置姿勢**
 - **拍縮圖存卡**：人物卡、服裝卡、姿勢、全部換裝一次存完，構圖一致
-- **合卡**：把服裝卡的飾品合進人物卡、移植整套換裝（搭配 kkbridge）
+- **合卡**：把服裝卡的飾品合進人物卡、移植整套換裝（搭配 kkscenebridge 的「人物卡合卡」分頁）
 
 ### 🎬 F7 — Studio CutScene
 讓過場影片、配音、地圖跟著 **Timeline** 走。
@@ -47,11 +47,14 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 - ⚠️ **請勿一次合併太多場景**，載入時可能記憶體不足
 - 自動整理相機、包資料夾、平移 Timeline、接相機、貼圖去重，外掛資料一起重新對應編號
 - 產生 F7 用的 `.cutscene.json`：內建播放器抓對應點、抽 wav、音量對齊、從切好的音頻反推
+- 各張卡已經做好的 F7 設定可以**一起接成一份**，音檔和影片不用合併（需要 F7 1.14.0 以上）
+- **人物卡合卡**（原本的 kkbridge，已併入）：附加飾品、移植整套換裝、修卡；F6 的合卡功能靠這一頁的「監看工單」
 - VNGE 音頻、物件樹整理（拖曳、改名、刪除並自動修正參照）
 - 影片／音訊處理要用 ffmpeg：下載 `kkscenebridge_ffmpeg.zip` 就已經附好；`kkscenebridge.zip` 不含，要自己安裝（沒有的話只少這部分，[哪些功能、怎麼裝](kkscenebridge/README.md#ffmpeg)）
 
-### 🔗 kkbridge（工具）
-角色卡離線合卡：附加飾品、移植整套換裝、修卡。F6 的合卡功能靠它，所以 `kkbridge.exe` 直接包在 `StudioCharTools.zip` 裡。
+### 🔗 kkbridge（已併入 kkscenebridge）
+角色卡離線合卡：附加飾品、移植整套換裝、修卡。**v1.0.1 起併進 `kkscenebridge.exe` 的「人物卡合卡」分頁**，只要開一個 exe；
+`StudioCharTools.zip` 不再附 `kkbridge.exe`，F6 的合卡功能改成要開著 `kkscenebridge.exe`。獨立版的原始碼仍留在 [`kkbridge/`](kkbridge/)。
 
 ---
 
@@ -84,7 +87,7 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 
 | 下載 | 內容 | 解壓到 |
 |---|---|---|
-| `StudioCharTools.zip` | F6 外掛 ＋ `kkbridge.exe`（合卡工具，會放在遊戲根目錄） | 遊戲根目錄 |
+| `StudioCharTools.zip` | F6 外掛（合卡功能要另外開著 `kkscenebridge.exe`） | 遊戲根目錄 |
 | `StudioCutScene.zip` | F7 外掛 | 遊戲根目錄 |
 | `StudioVrTools.zip` | F9 外掛 | 遊戲根目錄 |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge ＋ ffmpeg，解壓就能用 | 任何地方 |
@@ -99,7 +102,6 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 全部支援 **繁體中文 / English / 日本語**：
 - 外掛：面板最下方的 **Language** 按鈕，三支會一起換
 - kkscenebridge：「設定」分頁最下方（換完重新啟動）
-- kkbridge：「設定」分頁最下方（立即生效）
 
 ## 📖 詳細說明
 
@@ -109,7 +111,7 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 | F7 Studio CutScene | [說明](StudioCutScene/README.md) | [Docs](StudioCutScene/README.en.md) | [説明](StudioCutScene/README.ja.md) |
 | F9 Studio VR Tools | [說明](StudioVrTools/README.md) | [Docs](StudioVrTools/README.en.md) | [説明](StudioVrTools/README.ja.md) |
 | kkscenebridge | [說明](kkscenebridge/README.md) | [Docs](kkscenebridge/README.en.md) | [説明](kkscenebridge/README.ja.md) |
-| kkbridge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
+| kkbridge（舊的獨立版） | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
 
 ## 👨‍💻 自己編譯
 

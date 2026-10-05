@@ -24,7 +24,7 @@
 - **シーンのシェーダーを引き継ぐ**：入れ替え時にシーンの元キャラのシェーダー（MaterialEditor）を新キャラに適用。シェーダーのみでパラメータはそのまま（オフ／確認／自動）
 - **ブレンドシェイプ固定**、**コライダー設定の修復**（入れ替え後に髪が吸着される問題）、**全員のポーズリセット**
 - **サムネ撮影とカード保存**：キャラカード・コーデカード・ポーズ・全コーデを一括保存、構図も揃います
-- **カード合成**：コーデカードのアクセをキャラカードに合成、コーデ一式の移植（kkbridge と併用）
+- **カード合成**：コーデカードのアクセをキャラカードに合成、コーデ一式の移植（kkscenebridge の「キャラカード合成」タブと併用）
 
 ### 🎬 F7 — Studio CutScene
 ムービー・ボイス・マップを **Timeline** に同期させます。
@@ -47,11 +47,14 @@ CharaStudio を VR で使うための操作一式。**Meta Quest 3 でのみ試�
 - ⚠️ **一度に結合するシーンを増やしすぎないでください**。読み込み時にメモリ不足になることがあります
 - カメラ整理、フォルダ分け、Timeline のずらし、カメラ引き継ぎ、テクスチャの重複排除、プラグインデータの番号振り直しを自動で
 - F7 の `.cutscene.json` を生成：内蔵プレーヤーで対応点、wav 抽出、音量合わせ、カット済み音声からの逆算
+- 各カードで作成済みの F7 設定を**1 つにつなげられます**。音声・動画ファイルは結合しません（F7 1.14.0 以上が必要）
+- **キャラカード合成**（旧 kkbridge を統合）：アクセ追加、コーデ移植、カード修復。F6 のカード合成はこのタブの「ジョブ監視」を使います
 - VNGE 音声、オブジェクトツリー編集（ドラッグ、名前変更、参照を自動修正する削除）
 - 動画・音声処理には ffmpeg を使います：`kkscenebridge_ffmpeg.zip` には同梱済み。`kkscenebridge.zip` には入っていないので各自インストール（なくてもその部分が使えないだけ。[対象機能とインストール方法](kkscenebridge/README.ja.md#ffmpeg)）
 
-### 🔗 kkbridge（ツール）
-キャラカードのオフライン合成：アクセ追加、コーデ移植、カード修復。F6 のカード合成はこれを使うので、`kkbridge.exe` は `StudioCharTools.zip` に同梱しています。
+### 🔗 kkbridge（kkscenebridge に統合）
+キャラカードのオフライン合成：アクセ追加、コーデ移植、カード修復。**v1.0.1 から `kkscenebridge.exe` の「キャラカード合成」タブになりました**。起動する exe は 1 つだけです。
+`StudioCharTools.zip` に `kkbridge.exe` は入っていません。F6 のカード合成は `kkscenebridge.exe` を起動しておく必要があります。単体版のソースは [`kkbridge/`](kkbridge/) に残してあります。
 
 ---
 
@@ -84,7 +87,7 @@ CharaStudio を VR で使うための操作一式。**Meta Quest 3 でのみ試�
 
 | ダウンロード | 内容 | 解凍先 |
 |---|---|---|
-| `StudioCharTools.zip` | F6 プラグイン ＋ `kkbridge.exe`（カード合成ツール。ゲームのルートに置かれます） | ゲームのルート |
+| `StudioCharTools.zip` | F6 プラグイン（カード合成には `kkscenebridge.exe` の起動が必要） | ゲームのルート |
 | `StudioCutScene.zip` | F7 プラグイン | ゲームのルート |
 | `StudioVrTools.zip` | F9 プラグイン | ゲームのルート |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge ＋ ffmpeg。解凍すればすぐ使えます | どこでも |
@@ -100,7 +103,6 @@ kkscenebridge の zip はどちらか一方で構いません。
 すべて **繁体字中国語 / 英語 / 日本語** に対応：
 - プラグイン：各パネル最下部の **Language** ボタン（全プラグインが同時に切り替わります）
 - kkscenebridge：「設定」タブ最下部（変更後に再起動）
-- kkbridge：「設定」タブ最下部（即座に反映）
 
 ## 📖 詳しい説明
 
@@ -110,7 +112,7 @@ kkscenebridge の zip はどちらか一方で構いません。
 | F7 Studio CutScene | [說明](StudioCutScene/README.md) | [Docs](StudioCutScene/README.en.md) | [説明](StudioCutScene/README.ja.md) |
 | F9 Studio VR Tools | [說明](StudioVrTools/README.md) | [Docs](StudioVrTools/README.en.md) | [説明](StudioVrTools/README.ja.md) |
 | kkscenebridge | [說明](kkscenebridge/README.md) | [Docs](kkscenebridge/README.en.md) | [説明](kkscenebridge/README.ja.md) |
-| kkbridge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
+| kkbridge（旧・単体版） | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
 
 ## 👨‍💻 ビルド
 

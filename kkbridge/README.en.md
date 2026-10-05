@@ -4,6 +4,10 @@
 
 > 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
 
+> [!NOTE]
+> **Since v1.0.1 kkbridge is the "Chara card merge" tab of [kkscenebridge](../kkscenebridge/README.en.md)**; features and the job format are unchanged.
+> Releases no longer ship `kkbridge.exe` — run `kkscenebridge.exe` for F6's card merging. This folder keeps the source and docs of the standalone version.
+
 Offline character card merging for Koikatsu. `kkbridge.exe` is the GUI; `kkmerge.exe` is the same engine
 as a command-line tool. F6 (Studio Character Tools) uses it for its card-merging features.
 

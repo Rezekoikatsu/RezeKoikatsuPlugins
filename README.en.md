@@ -25,7 +25,7 @@ A manager for the characters in your scene, one row each.
 - **Carry the scene's shaders over**: on swap, apply the original character's shaders (MaterialEditor) to the new one — shaders only, parameters untouched (Off / Ask / Auto)
 - **Blendshape lock**, **collider binding repair** (hair getting grabbed after a swap), **reset all poses**
 - **Thumbnails and card saving**: character cards, outfit cards, poses, every outfit at once — with consistent framing
-- **Card merging**: merge an outfit card's accessories into a character card, transfer whole outfits (with kkbridge)
+- **Card merging**: merge an outfit card's accessories into a character card, transfer whole outfits (with kkscenebridge's "Chara card merge" tab)
 
 ### 🎬 F7 — Studio CutScene
 Keeps cutscene videos, voices and maps in sync with **Timeline**.
@@ -48,11 +48,14 @@ Everything for using CharaStudio in VR. **Only tried on a Meta Quest 3; other he
 - ⚠️ **Do not merge too many scenes at once** — the game may run out of memory while loading the result
 - Sorts out cameras, wraps folders, shifts Timeline, hands cameras over, de-duplicates textures, remaps plugin data
 - Generates F7's `.cutscene.json`: built-in player for sync points, wav extraction, loudness matching, deriving points from pre-cut audio
+- F7 configs that the individual cards already have can be **joined into one** — audio and video files are not merged (needs F7 1.14.0 or later)
+- **Chara card merge** (the former kkbridge, now built in): add accessories, transfer outfits, repair cards; F6's card merging relies on this tab's "Watch jobs"
 - VNGE audio, and an object tree editor (drag, rename, delete with automatic reference fixes)
 - Video/audio processing uses ffmpeg: `kkscenebridge_ffmpeg.zip` already includes it; `kkscenebridge.zip` does not, so install it yourself (without it only that part is missing — [which features, how to install](kkscenebridge/README.en.md#ffmpeg))
 
-### 🔗 kkbridge (tool)
-Offline character card merging: add accessories, transfer outfits, repair cards. F6's merge feature uses it, so `kkbridge.exe` ships inside `StudioCharTools.zip`.
+### 🔗 kkbridge (merged into kkscenebridge)
+Offline character card merging: add accessories, transfer outfits, repair cards. **Since v1.0.1 it is the "Chara card merge" tab of `kkscenebridge.exe`**, so there is only one exe to run;
+`StudioCharTools.zip` no longer contains `kkbridge.exe`, and F6's card merging needs `kkscenebridge.exe` running instead. The source of the standalone version is still in [`kkbridge/`](kkbridge/).
 
 ---
 
@@ -85,7 +88,7 @@ Offline character card merging: add accessories, transfer outfits, repair cards.
 
 | Download | Contains | Extract to |
 |---|---|---|
-| `StudioCharTools.zip` | F6 plugin + `kkbridge.exe` (card-merge tool, placed in the game root) | game root |
+| `StudioCharTools.zip` | F6 plugin (card merging needs `kkscenebridge.exe` running) | game root |
 | `StudioCutScene.zip` | F7 plugin | game root |
 | `StudioVrTools.zip` | F9 plugin | game root |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge + ffmpeg, works right after extracting | anywhere |
@@ -101,7 +104,6 @@ Settings live in `BepInEx\config\reze.studio.*.cfg`. To reset everything, run `�
 Everything supports **Traditional Chinese / English / Japanese**:
 - Plugins: the **Language** button at the bottom of each panel (all plugins switch together)
 - kkscenebridge: bottom of the Settings tab (restart after changing)
-- kkbridge: bottom of the Settings tab (applies immediately)
 
 ## 📖 Documentation
 
@@ -111,7 +113,7 @@ Everything supports **Traditional Chinese / English / Japanese**:
 | F7 Studio CutScene | [說明](StudioCutScene/README.md) | [Docs](StudioCutScene/README.en.md) | [説明](StudioCutScene/README.ja.md) |
 | F9 Studio VR Tools | [說明](StudioVrTools/README.md) | [Docs](StudioVrTools/README.en.md) | [説明](StudioVrTools/README.ja.md) |
 | kkscenebridge | [說明](kkscenebridge/README.md) | [Docs](kkscenebridge/README.en.md) | [説明](kkscenebridge/README.ja.md) |
-| kkbridge | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
+| kkbridge (old standalone version) | [說明](kkbridge/README.md) | [Docs](kkbridge/README.en.md) | [説明](kkbridge/README.ja.md) |
 
 ## 👨‍💻 Building
 

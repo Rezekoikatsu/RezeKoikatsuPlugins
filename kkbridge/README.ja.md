@@ -4,6 +4,10 @@
 
 > 🤖 **Created by Claude AI** —— 本プロジェクトのコードとドキュメントは Claude（Anthropic の AI）が書きました。Reze は発案・指示・ゲーム内での動作確認を担当しています。
 
+> [!NOTE]
+> **v1.0.1 から kkbridge は [kkscenebridge](../kkscenebridge/README.ja.md) の「キャラカード合成」タブに統合されました**。機能とジョブの形式は同じです。
+> Releases に `kkbridge.exe` は含まれません。F6 のカード合成には `kkscenebridge.exe` を起動してください。ここには単体版のソースと説明を残しています。
+
 コイカツのキャラカードをオフラインで合成するツールです。`kkbridge.exe` が GUI、`kkmerge.exe` は同じエンジンの
 コマンドライン版です。F6（Studio Character Tools）のカード合成機能はこれを使います。
 

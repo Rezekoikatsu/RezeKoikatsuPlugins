@@ -840,6 +840,31 @@ def variant_name(path):
     return nm[:20].replace("=", "-")
 
 
+class AutoPairWorker(QObject):
+    """音檔長度跟場景卡大致一樣長的時候，直接算出對應點（kkcutscene.pairs_by_length）。
+
+    要讀整張卡才知道每一段的起訖和時間流速，大卡要好幾秒，所以放背景。
+    """
+    done = pyqtSignal(int, str, object, str)       # 序號, 卡片, (pairs, info), 錯誤訊息
+
+    def __init__(self):
+        super().__init__()
+        self._a = None
+
+    def submit(self, card, files, seq, any_length=False):
+        self._a = (card, list(files), seq, any_length)
+
+    @pyqtSlot()
+    def run(self):
+        card, files, seq, any_length = self._a
+        try:
+            import kkcutscene as K
+            res = K.auto_pairs_for_card(card, files, force=any_length)
+            self.done.emit(seq, card, res, "")
+        except BaseException as e:                 # load_segments 會丟 SystemExit
+            self.done.emit(seq, card, None, str(e) or e.__class__.__name__)
+
+
 class FileList(QTableWidget):
     """影片和音訊都放這裡。勾起來的音訊當配音版本，勾起來的影片可以批次抽 wav。"""
     COLS = (T("用"), T("名稱"), T("類型"), T("路徑"))
@@ -2306,8 +2331,11 @@ class CutTab(QWidget):
                         (T("讀 pairs.txt"), self._load_pairs),
                         (T("存 pairs.txt"), self._save_pairs),
                         (T("從切好的音頻反推…"), self._align_dialog),
+                        (T("依長度自動設定"), self._auto_pairs_clicked),
                         (T("配音對照…"), self._variant_dialog)):
             b = QPushButton(txt)
+            if fn == self._auto_pairs_clicked:
+                b.setToolTip(T("清單裡有音檔（或影片）跟場景卡大致一樣長的時候用：\n這種音檔是照著場景從頭播到尾的，每一段的頭尾直接對上，不用自己量。\n把音檔拖進來時，對應點表格是空的就會自動做一次。"))
             if fn == self._align_dialog:
                 b.setToolTip(T("以前用 VNGE 做的卡片，音檔是一段一段切好的。\n這個功能把切好的片段拿去跟原始音檔比對，\n自動量出每一段落在原檔的第幾秒，直接變成對應點。"))
             if fn == self._variant_dialog:
@@ -2381,6 +2409,15 @@ class CutTab(QWidget):
         self.probe_worker.moveToThread(self.probe_thread)
         self.probe_worker.done.connect(self._probe_done)
         self.probe_thread.start()
+
+        self.autopair_worker = AutoPairWorker()
+        self.autopair_thread = QThread(self)
+        self.autopair_worker.moveToThread(self.autopair_thread)
+        self.autopair_worker.done.connect(self._auto_pairs_done)
+        self.autopair_thread.start()
+        self._autopair_seq = 0
+        self._autopair_busy = False
+        self._autopair_force = False
 
         self.master_worker = MasterWorker()
         self.master_thread = QThread(self)
@@ -2482,6 +2519,8 @@ class CutTab(QWidget):
         if took:
             e.acceptProposedAction()
             self.status.emit(T("已收下：") + "、".join(took))
+            # 丟進來的音檔跟場景卡一樣長的話，對應點直接設好（表格是空的才做）
+            self._maybe_auto_pairs()
 
     # ---- 小工具 ----
     def _picker(self, lay, caption, filt="", is_dir=False, on_change=None,
@@ -2574,6 +2613,7 @@ class CutTab(QWidget):
         if ps:
             self.log_line.emit(T("加入 %d 個檔案") % self.files.add(ps))
             self._probe_added()
+            self._maybe_auto_pairs()
 
     def _add_folder(self):
         d = QFileDialog.getExistingDirectory(self, T("加入整個資料夾裡的影片與音訊"))
@@ -2582,6 +2622,116 @@ class CutTab(QWidget):
         ps = [os.path.join(d, f) for f in sorted(os.listdir(d))]
         self.log_line.emit(T("加入 %d 個檔案") % self.files.add(ps))
         self._probe_added()
+        self._maybe_auto_pairs()
+
+    # ---- 長度一致就自動設定對應點 ----
+    def _table_empty(self):
+        for r in range(self.table.rowCount()):
+            for c in (0, 1):
+                it = self.table.item(r, c)
+                if it and it.text().strip():
+                    return False
+        return True
+
+    def _auto_pairs_clicked(self):
+        card = self.ed_card.text().strip()
+        if not card or not os.path.isfile(card):
+            QMessageBox.warning(self, T("還不能執行"), T("先指定合併好的場景卡"))
+            return
+        if not self.files.rowCount():
+            QMessageBox.warning(self, T("還不能執行"), T("先把音檔（或影片）加進清單"))
+            return
+        if not self._table_empty():
+            if QMessageBox.question(
+                    self, T("依長度自動設定"),
+                    T("對應點表格裡已經有東西了，長度對得上的話會整個換掉。要繼續嗎？")
+            ) != QMessageBox.StandardButton.Yes:
+                return
+        self._maybe_auto_pairs(force=True)
+
+    def _maybe_auto_pairs(self, force=False, any_length=False):
+        """清單裡的檔案跟場景卡一樣長就把對應點設好。
+
+        自動觸發（把檔案拖進來、加進清單）只在表格是空的時候做 ——
+        已經量好或載回來的對應點不能被悄悄蓋掉。按鈕（force）才會問過之後覆蓋。
+        """
+        card = self.ed_card.text().strip()
+        if not card or not os.path.isfile(card):
+            return
+        # 打勾的排前面：兩個檔案都對得上的時候，會挑差最少的那個
+        files = [self.files.path(r) for r in range(self.files.rowCount())]
+        if not files:
+            return
+        if not force and not self._table_empty():
+            return
+        if self._autopair_busy:
+            self._autopair_again = force or getattr(self, "_autopair_again", False)
+            self._autopair_pending = True
+            return
+        self._autopair_busy = True
+        self._autopair_pending = False
+        self._autopair_force = force
+        self._autopair_seq += 1
+        self.status.emit(T("比對音檔長度和場景卡…（大卡要等一下）"))
+        self.autopair_worker.submit(card, files, self._autopair_seq, any_length)
+        QMetaObject.invokeMethod(self.autopair_worker, "run",
+                                 Qt.ConnectionType.QueuedConnection)
+
+    def _auto_pairs_done(self, seq, card, res, err):
+        self._autopair_busy = False
+        force = self._autopair_force
+        if getattr(self, "_autopair_pending", False):
+            # 等的時候清單又變了（或換了卡片）→ 用最新的狀態再跑一次
+            again = getattr(self, "_autopair_again", False)
+            self._autopair_again = False
+            self._maybe_auto_pairs(force=again)
+            return
+        now = self.ed_card.text().strip()
+        if (seq != self._autopair_seq
+                or os.path.normcase(os.path.abspath(now or "?")) != os.path.normcase(os.path.abspath(card))):
+            return
+        if err or res is None:
+            self.log_line.emit(T("依長度自動設定：讀不了這張卡（%s）") % err)
+            if force:
+                QMessageBox.warning(self, T("依長度自動設定"), T("讀不了這張卡：\n%s") % err)
+            return
+        pairs, info = res
+        tl, real = info.get("total_tl") or 0.0, info.get("total_real") or 0.0
+        scene_txt = fmt_time(real) + ((T("（timeline %s，有時間流速軌道）") % fmt_time(tl))
+                                      if abs(real - tl) > 0.05 else "")
+        if not pairs:
+            lens = "、".join("%s %s" % (os.path.basename(p), fmt_time(d) if d else T("讀不到"))
+                             for p, d in (info.get("media") or [])[:8])
+            msg = (T("沒有一個檔案的長度跟場景卡對得上（場景 %s，容許差 %.1f 秒）：%s")
+                   % (scene_txt, info.get("tol") or 0.0, lens))
+            self.log_line.emit(T("依長度自動設定：") + msg)
+            if force and info.get("file"):
+                # 按鈕按的：差太多也可以硬套，但要先講清楚會發生什麼事
+                if QMessageBox.question(
+                        self, T("依長度自動設定"),
+                        msg + "\n\n" + T("最接近的是 %s（差 %+.2f 秒）。要不管長度，直接頭對頭、尾對尾套上去嗎？\n音檔裡有開場動畫或過場的話，這樣會整段對不上。")
+                        % (os.path.basename(info["file"]), info.get("diff") or 0.0),
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
+                    self._maybe_auto_pairs(force=True, any_length=True)
+            elif force:
+                QMessageBox.information(self, T("依長度自動設定"), msg)
+            else:
+                self.status.emit(T("音檔長度跟場景卡不一樣，對應點要自己量"))
+            return
+        if not force and not self._table_empty():
+            return                          # 等結果的時候使用者自己填了東西
+        self.table.load_rows(pairs)
+        self._pairs_path = ""
+        self._show_pairs_path()
+        fn = os.path.basename(info.get("file") or "")
+        self.log_line.emit(
+            T("依長度自動設定：%s 長 %s，場景 %s（差 %+.2f 秒）→ 頭對頭、尾對尾，帶入 %d 個對應點（尚未存檔）")
+            % (fn, fmt_time(info.get("dur") or 0.0), scene_txt, info.get("diff") or 0.0, len(pairs)))
+        self.lbl_edit.setText(
+            T("<span style='color:#1a7f37'><b>音檔長度跟場景卡一致（%s）—— 對應點已經自動設好，確認配音有打勾就可以直接按「產生 cutscene.json」。</b></span>") % fn)
+        self.lbl_edit.setTextFormat(Qt.TextFormat.RichText)
+        self.status.emit(T("已自動帶入 %d 個對應點（音檔長度跟場景卡一致）") % len(pairs))
 
     def _set_as_source(self):
         for r in sorted({i.row() for i in self.files.selectedItems()}):
@@ -3359,7 +3509,8 @@ class CutTab(QWidget):
         for th in (self.thread, getattr(self, "wav_thread", None),
                    getattr(self, "master_thread", None),
                    getattr(self, "norm_thread", None),
-                   getattr(self, "probe_thread", None)):
+                   getattr(self, "probe_thread", None),
+                   getattr(self, "autopair_thread", None)):
             if th is not None:
                 th.quit()
                 if not th.wait(5000):
@@ -3516,6 +3667,23 @@ class CutTab(QWidget):
             QMessageBox.warning(self, T("對應點太少"),
                                 T("每一段至少要兩個點。只有一個點的話尺度無從驗證，實測出過 8 秒等級的偏差。"))
             return
+        # 用「合併場景」接出來的設定檔不能在這裡重新產生：它的後半段是別張卡的
+        # 影片和音檔接上去的，這一頁只認得一支來源影片，重算會把後面幾段的過場弄壞。
+        stem0 = os.path.splitext(os.path.basename(card))[0]
+        outdir0 = self.ed_out.text().strip() or os.path.dirname(card)
+        prev = os.path.join(outdir0, stem0 + ".cutscene.json")
+        try:
+            merged = bool(os.path.isfile(prev) and (read_cutscene_json(prev).get("mergedFrom") or [])
+                          and len(read_cutscene_json(prev).get("mergedFrom")) > 1)
+        except Exception:
+            merged = False
+        if merged:
+            if QMessageBox.question(
+                    self, T("這份設定是接出來的"),
+                    T("這張卡現有的 cutscene.json 是「合併場景」時從各張卡的設定接起來的。\n在這裡重新產生會蓋掉它，而且後面幾張卡的過場和音訊位置會算錯。\n\n要改的話，建議改原本各張卡的設定，再回「合併場景」重新接一次。\n\n還是要在這裡重新產生嗎？"),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
         # 對應點存不起來就整個停下來 —— 理由見 _save_pairs 的說明
         if not self._save_pairs():
             return

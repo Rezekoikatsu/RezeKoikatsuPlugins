@@ -5,7 +5,8 @@
 > 🤖 **Created by Claude AI** — the code and documentation in this project were written by Claude (Anthropic's AI); Reze came up with the ideas, directed the work and tested everything in-game.
 
 Joins several CharaStudio scene cards into one card, in order, and then handles the voices,
-cutscene videos and object tree of the result. What used to take a whole evening by hand in Studio
+cutscene videos and object tree of the result. The formerly separate **kkbridge** (character-card
+merging and the job watcher F6 relies on) now lives in this program too, so there is only one exe to run. What used to take a whole evening by hand in Studio
 (deleting cameras, wrapping folders, shifting Timeline, handing cameras over, wiring VNGE audio)
 becomes: add cards, set the order, press Merge.
 
@@ -20,6 +21,7 @@ becomes: add cards, set the order, press Merge.
 | **Cutscene audio** | Generates the `.cutscene.json` for F7 (Studio CutScene): cutscene videos, voices, sync points |
 | **VNGE audio** | Adds voices per segment with VNGE's VNSound (no F7 needed) |
 | **Organize** | Edits the card's object tree directly: drag, new folder, rename, hide, delete, transform |
+| **Chara card merge** | The former kkbridge: add accessories to a character card, transplant whole outfits, repair cards; the job watcher F6 (StudioCharTools) uses for merging |
 | **Settings** | Paths, advanced options, language |
 
 ## Merge scenes
@@ -47,6 +49,40 @@ The tool then does all of this:
   a `[MAPINFO]` / `[ENV]` marker folder. With F7 installed they switch automatically during playback;
   **unchecking a marker folder turns that segment's map off**
 - Already-prepared cards (with `(CAM)` at the root) are used as-is
+- (1.1.3) KKPE colliders: a "Dynamic Bone Collider" item affects **every dynamic bone of any character that is not in its list**.
+  After merging, characters of the other segments are not in the list, so their hair / breasts / skirt get pulled by a collider
+  that belongs to another segment. The merge now adds "disabled" entries for the other segments' characters and items.
+  Characters that appear in several segments with the same hair / outfit / accessories are fully covered; for characters with
+  different hair or accessories only the common bones can be listed (the card does not contain the bone list), these are named
+  in the log — use F6 "Repair collider bindings" after loading if something is still pulled.
+- (1.1.2) Merging cards that are themselves merged results works again. Before 1.1.2 every segment except the first of each
+  input card ended up with two camera-chain keyframes at the same time, and Timeline drops such a track entirely on load
+  ("only the first scene of each card has the right camera"). Delete the output made with the old version and merge the inputs again.
+- (1.1.1) Only the folders that actually move with the camera go into `(CAM)`. If the camera sits inside a scene-wide
+  folder that also holds characters / map / effects (e.g. `General > Chara, Effects, CAM > c1 > … > camera`), that folder
+  stays where it is; a stand-in folder with the same position / rotation is added on top of the camera chain so the view does not change.
+- (1.1.1) Camera-chain keyframes are clipped to 0 … card duration. Keyframes the author left before 0 s or after the duration
+  are removed, but a computed keyframe is added at the boundary, so the camera move inside the duration is identical to the original card.
+
+### Joining F7 configs (cutscene.json)
+
+When the cards already have their own configs from the Cutscene audio tab (the Status column adds
+"has F7 config"), tick "Join F7 configs (cutscene.json) too" and the configs are joined into one after
+merging — **no need to measure sync points again**.
+
+- **Audio and video files are left untouched**: the joined config records which audio file and which
+  source video each card uses, and F7 switches files as playback moves from card to card (the next
+  audio file is read in the background shortly before the boundary). No ffmpeg, no extra files.
+  Such a config needs **F7 (StudioCutScene) 1.14.0 or later**
+- If two or more cards have voices, a voice pairing window appears after pressing "Merge": each row is
+  one voice version of the merged scene (one button on the F7 panel); pick one version per card. A card
+  with fewer versions can reuse the same one
+- If the original cards' audio or video files are moved or renamed, the joined config can no longer find
+  them (the voice button turns red on the F7 panel) — just join again
+- Cards without a config can be mixed in; that part simply has no voice or cutscenes
+- **Don't regenerate a joined config in the Cutscene audio tab** (it asks first): edit the original
+  cards' configs and join again
+- The cards' `.view.json` (view settings) are not joined
 
 The Length cell is editable: longer = hold the last frame, shorter = keyframes past the end are removed.
 If a card's animation actually runs past its declared length, the cell turns red and tells you what to enter.
@@ -59,6 +95,11 @@ The steps are shown at the top of the tab: **① Merge scenes → ② Pick video
   voice version, and the video marked `★source` supplies the cutscene pictures
 - **Sync points**: find the frame in the built-in player, "Capture this time" puts the video time in the
   table, and the timeline time is copied from the game's Timeline panel. At least two points per segment
+- **Auto-set by length**: when an audio (or video) file is about as long as the scene card (within 5%,
+  with at least 1.5 s and at most 6 s of tolerance), it plays alongside the scene from start to end —
+  drop the file in while the sync point table is empty and the start and end of every segment are lined
+  up automatically. If the lengths don't match, the "Auto-set by length" button offers to force it
+  (don't, if the audio contains an intro or cutscenes)
 - **Generate cutscene.json**: writes `UserData\cutscene\<card>.cutscene.json` (F7 also looks next to the scene card)
 
 Helpers:
@@ -88,6 +129,21 @@ absolute path, or embedded in the card.
 - Items under a character's attach point can only move within that attach point
 - By default a `<card>.png.bak` backup is made before saving over the card
 
+## Chara card merge (formerly kkbridge)
+
+The formerly separate `kkbridge.exe` has been folded in as a whole; its features and job format are unchanged.
+**F6 (StudioCharTools) "Add accessories", "Swap keeping outfit" and "bring back hair accessories" need
+`kkscenebridge.exe` running with "Watch jobs" on this tab watching** (by default it starts with the program).
+
+- **Add accessories**: character card + outfit card → tick the outfit slots to receive the accessories → Run. Cards can be dragged in
+- **Transplant a whole outfit**: moves whole outfits from a source character card to a target card; the right-hand column picks the target slot. An outfit card's accessories can be added first
+- **Repair card**: removes leftover extended data pointing at empty accessory slots (cards where one outfit's materials break until you switch outfits back and forth)
+- **Watch jobs**: F6 drops `*.job.json` into this folder (default `UserData\chara\female\Temp`); a `*.done.json` appears next to it when finished
+- **Merge settings**: default folders for opening cards, output folder, whether Pushup and the skin overlay (KSOX) follow the outfit, automatic cleanup, auto-watch. The game folder and the language come from the Settings tab on the far right
+- Settings live under `bridge` in `kkscenebridge_settings.json`. On first start, an old `kkbridge_settings.json` (next to the exe or in the game root) is imported if found
+- Outfit cards without plugin data (saved from vanilla clothes) can now be read; they used to fail with a "read out of range" error
+- The old `kkbridge.exe` is no longer needed; if both run and watch the same folder, each job is done twice
+
 ## Settings
 
 - **Game folder**: the other paths (cards, output, audio root) default to locations under it and follow it
@@ -112,8 +168,8 @@ The bundled ffmpeg is an unmodified third-party build. It is not part of kkscene
 MIT license; its license (GPL) and source links are in `ffmpeg\README_ffmpeg.txt`. To use another version,
 just replace the `ffmpeg` folder.
 
-Without ffmpeg, only the video/audio processing in the Cutscene audio tab
-stops working — **Merge scenes, VNGE audio, Organize and Settings are unaffected**.
+Without ffmpeg, only the video/audio processing in the Cutscene audio tab stops working —
+**Merge scenes, VNGE audio, Organize, Chara card merge and Settings are unaffected**.
 
 ### Features that need ffmpeg (all in the Cutscene audio tab)
 
@@ -188,6 +244,8 @@ Command line (no UI):
 python kkscenemerge.py info  <card.png>
 python kkscenemerge.py prep  <card.png> --name "Scene A" [--camera <dicKey>] --out <out.png>
 python kkscenemerge.py merge <card1> <card2> [card3 ...] --out <merged.png>
+python kkcutmerge.py --part <card1.png>=0 --part <card2.png>=<start sec> --card <merged.png>
+python kkmerge.py --help        command-line version of the chara card merge (add accessories / transplant / repair)
 ```
 
 ## Files
@@ -202,6 +260,8 @@ python kkscenemerge.py merge <card1> <card2> [card3 ...] --out <merged.png>
 | `kkcheck.py` | Round-trip verification |
 | `kktl_scan.py` | Timeline track checks |
 | `kkcuttab.py` / `kkcutscene*.py` / `kkaudioalign.py` / `kkvariantmap.py` | Cutscene audio tab and config generation |
+| `kkcutmerge.py` | Joins each card's `cutscene.json` into one when merging scenes |
+| `kkbridgetab.py` / `kkmerge.py` / `kklang.py` | Chara card merge tab (the former kkbridge), its merge engine and its translation table |
 | `kkaudiotab.py` / `kkvnsound.py` | VNGE audio tab |
 | `kktreetab.py` | Organize tab |
 | `kkffmpeg.py` | Finds ffmpeg (the `ffmpeg\` folder next to the exe → PATH) and keeps it from flashing console windows |

@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
-REM Build kkscenebridge.exe (scene card merger, GUI).
+REM Build kkscenebridge.exe (scene card merger + the former kkbridge, one GUI exe).
 REM Requires Python 3.11+ in PATH.
 
 where python >nul 2>nul
@@ -13,7 +13,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-for %%F in (kkscenebridge.py kksblang.py kkscenemerge.py kkscene2.py kkmsgpack.py kkref.py kkcheck.py kkvnsound.py kkaudiotab.py) do (
+for %%F in (kkscenebridge.py kksblang.py kkscenemerge.py kkscene2.py kkmsgpack.py kkref.py kkcheck.py kkvnsound.py kkaudiotab.py kkcutmerge.py kkbridgetab.py kkmerge.py kklang.py) do (
     if not exist "%%F" (
         echo [ERROR] missing %%F
         pause

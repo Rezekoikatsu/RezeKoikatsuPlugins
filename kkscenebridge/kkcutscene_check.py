@@ -358,6 +358,10 @@ def check_against_pairs(rep, d, tol=0.35):
             continue
         t, a = float(pr[0]), float(pr[1])
         label = pr[2] if len(pr) > 2 else ""
+        # 交界上的點（上一段的尾、下一段的頭只差 0.01 秒）兩段都對得到。
+        # 多張卡接起來、音檔不合併的設定檔，兩段是不同的音檔、秒數完全不相干，
+        # 所以要挑「曲線跟它最接近的那一段」來比，不能看到第一段就比。
+        cands = []
         for i, tr in enumerate(tracks):
             frm, to = tr.get("from"), tr.get("to")
             if frm is None or to is None:
@@ -366,10 +370,14 @@ def check_against_pairs(rep, d, tol=0.35):
                 continue
             an = tr.get("anchors") or []
             if len(an) < 2:
-                break
+                continue
             got = map_at(an, t)
             if got is None:
-                break
+                continue
+            cands.append((abs(a - got), i, tr, got))
+        cands.sort(key=lambda x: x[0])
+        for _d, i, tr, got in cands[:1]:
+            frm, to = tr.get("from"), tr.get("to")
             checked += 1
             at_edge = abs(t - frm) <= 0.2 or abs(t - to) <= 0.2
             if not at_edge:
@@ -464,28 +472,36 @@ def check_variant_maps(rep, d):
         rep.add(ERR, f"refVariant「{ref}」不在 variantNames 裡",
                 "主配音必須是配音清單裡的一個。改成清單裡的名字，"
                 "否則插件會拿第一個當主配音，其他版的對照表全部錯位")
-    for n, pts in vmaps.items():
+    _check_maps(rep, vmaps, names, "")
+    # 多張卡接起來、音檔不合併的設定檔：每條音軌自己帶對照表
+    for i, tr in enumerate(d.get("tracks") or []):
+        if isinstance(tr.get("maps"), dict):
+            _check_maps(rep, tr["maps"], list((tr.get("files") or {}).keys()), f"音軌 {i} 的")
+
+
+def _check_maps(rep, vmaps, names, where):
+    for n, pts in (vmaps or {}).items():
         if names and n not in names:
-            rep.add(WARN, f"配音對照裡的「{n}」不在 variantNames 裡 —— 這張對照表用不到",
+            rep.add(WARN, f"{where}配音對照裡的「{n}」不在配音清單裡 —— 這張對照表用不到",
                     "名字打錯，或那個配音被拿掉了。改名字或把這一筆刪掉")
             continue
         if not isinstance(pts, list) or not pts:
-            rep.add(WARN, f"配音「{n}」的對照表是空的", "刪掉這一筆，或補上對照點")
+            rep.add(WARN, f"{where}配音「{n}」的對照表是空的", "刪掉這一筆，或補上對照點")
             continue
         prev = None
         for p in pts:
             if not (isinstance(p, list) and len(p) >= 2):
-                rep.add(ERR, f"配音「{n}」的對照表裡有一筆不是 [主配音秒, 該版秒]",
+                rep.add(ERR, f"{where}配音「{n}」的對照表裡有一筆不是 [主配音秒, 該版秒]",
                         "每一個點都要是兩個數字的陣列")
                 break
             if prev is not None and (p[0] <= prev[0] or p[1] < prev[1]):
-                rep.add(ERR, f"配音「{n}」的對照點在 {p[0]} 秒倒退了",
+                rep.add(ERR, f"{where}配音「{n}」的對照點在 {p[0]} 秒倒退了",
                         "兩邊的秒數都只能往前走。倒退的點一定是量錯或抄錯，"
                         "插件會丟掉它，但那一帶的對照就沒人管了 —— 回去重量")
                 break
             prev = p
         if len(pts) == 1:
-            rep.add(WARN, f"配音「{n}」只有 1 個對照點 —— 只能平移，修不了尺度",
+            rep.add(WARN, f"{where}配音「{n}」只有 1 個對照點 —— 只能平移，修不了尺度",
                     "在場景的另一端再量一個點。兩版如果是不同的剪輯，"
                     "離那個點越遠偏得越多")
 
@@ -508,12 +524,47 @@ def check_files(rep, path, d):
                 "這兩個陣列是一一對應的（第 n 個名字配第 n 個檔案）。"
                 "補上缺的那一個，或把多出來的刪掉 —— 數量不符的話插件會抓到錯的配音")
 
-    # 每一段音軌需要的最大音訊時間
+    # 每一段音軌需要的最大音訊時間。
+    # 音軌自己帶音檔的（多張卡接起來、音檔不合併）另外算：每個檔只管它自己那幾段。
     need = 0.0
-    for tr in d.get("tracks") or []:
+    own = {}             # 檔案 → [需要到第幾秒, 說明]
+    uses_global = False
+    for i, tr in enumerate(d.get("tracks") or []):
         an = tr.get("anchors") or []
-        if an:
-            need = max(need, an[-1][1])
+        nd_tr = an[-1][1] if an else 0.0
+        tfiles = tr.get("files") if isinstance(tr.get("files"), dict) else None
+        au = str(tr.get("audio", "@"))
+        if tfiles and au.startswith("@"):
+            tmaps = tr.get("maps") or {}
+            for n, f in tfiles.items():
+                nd = nd_tr
+                if tmaps.get(n):
+                    try:
+                        nd = _map_at(tmaps[n], nd_tr)
+                    except Exception:                       # noqa: BLE001
+                        pass
+                cur = own.get(f)
+                if cur is None or nd > cur[0]:
+                    own[f] = [nd, f"音軌 {i} 的配音「{n}」"]
+            continue
+        if au.startswith("@"):
+            uses_global = True
+        need = max(need, nd_tr)
+
+    for f, (nd, what) in own.items():
+        full = resolve(game, d.get("audioRoot"), f)
+        if not full or not os.path.isfile(full):
+            rep.add(ERR, f"{what}的檔案不存在：{f}",
+                    "修正這條音軌 files 裡的路徑，或把音檔放回那個位置。"
+                    "這份設定檔是從幾張卡的設定接起來的，音檔還是各張卡原本的那幾個 —— "
+                    "原本的音檔搬走的話，改好各張卡的設定再回「合併場景」重新接一次")
+            continue
+        dur = audio_seconds(full)
+        if dur is not None and nd > 0 and dur < nd - 0.5:
+            rep.add(ERR, f"{what}長度只有 {dur:.2f} s，但對應點最遠需要到 {nd:.2f} s"
+                         f"（差 {nd-dur:.2f} s）—— 後面那段會沒有聲音",
+                    "音檔被換成比較短的版本，或原本那張卡的設定就有這個問題。"
+                    "先單獨檢查那張卡自己的 cutscene.json")
 
     vmaps = d.get("variantMaps") or {}
     ref = d.get("refVariant") or (names[0] if names else "")
@@ -534,6 +585,8 @@ def check_files(rep, path, d):
             return need
 
     for n, f in zip(names, files):
+        if own and not uses_global:
+            break                # 每條音軌都自己帶音檔，最上層的 variantFiles 沒人用
         full = resolve(game, d.get("audioRoot"), f)
         if not full or not os.path.isfile(full):
             rep.add(ERR, f"配音「{n}」的檔案不存在：{f}",
@@ -566,12 +619,46 @@ def check_files(rep, path, d):
             dur = audio_seconds(full)
             if dur is not None:
                 for i, c in enumerate(d.get("cuts") or []):
+                    if c.get("video") or c.get("source"):
+                        continue         # 自己帶影片／來源片的過場不看這一支
                     ve = c.get("videoEnd")
                     if ve is not None and ve > dur + 0.5:
                         rep.add(ERR, f"過場 {i} 的 videoEnd={ve} 超過影片長度 {dur:.2f} s",
                                 f"這個過場的結束時間落在影片外面，播到底就停了。"
                                 f"重新量這個過場在來源影片裡的區間；"
                                 f"也有可能是 videoFile 指到了錯的（比較短的）那一份影片")
+
+
+def check_cut_sources(rep, path, d):
+    """過場自己帶的來源片（多張卡接起來的設定檔）：在不在、區間有沒有超出去。"""
+    game = None
+    for key in ("audioRoot", "videoRoot"):
+        v = d.get(key)
+        if v and os.path.isabs(v):
+            game = os.path.dirname(os.path.dirname(os.path.dirname(v)))
+            break
+    seen = {}
+    ntr = len(d.get("tracks") or [])
+    for i, c in enumerate(d.get("cuts") or []):
+        tk = c.get("track")
+        if tk is not None and not (isinstance(tk, int) and -1 <= tk < ntr):
+            rep.add(ERR, f"過場 {i} 的 track={tk} 不是有效的音軌編號（0–{ntr-1}）",
+                    "track 是「過場期間沿用哪一條音軌的音檔」。改成那張卡的音軌編號，或刪掉這個欄位")
+        src = c.get("source")
+        if not src or c.get("video"):
+            continue
+        if src not in seen:
+            full = resolve(game, d.get("videoRoot"), src)
+            ok = bool(full) and os.path.isfile(full)
+            seen[src] = (ok, audio_seconds(full) if ok else None)
+            if not ok:
+                rep.add(ERR, f"過場的來源影片不存在：{src}",
+                        "修正這段過場 source 的路徑，或把影片放回那個位置（第一次出現在過場 %d）" % i)
+        ok, dur = seen[src]
+        ve = c.get("videoEnd")
+        if ok and dur is not None and ve is not None and ve > dur + 0.5:
+            rep.add(ERR, f"過場 {i} 的 videoEnd={ve} 超過它的來源影片長度 {dur:.2f} s",
+                    "這個過場的結束時間落在影片外面，播到底就停了。先單獨檢查那張卡自己的 cutscene.json")
 
 
 def check_cuts(rep, d):
@@ -623,7 +710,9 @@ def check_cuts(rep, d):
                         "生出一個橫跨整段的假過場，播放時會在劇情中間插一段影片。"
                         "直接把這一筆 cut 從 cuts 裡刪掉；"
                         "那一段的 anchors 如果也是空的，一併用新版 plan 重跑")
-        if vs is not None and ve is not None:
+        # 自己帶影片檔的過場（video 有填）是整支播完，videoStart／videoEnd 都是 -1，不算區間反了
+        own_clip = bool(c.get("video")) and (vs is None or vs < 0)
+        if vs is not None and ve is not None and not own_clip:
             if ve <= vs:
                 rep.add(ERR, f"過場 {i} 的 videoEnd({ve}) 沒有大於 videoStart({vs})",
                         "影片區間反了或長度是 0。把 videoStart／videoEnd 對調，"
@@ -695,6 +784,7 @@ def check_file(path, lo, hi, do_fix):
     check_cuts(rep, d)
     check_variant_maps(rep, d)
     check_files(rep, path, d)
+    check_cut_sources(rep, path, d)
     return rep
 
 

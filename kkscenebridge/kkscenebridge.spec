@@ -49,7 +49,9 @@ a = Analysis(
                    # 這幾支都是在函式裡才 import 的（延後載入，少了也不會整個掛掉），
                    # 靜態分析不一定掃得到，所以明講。
                    'kkaudioalign', 'kkcutscene', 'kkcutscene_check', 'kkcutscene_prep',
-                   'kkcuttab', 'kktreetab', 'kksblang', 'kkffmpeg',
+                   'kkcuttab', 'kktreetab', 'kksblang', 'kkffmpeg', 'kkcutmerge',
+                   # 「人物卡合卡」分頁（原本獨立的 kkbridge.exe，現在併在這裡）
+                   'kkbridgetab', 'kkmerge', 'kklang',
                    'kkvnsound', 'kkaudiotab', 'kkscenemerge', 'kktl_scan',
                    'kkloader', 'kkloader.KoikatuSceneData',
                    'kkloader.KoikatuSceneObjectLoader',

@@ -755,6 +755,131 @@ def build_config(segs, pairs, video_file="", video_duration=None,
     return cfg, report, orphan
 
 
+# ---------------------------------------------------------------- 長度一致就自動設定對應點
+
+# 「大致一致」的容許範圍：差在總長的 5% 以內，最少給 1.5 秒、最多 6 秒。
+# 實際的卡：60 秒的場景配 61.78 秒的音檔（+3.0%）、58.17 秒配 56.30 秒（-3.2%）都算一致；
+# 430 秒的場景配 474 秒的音檔（多了開場和過場）不算，那種要量對應點。
+AUTO_TOL_REL = 0.05
+AUTO_TOL_MIN = 1.5
+AUTO_TOL_MAX = 6.0
+
+
+def auto_tol(total):
+    return min(AUTO_TOL_MAX, max(AUTO_TOL_MIN, float(total) * AUTO_TOL_REL))
+
+
+def real_seconds(kfs, t):
+    """timeline 的第 t 秒，實際播到那裡要花幾秒（有時間流速軌道時兩者不一樣）。"""
+    if not kfs or t <= 0:
+        return max(0.0, float(t))
+    v = tau(kfs, 0.0, float(t))
+    if v is None:
+        v = tau(kfs, 0.0, float(t), floor=TS_FLOOR)
+    return float(t) if v is None else float(v)
+
+
+def pairs_by_length(segs, kfs, media, force=False):
+    """音檔（或影片）的長度跟場景卡大致一樣長的時候，直接算出對應點：頭對頭、尾對尾。
+
+    這種音檔是照著場景從頭播到尾的（沒有開場動畫、沒有過場）。整個音檔對到整段場景，
+    差的那一點點平均攤在整段上（跟「從切好的音頻反推」量出來的結果是同一種形狀）。
+    有時間流速軌道的卡先把 timeline 秒數換成實際播放的秒數再對。每一段給頭尾兩個點。
+
+    media＝[(路徑, 長度秒 或 None)]。force＝不管差多少，拿最接近的那個檔硬套。
+    回傳 (pairs, info)：pairs＝[(timeline, 音訊秒, 說明)]，對不上時是 []；
+    info：total_tl / total_real / file / dur / diff / tol / mode / media，給介面說明用。
+    """
+    info = {"total_tl": None, "total_real": None, "file": "", "dur": None,
+            "diff": None, "tol": None, "mode": "", "media": list(media)}
+    if not segs:
+        return [], info
+    total_tl = max(float(s["end"]) for s in segs)
+    total_real = real_seconds(kfs, total_tl)
+    info["total_tl"], info["total_real"] = total_tl, total_real
+    info["tol"] = auto_tol(total_real)
+    modes = [("real", total_real)]
+    if abs(total_real - total_tl) > 0.05:
+        modes.append(("timeline", total_tl))
+    best = None
+    for mode, total in modes:
+        if total <= 0:
+            continue
+        for path, d in media:
+            if not d:
+                continue
+            diff = float(d) - total
+            if best is None or abs(diff) < abs(best[2]):
+                best = (path, float(d), diff, auto_tol(total), mode, total)
+    if not best:
+        return [], info
+    path, d, diff, tol, mode, total = best
+    info.update(file=path, dur=d, diff=diff, tol=tol, mode=mode)
+    if abs(diff) > tol and not force:
+        return [], info
+    k = d / total
+    conv = (lambda t: real_seconds(kfs, t) * k) if mode == "real" else (lambda t: float(t) * k)
+    tag = "長度一致，自動設定" if abs(diff) <= tol else "頭尾硬套"
+    pairs = []
+    for s in sorted(segs, key=lambda x: x["start"]):
+        t0, t1 = float(s["start"]), float(s["end"])
+        a, b = conv(t0), min(conv(t1), d)
+        if t1 - t0 < 0.05 or b - a < 0.05:
+            continue
+        nm = s.get("name") or ("場景%d" % s.get("index", 0))
+        pairs.append((round(t0, 3), round(a, 3), "%s 頭（%s）" % (nm, tag)))
+        pairs.append((round(t1, 3), round(b, 3), "%s 尾（%s）" % (nm, tag)))
+    return pairs, info
+
+
+def media_duration(path):
+    """影片或音訊的長度（秒）。讀不到回傳 None。"""
+    try:
+        import subprocess
+        r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                            "-of", "default=nw=1:nk=1", path],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return float(r.stdout.decode().strip())
+    except Exception:                                       # noqa: BLE001
+        pass
+    try:
+        import wave
+        with wave.open(path, "rb") as w:
+            return w.getnframes() / float(w.getframerate())
+    except Exception:                                       # noqa: BLE001
+        return None
+
+
+_AUTO_CACHE = {}
+
+
+def auto_pairs_for_card(card, files, force=False):
+    """讀卡片的段落和時間流速，量每個檔案的長度，回傳 pairs_by_length 的結果。
+
+    卡片的段落會記住（同一張卡、檔案沒變就不重讀）——大卡讀一次要好幾秒。
+    """
+    key = os.path.normcase(os.path.abspath(card))
+    try:
+        stamp = (os.path.getmtime(card), os.path.getsize(card))
+    except OSError:
+        stamp = None
+    hit = _AUTO_CACHE.get(key)
+    if hit and hit[0] == stamp:
+        segs, kfs = hit[1], hit[2]
+    else:
+        class _A:
+            pass
+        shim = _A()
+        shim.segments, shim.card = None, card
+        segs, scene = load_segments(shim, want_scene=True)
+        kfs = read_timescale(scene) if scene is not None else []
+        del scene
+        _AUTO_CACHE.clear()
+        _AUTO_CACHE[key] = (stamp, segs, kfs)
+    media = [(f, media_duration(f)) for f in files]
+    return pairs_by_length(segs, kfs, media, force=force)
+
+
 # ---------------------------------------------------------------- 輸出
 
 def print_report(segs, report, cuts, orphan, video_duration=None):

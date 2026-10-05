@@ -105,6 +105,7 @@ def _elem_patch(e, upd, wrapped):
 #     textures, nodesConstraints, kkpe, treenodenaming, MaterialEditor,
 #     UAR, LightSettings, itemlayeredit, savecameraobjectfov,
 #     RSkoi_ComponentUtil, rendererEditor, objimport
+#     colliderfix（不是搬運，是合併後幫 KKPE 碰撞器補『別段的角色不吃』那一步）
 # 特別的：all 會全部跳過（只搬節點，不搬任何外掛資料）
 def _skipped(name):
     raw = os.environ.get("KKSB_SKIP", "")
@@ -903,7 +904,7 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
                enable_tracks=True, post=None, sync_static=True,
                fov_track=True, shader_type=None,
                tl_clean=False, tl_mismatch=True, nc_enable_tracks=False,
-               clear_frame=True, enable_all_tracks=True):
+               clear_frame=True, enable_all_tracks=True, collider_fix=True):
     """把一串已經 prep 好的場景卡按順序接成一張。
 
     第一張是底卡，其餘照順序接在後面。中間的搬運一張一張疊（省記憶體），
@@ -1409,6 +1410,15 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
     apply_segment_maps(A, cards, segs, wraps, warn)
     apply_segment_env(A, cards, segs, wraps, warn)
 
+    # ---- KKPE 碰撞器：別段的角色不要吃 ----
+    if collider_fix and not _skipped("colliderfix"):
+        try:
+            isolate_colliders(A, warn, wraps)
+        except Exception as e:                              # noqa: BLE001
+            warn.append(f"KKPE 碰撞器隔離失敗（合併照常完成）：{type(e).__name__}: {e}")
+    elif collider_fix:
+        _skip_note("colliderfix", warn)
+
     # ---- 存檔時的靜態狀態對齊 0 秒 ----
     st = sync_static_state(A, only=sync_dk) if sync_static else {}
     if not sync_static:
@@ -1441,8 +1451,10 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
         if w not in seen:
             seen.add(w)
             log("[注意] " + w)
+    # cards：每張來源卡在合併後 timeline 的起點（接 cutscene.json 的時候要用）
     return {"out": out_path, "size": size, "duration": total,
-            "warnings": sorted(seen)}
+            "warnings": sorted(seen),
+            "cards": [{"off": float(c["off"]), "label": c["label"]} for c in cards]}
 
 
 def renumber_scene_folders(scene, segs):
@@ -2456,6 +2468,8 @@ def main(argv=None):
                    help="不要在每段開頭切換相機縮放（cameraOZoom）和相機FOV（cameraFOV）。"
                         "預設會切：每段開頭放一格那張原卡的值，下一段開頭瞬間換掉；"
                         "原卡自己有的格子不動。")
+    p.add_argument("--no-collider-fix", action="store_true",
+                   help="不要幫 KKPE 的碰撞器補上『別段的角色不吃這顆』")
     p.add_argument("--no-sync-static", action="store_true",
                    help="不要把 timeline 第 0 秒的值寫回節點的靜態座標。"
                         "用來確認「合併卡一載入時鏡位/勾選狀態不對」是不是這一步造成的。")
@@ -2527,7 +2541,8 @@ def main(argv=None):
                    tl_mismatch=not a.no_tl_mismatch,
                    nc_enable_tracks=a.nc_enable_tracks,
                    clear_frame=not a.keep_frame,
-                   enable_all_tracks=not a.no_enable_all_tracks)
+                   enable_all_tracks=not a.no_enable_all_tracks,
+                   collider_fix=not a.no_collider_fix)
         return 0
     return 1
 
@@ -2892,6 +2907,256 @@ def _vals(head, names):
     return out
 
 
+# ================================================================ KKPE 碰撞器：別段的角色不要吃
+#
+# KKPE 的「Dynamic Bone Collider」物件（lone collider）一建立就會把自己掛到
+# 場上**每一根**動骨上（CollidersEditor 的建構式：FindObjectsOfTypeAll<DynamicBone>），
+# 之後載入場景才照 <collider> 底下的
+#     <dynamicBoneData  poseControllerId="角色/物件的 uniqueId" root="動骨路徑" enabled=… />
+#     <dynamicBoneData2 poseControllerId=… id="BreastL" enabled=… />
+# 一筆一筆關掉不要的。**清單裡沒寫到的角色，就是每一根動骨都吃這顆碰撞器。**
+#
+# 單張卡沒問題：存檔時場上的角色都在清單裡。合併之後別段的角色不在清單裡，
+# 於是整個人被這顆碰撞器影響；作者常用的是 bound=1（Inside，把骨頭關在碰撞器裡面）
+# 半徑 0.002 的小碰撞器，而它這時還停在外太空（100,100,100）——
+# 頭髮、胸、裙子全部被往那個方向拉。F6 的「一鍵修復碰撞器綁定」做的就是把這些關掉。
+#
+# 這裡在合併時直接補上「別段的角色 / 物件 → enabled=false」。
+# 限制：卡片裡沒有「這個角色有哪些動骨」的清單（那是遊戲載入髮型、飾品之後才有的），
+# 所以只能用**其他碰撞器清單裡出現過的路徑**去補：
+#     角色 —— 所有角色出現過的路徑聯集 + 胸 / 臀四根（路徑不存在的那幾筆 KKPE 會自己跳過）
+#     物件 —— 同一種物件（group / category / no 相同）出現過的路徑
+# 同一個角色出現在好幾段（最常見的情況）可以補齊；髮型、飾品跟有資料的角色
+# 不一樣的角色，會剩下那幾根沒關到，這種會記在注意事項裡。
+RE_ITEMINFO = re.compile(r'<itemInfo\b[^>]*?/>|<itemInfo\b[^>]*?>.*?</itemInfo>', re.S)
+RE_COLLIDER_BLOCK = re.compile(r'<collider\b[^>]*?(?<!/)>.*?</collider>', re.S)
+RE_DB_ENTRY = re.compile(r'<dynamicBoneData(2?)\b([^>]*?)/>')
+COLLIDER_V2_IDS = ("HipL", "HipR", "BreastL", "BreastR")
+COLLIDER_MAX_ADD = 80000
+
+
+def _xml_attr(head, name):
+    m = re.search(r'\b%s="([^"]*)"' % re.escape(name), head)
+    return m.group(1) if m else None
+
+
+def _char_kkpe_uid(node):
+    """角色在 KKPE 裡的 uniqueId（存在角色自己的擴充資料 kkpe/characterInfo）。"""
+    try:
+        e = node["data"]["character"]["KKEx"].data.get("kkpe")
+        xml = e[1].get("characterInfo")
+        if isinstance(xml, (bytes, bytearray)):
+            xml = bytes(xml).decode("utf-8", "replace")
+        m = re.search(r'<characterInfo\b[^>]*?\buniqueId="(-?\d+)"', xml or "")
+        return m.group(1) if m else None
+    except Exception:                                       # noqa: BLE001
+        return None
+
+
+def _char_look(node):
+    """決定「這個角色有哪些動骨」的那些東西：髮型、目前這套的衣服與飾品。"""
+    try:
+        c = node["data"]["character"]
+        cu = c["Custom"].data
+        ct = c["Status"].data.get("coordinateType") or 0
+        co = c["Coordinate"].data
+        cur = co[ct] if isinstance(co, list) and 0 <= ct < len(co) else None
+        if cur is None:
+            return None
+        hair = tuple(h.get("id") for h in cu["hair"]["parts"])
+        clo = tuple(x.get("id") for x in cur["clothes"]["parts"])
+        acc = tuple((a.get("type"), a.get("id"), a.get("parentKey"))
+                    for a in cur["accessory"]["parts"] if a.get("type", 120) != 120)
+        more = c["KKEx"].data.get("moreAccessories")
+        mh = hashlib.md5(repr(more).encode("utf-8", "replace")).hexdigest() if more else ""
+        return (node["data"].get("sex"), hair, clo, acc, mh)
+    except Exception:                                       # noqa: BLE001
+        return None
+
+
+def _char_label(node):
+    try:
+        p = node["data"]["character"]["Parameter"].data
+        nm = ("%s %s" % (p.get("lastname") or "", p.get("firstname") or "")).strip()
+        return nm or "(沒有名字)"
+    except Exception:                                       # noqa: BLE001
+        return "(角色)"
+
+
+def isolate_colliders(scene, warn, wraps=None):
+    """KKPE 的碰撞器只留給自己那一段：別段的角色 / 物件補上 enabled=false。
+
+    wraps：各段包裝資料夾的 dicKey。只有「碰撞器和角色在**不同的包裝資料夾**底下」
+    才算別段 —— 沒合併過的卡裡，清單沒寫到的角色本來就是要吃這顆碰撞器的，不能動。
+    回傳 (處理的碰撞器數, 補上的筆數)。只有一段的卡什麼都不做。
+    """
+    kp = scene.kkex.get("kkpe", "sceneInfo")
+    if kp is None:
+        return 0, 0
+    xml = unpack(kp)
+    if not isinstance(xml, str) or "<dynamicBoneData" not in xml:
+        return 0, 0
+    head, body, tail = _split_xml_root(xml, "root")
+    if head is None:
+        return 0, 0
+
+    # 每個節點屬於哪一段（= 最上層的哪個資料夾）
+    seg_of, seg_name, by_key = {}, {}, {}
+    want = None if wraps is None else {w for w in wraps if w is not None}
+    for root in scene.objects.values():
+        rk = root["data"]["dicKey"]
+        seg_name[rk] = root["data"].get("name") or ""
+        is_seg = (want is None and root.get("type") == 3
+                  and seg_name[rk] != "(CAM)") or (want is not None and rk in want)
+        for n, _d, _p in S.iter_nodes([root]):
+            by_key[n["data"]["dicKey"]] = n
+            if is_seg:
+                seg_of[n["data"]["dicKey"]] = rk
+    if len(set(seg_of.values())) < 2:
+        return 0, 0
+
+    # 場上所有 KKPE 控制器：uniqueId -> 是誰
+    ctrl, seen_uid, dup = {}, {}, set()
+
+    def add_ctrl(uid, info):
+        if uid is None:
+            return
+        if uid in seen_uid:
+            dup.add(uid)
+            return
+        seen_uid[uid] = 1
+        ctrl[uid] = info
+
+    blocks = list(RE_ITEMINFO.finditer(body))
+    for m in blocks:
+        h = m.group(0).split(">", 1)[0]
+        idx, uid = _xml_attr(h, "index"), _xml_attr(h, "uniqueId")
+        try:
+            dk = int(idx)
+        except (TypeError, ValueError):
+            continue
+        n = by_key.get(dk)
+        if n is None:
+            continue
+        d = n["data"]
+        add_ctrl(uid, {"kind": "item", "dk": dk, "seg": seg_of.get(dk),
+                       "ident": (d.get("group"), d.get("category"), d.get("no"))})
+    for dk, n in by_key.items():
+        if n.get("type") == 0:
+            add_ctrl(_char_kkpe_uid(n), {"kind": "char", "dk": dk, "seg": seg_of.get(dk),
+                                         "look": _char_look(n), "node": n})
+    for uid in dup:
+        ctrl.pop(uid, None)
+
+    # 第一輪：從所有碰撞器的清單收集「已知的動骨路徑」
+    char_roots, v2_ids, item_roots, known_looks = [], list(COLLIDER_V2_IDS), {}, set()
+    cr_seen, v2_seen = set(), set(v2_ids)
+    for m in blocks:
+        for cm in RE_COLLIDER_BLOCK.finditer(m.group(0)):
+            for is2, attrs in RE_DB_ENTRY.findall(cm.group(0)):
+                c = ctrl.get(_xml_attr(attrs, "poseControllerId"))
+                if c is None:
+                    continue
+                if is2:
+                    v = _xml_attr(attrs, "id")
+                    if v and v not in v2_seen:
+                        v2_seen.add(v)
+                        v2_ids.append(v)
+                    continue
+                r = _xml_attr(attrs, "root")
+                if not r:
+                    continue
+                if c["kind"] == "char":
+                    if c.get("look") is not None:
+                        known_looks.add(c["look"])
+                    if r not in cr_seen:
+                        cr_seen.add(r)
+                        char_roots.append(r)
+                else:
+                    lst = item_roots.setdefault(c["ident"], [])
+                    if r not in lst:
+                        lst.append(r)
+
+    # 第二輪：每顆碰撞器補上別段的控制器
+    n_col = n_add = 0
+    partial, dup_hit = {}, False
+    out, last = [], 0
+    over = False
+    for m in blocks:
+        blk = m.group(0)
+        if "<dynamicBoneData" not in blk:
+            continue
+        h = blk.split(">", 1)[0]
+        try:
+            own_seg = seg_of.get(int(_xml_attr(h, "index")))
+        except (TypeError, ValueError):
+            continue
+        if own_seg is None:
+            continue
+
+        def fix(cm, own_seg=own_seg):
+            nonlocal n_col, n_add, dup_hit, over
+            cb = cm.group(0)
+            if "<dynamicBoneData" not in cb:
+                return cb
+            have = {_xml_attr(a, "poseControllerId") for _2, a in RE_DB_ENTRY.findall(cb)}
+            if have & dup:
+                dup_hit = True
+            add = []
+            for uid, c in ctrl.items():
+                if uid in have or c["seg"] is None or c["seg"] == own_seg:
+                    continue
+                if c["kind"] == "char":
+                    add.extend('<dynamicBoneData2 poseControllerId="%s" id="%s" enabled="false" />'
+                               % (uid, v) for v in v2_ids)
+                    add.extend('<dynamicBoneData poseControllerId="%s" root="%s" enabled="false" />'
+                               % (uid, r) for r in char_roots)
+                    if c.get("look") is None or c["look"] not in known_looks:
+                        partial[c["dk"]] = c
+                else:
+                    add.extend('<dynamicBoneData poseControllerId="%s" root="%s" enabled="false" />'
+                               % (uid, r) for r in item_roots.get(c["ident"], ()))
+            if not add:
+                return cb
+            if n_add + len(add) > COLLIDER_MAX_ADD:
+                over = True
+                return cb
+            n_col += 1
+            n_add += len(add)
+            return cb[:-len("</collider>")] + "".join(add) + "</collider>"
+
+        nb = RE_COLLIDER_BLOCK.sub(fix, blk)
+        if nb != blk:
+            out.append(body[last:m.start()])
+            out.append(nb)
+            last = m.end()
+    if not n_add:
+        if dup_hit:
+            warn.append("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
+                        "碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」")
+        return 0, 0
+    out.append(body[last:])
+    scene.kkex.set("kkpe", "sceneInfo", pack(head + "".join(out) + tail))
+
+    log(f"  KKPE 碰撞器：{n_col} 顆碰撞器補上 {n_add} 筆「別段的角色/物件不吃這顆」"
+        f"（不補的話別段的人整個會被它拉住）")
+    if partial:
+        who = "、".join("%s（%s）" % (_char_label(c["node"]), seg_name.get(c["seg"]) or "?")
+                       for c in list(partial.values())[:6])
+        if len(partial) > 6:
+            who += f" 等 {len(partial)} 個角色"
+        warn.append(f"KKPE 碰撞器：{who} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，"
+                    f"只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨"
+                    f"卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」")
+    if dup_hit or dup:
+        warn.append("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
+                    "這幾個沒有補；載入後如果碰撞器怪怪的，用 F6 的「一鍵修復碰撞器綁定」")
+    if over:
+        warn.append(f"KKPE 碰撞器：要補的筆數超過 {COLLIDER_MAX_ADD}，後面的碰撞器沒有補"
+                    f"（載入後用 F6 的「一鍵修復碰撞器綁定」）")
+    return n_col, n_add
+
+
 def sync_static_state(scene, only=None, t=0.0):
     """把節點上「存檔時的值」改成 timeline 在第 t 秒的值。
 
@@ -3025,13 +3290,15 @@ def dedupe_float32_times(scene):
             return blk
         h = hm.group(0)
         inner = blk[len(h):-len("</interpolable>")]
-        out, prev, dropped = [], None, 0
+        out, seen, dropped = [], set(), 0
         last = 0
         for km in S.RE_KEYFRAME_TIME.finditer(inner):
             # RE_KEYFRAME_TIME 只認 <keyframe time="…">，不會誤抓 curveKeyframe
             t = float(km.group(2))
             f = struct.unpack("f", struct.pack("f", t))[0]
-            if prev is not None and f == prev:
+            # 不能只跟前一格比：關鍵影格在 XML 裡不一定照時間排，
+            # 隔了幾格才出現的同一個時間一樣會讓 Timeline 把整條軌道丟掉
+            if f in seen:
                 # 連同這一格整個 <keyframe …>…</keyframe> 一起拿掉
                 end = _keyframe_end(inner, km.start())
                 if end > km.start():
@@ -3039,7 +3306,7 @@ def dedupe_float32_times(scene):
                     last = end
                     dropped += 1
                     continue
-            prev = f
+            seen.add(f)
         out.append(inner[last:])
         if not dropped:
             return blk
@@ -3298,7 +3565,90 @@ def prep_scene(card_path, name, camera_dickey=None, subfolders=True,
     nxt = max(S.all_dickeys(sc.objects)) + 1
     cam_root = S.new_folder(nxt, "(CAM)")
     nxt += 1
+
+    # ---- 2a. 相機的上層資料夾不一定整條都是「相機鏈」 ----
+    #
+    # 以前直接把相機往上的每一層都當成 POV 資料夾，最外層整包搬進 (CAM)。
+    # 作者把相機鏈放在根目錄時沒問題；但有些作者（實測過一位作者的 TimelineScene 卡）
+    # 是這樣擺的：
+    #     General            ← 整個場景的總資料夾，有自己的位置／角度
+    #       ├ Effects、Modmaps、Chara（兩個角色都在這）
+    #       └ CAM > c1 > c2 > … > 相機
+    # 整條往上搬的話 General 就變成「POV 1」，角色、特效、燈光全部跟著進了 (CAM)：
+    #   * 不在包裝資料夾裡 → 沒輪到的時候不會停放、也不會取消勾選，三段的角色同時出現
+    #   * 合併時相機鏈一層套一層 → 第 2 段的角色變成第 1 段相機資料夾的子物件
+    #   * 段尾的「相機鏈歸零」把 General 拉回原點 → 角色跟著跳位
+    #   * NC 找不到屬於哪一段
+    #
+    # 分法：相機鏈＝會跟著鏡頭動的那幾層。從最外面往內找第一個有動畫
+    # （timeline 的位置／旋轉／縮放軌道）或被 NodesConstraints 帶著走的資料夾，
+    # 它外面那幾層都是靜止的；靜止的層裡面，底下還裝著別的東西的最內那一層
+    # （和它外面的全部）就是場景的容器，留在原位。
+    # 容器自己的位置／角度不能丟（相機是算在它底下的）：在相機鏈最外面補上
+    # 同樣座標的空資料夾頂替，鏡頭的世界座標一點都不變。
+    outer = []
     if chain:
+        tl_body = S.split_root(sc.timeline_xml())[1] if sc.timeline_xml() else ""
+        rk = S.rank_map(old_nodes)          # timeline／NC 這時候還是用刪相機之前的編號
+        moved = set()
+        for m in re.finditer(r'<interpolable\b[^>]*?>', tl_body):
+            hd = m.group(0)
+            if re.search(r'\bid="guideObject(?:Pos|Rot|Scale)"', hd):
+                mi = re.search(r'\bobjectIndex="(-?\d+)"', hd)
+                if mi:
+                    moved.add(int(mi.group(1)))
+        cvb = sc.kkex.get("nodesConstraints", "constraints")
+        if cvb is not None:
+            try:
+                for blk in re.findall(RE_CONSTRAINT, unpack(cvb), re.S):
+                    ci = _attr_int(blk, "childObjectIndex")
+                    if ci is not None and not (_attr(blk, "childPath") or ""):
+                        moved.add(ci)
+            except Exception:                           # noqa: BLE001
+                pass
+        first_moving = len(chain)
+        for i, f in enumerate(chain):
+            if rk.get(f["data"]["dicKey"]) in moved:
+                first_moving = i
+                break
+        cut = -1
+        for i in range(first_moving):
+            nxt_on_path = chain[i + 1] if i + 1 < len(chain) else keep
+            kids = f_children(chain[i])
+            if any(c is not nxt_on_path for c in kids):
+                cut = i                                 # 這一層底下還有別的東西
+        if cut >= 0:
+            outer, chain = chain[:cut + 1], chain[cut + 1:]
+    stand_ins = []
+    if outer:
+        for f in outer:
+            d = f["data"]
+            if _is_identity_trs(d):
+                continue
+            g = S.new_folder(nxt, "")
+            nxt += 1
+            for k in ("position", "rotation", "scale"):
+                g["data"][k] = {a: float(d[k][a]) for a in ("x", "y", "z")}
+            stand_ins.append(g)
+        log("  相機的上層資料夾 %s 底下還有場景內容（角色／地圖／特效），留在原位不當成相機鏈"
+            % " > ".join(repr(str(f["data"].get("name") or "")) for f in outer)
+            + ("；它%s有自己的位置／角度，在相機鏈最外面補 %d 個同座標的資料夾頂替（鏡頭位置不變）"
+               % ("們" if len(outer) > 1 else "", len(stand_ins)) if stand_ins else ""))
+        # 真正的相機鏈（或相機本身）從容器裡拿出來
+        top = chain[0] if chain else keep
+        _, container = pmap[id(top)]
+        S.detach(top, container)
+        for a, b in zip(stand_ins, stand_ins[1:]):
+            a["data"]["child"].append(b)
+        if stand_ins:
+            stand_ins[-1]["data"]["child"].append(top)
+            cam_root["data"]["child"].append(stand_ins[0])
+        else:
+            cam_root["data"]["child"].append(top)
+        chain = stand_ins + chain
+        for i, f in enumerate(chain, 1):
+            set_node_name(sc, f, f"POV {i}{sfx}")
+    elif chain:
         top = chain[0]
         _, container = pmap[id(top)]
         S.detach(top, container)
@@ -3358,6 +3708,28 @@ def prep_scene(card_path, name, camera_dickey=None, subfolders=True,
     for w in warn:
         log("[注意] " + w)
     return sc
+
+
+def f_children(node):
+    """節點的直接子節點（角色的接點子物件也算）。"""
+    return [c for c, _d, par in S.iter_nodes([node]) if par is node]
+
+
+def _is_identity_trs(d, eps=1e-6):
+    """位置 0、旋轉 0（或 360 的倍數）、縮放 1。"""
+    try:
+        p, r, sc_ = d["position"], d["rotation"], d["scale"]
+        if any(abs(float(p[a])) > eps for a in ("x", "y", "z")):
+            return False
+        if any(abs(float(sc_[a]) - 1.0) > eps for a in ("x", "y", "z")):
+            return False
+        for a in ("x", "y", "z"):
+            v = float(r[a]) % 360.0
+            if min(v, 360.0 - v) > 1e-4:
+                return False
+        return True
+    except (KeyError, TypeError, ValueError):
+        return False
 
 
 # ================================================================ NC alias 重新命名
@@ -3930,6 +4302,267 @@ def _node_track_value(node, tid):
             f' valueZ="{S.fmt_time(q[2])}" valueW="{S.fmt_time(q[3])}"')
 
 
+# ---------------------------------------------------------------- 關鍵影格的曲線
+#
+# timeline 兩格之間的值 = 內插(左格的值, 右格的值, 左格的曲線(進度))。
+# 曲線是 Unity 的 AnimationCurve：幾個 (time, value, inTangent, outTangent)，中間三次 Hermite。
+# 要在兩格中間「切一刀」而不改變動作，得算出切點的值，還要把左格的曲線換成原曲線的那一小段。
+_RE_CURVE_KEY = re.compile(r'<curveKeyframe\b([^>]*)/>')
+
+
+def _curve_keys(kf):
+    """關鍵影格裡的曲線 → [(time, value, inTangent, outTangent)]；讀不懂（或有無限大的切線）回傳 None。"""
+    out = []
+    for m in _RE_CURVE_KEY.finditer(kf):
+        a = m.group(1)
+        try:
+            vals = [float(re.search(r'\b%s="([^"]*)"' % k, a).group(1))
+                    for k in ("time", "value", "inTangent", "outTangent")]
+        except (AttributeError, ValueError):
+            return None
+        if any(v != v or v in (float("inf"), float("-inf")) for v in vals):
+            return None
+        out.append(tuple(vals))
+    out.sort(key=lambda k: k[0])
+    return out if len(out) >= 2 else None
+
+
+def _curve_eval(keys, x):
+    """回傳 (曲線在 x 的值, 斜率)。範圍外固定在頭尾的值（斜率 0）。"""
+    if x <= keys[0][0]:
+        return keys[0][1], 0.0
+    if x >= keys[-1][0]:
+        return keys[-1][1], 0.0
+    for (t0, v0, _i0, o0), (t1, v1, i1, _o1) in zip(keys, keys[1:]):
+        if t0 <= x <= t1:
+            dt = t1 - t0
+            if dt <= 0:
+                return v1, 0.0
+            u = (x - t0) / dt
+            m0, m1 = o0 * dt, i1 * dt
+            v = ((2 * u ** 3 - 3 * u ** 2 + 1) * v0 + (u ** 3 - 2 * u ** 2 + u) * m0
+                 + (-2 * u ** 3 + 3 * u ** 2) * v1 + (u ** 3 - u ** 2) * m1)
+            dv = ((6 * u ** 2 - 6 * u) * v0 + (3 * u ** 2 - 4 * u + 1) * m0
+                  + (-6 * u ** 2 + 6 * u) * v1 + (3 * u ** 2 - 2 * u) * m1) / dt
+            return v, dv
+    return keys[-1][1], 0.0
+
+
+def _curve_xml(keys):
+    def f(v):
+        s = ("%.9g" % v)
+        return "0" if s in ("-0", "0") else s
+    return "".join('<curveKeyframe time="%s" value="%s" inTangent="%s" outTangent="%s" />'
+                   % (f(t), f(v), f(i), f(o)) for t, v, i, o in keys)
+
+
+def _curve_head(keys, u):
+    """
+    原曲線 0～u 那一段攤成 0～1，值除以 c(u)：
+    內插(a, V, c(u·s)/c(u)) 就等於原本的 內插(a, b, c(u·s))，其中 V＝內插(a, b, c(u))。算不出來回傳 None。
+    """
+    cu, du = _curve_eval(keys, u)
+    if u <= 1e-9 or abs(cu) < 1e-9:
+        return None
+    sc_ = u / cu
+    out = [(t / u, v / cu, i * sc_, o * sc_) for t, v, i, o in keys if t < u - 1e-9]
+    if not out or out[0][0] > 1e-9:
+        c0, d0 = _curve_eval(keys, 0.0)
+        out.insert(0, (0.0, c0 / cu, 0.0, d0 * sc_))
+    out.append((1.0, 1.0, du * sc_, 0.0))
+    return out
+
+
+def _curve_tail(keys, u):
+    """
+    原曲線 u～1 那一段攤成 0～1，值換成 (c − c(u)) / (1 − c(u))：
+    內插(V, b, 新曲線(s)) 就等於原本的 內插(a, b, c(u + (1−u)·s))。算不出來回傳 None。
+    """
+    cu, du = _curve_eval(keys, u)
+    if u >= 1 - 1e-9 or abs(1 - cu) < 1e-9:
+        return None
+    sc_ = (1 - u) / (1 - cu)
+    out = [((t - u) / (1 - u), (v - cu) / (1 - cu), i * sc_, o * sc_) for t, v, i, o in keys if t > u + 1e-9]
+    out.insert(0, (0.0, 0.0, 0.0, du * sc_))
+    if out[-1][0] < 1 - 1e-9:
+        c1, d1 = _curve_eval(keys, 1.0)
+        out.append((1.0, (c1 - cu) / (1 - cu), d1 * sc_, 0.0))
+    return out
+
+
+def _kf_time(kf):
+    return float(re.search(r'time="([-\d.eE+]+)"', kf).group(1))
+
+
+def _kf_values(kf):
+    """<keyframe time=… valueX=… …> 的值（位置／縮放 3 個，旋轉 4 個）。"""
+    hd = kf.split(">")[0]
+    out = []
+    for k in ("valueX", "valueY", "valueZ", "valueW"):
+        m = re.search(r'\b%s="([^"]*)"' % k, hd)
+        if m:
+            out.append(float(m.group(1)))
+    return out
+
+
+def _mix(a, b, f, quat):
+    """Unity 的 LerpUnclamped／Quaternion.SlerpUnclamped（走短的那一邊）。"""
+    import math
+    if not quat:
+        return [x + (y - x) * f for x, y in zip(a, b)]
+    dot = sum(x * y for x, y in zip(a, b))
+    if dot < 0:
+        b, dot = [-y for y in b], -dot
+    if dot > 0.9995:
+        q = [x + (y - x) * f for x, y in zip(a, b)]
+    else:
+        th0 = math.acos(max(-1.0, min(1.0, dot)))
+        th = th0 * f
+        s0 = math.cos(th) - dot * math.sin(th) / math.sin(th0)
+        s1 = math.sin(th) / math.sin(th0)
+        q = [s0 * x + s1 * y for x, y in zip(a, b)]
+    n = math.sqrt(sum(x * x for x in q)) or 1.0
+    return [x / n for x in q]
+
+
+def _kf_make(t, vals, curve):
+    names = ("valueX", "valueY", "valueZ", "valueW")
+    return '<keyframe time="%s" %s>%s</keyframe>' % (
+        S.fmt_time(t), " ".join('%s="%s"' % (n, ("%.7g" % v)) for n, v in zip(names, vals)), curve)
+
+
+def _kf_set(kf, t=None, curve=None):
+    """換掉關鍵影格的時間和／或曲線，其餘不動。"""
+    if t is not None:
+        kf = re.sub(r'^(<keyframe\s+time=")[^"]*"', lambda m: m.group(1) + S.fmt_time(t) + '"', kf, count=1)
+    if curve is not None and not kf.rstrip().endswith("/>"):
+        i = kf.index(">") + 1
+        kf = kf[:i] + curve + "</keyframe>"
+    return kf
+
+
+_LINEAR_CURVE = ('<curveKeyframe time="0" value="0" inTangent="0" outTangent="1" />'
+                 '<curveKeyframe time="1" value="1" inTangent="1" outTangent="0" />')
+
+
+def _between(lk, lt, rk, rt, t, quat):
+    """左格 lk（時間 lt）和右格 rk（時間 rt）之間，t 那一刻 timeline 會算出來的值。"""
+    a, b = _kf_values(lk), _kf_values(rk)
+    if not a or len(a) != len(b) or rt - lt <= 0:
+        return b or a
+    u = (t - lt) / (rt - lt)
+    ck = _curve_keys(lk)
+    return _mix(a, b, _curve_eval(ck, u)[0] if ck else u, quat)
+
+
+def _same(a, b, quat, tol=2e-5):
+    if quat and sum(x * y for x, y in zip(a, b)) < 0:
+        b = [-x for x in b]
+    return max(abs(x - y) for x, y in zip(a, b)) <= tol
+
+
+def _cut_span(lk, lt, rk, rt, t0, t1, quat, curve, step=1.0 / 30):
+    """
+    原本「lk → rk」這一段只留 t0～t1（lt ≤ t0 < t1 ≤ rt），回傳取代用的關鍵影格（t0 那格到 t1 那格）。
+    優先只用頭尾兩格＋切下來的那段曲線（最乾淨）；算出來跟原本對不上的情況
+    （曲線衝過頭、旋轉角度很大時四元數會走另一邊、切線是無限大…）改成每 1/30 秒補一格，一定對得上。
+    """
+    val = lambda t: _between(lk, lt, rk, rt, t, quat)
+    ck = _curve_keys(lk)
+    u0, u1 = (t0 - lt) / (rt - lt), (t1 - lt) / (rt - lt)
+    first = lk if abs(t0 - lt) < 1e-9 else None
+    out = None
+    if ck:
+        # 兩刀都下：先取 u0～1 那段，再從裡面取到 u1
+        sub = ck
+        ok = True
+        if u0 > 1e-9:
+            sub = _curve_tail(ck, u0)
+            ok = sub is not None
+        if ok and u1 < 1 - 1e-9:
+            uu = (u1 - u0) / (1 - u0)
+            sub = _curve_head(sub, uu)
+            ok = sub is not None
+        if ok:
+            k0 = (_kf_set(first, curve=_curve_xml(sub)) if first is not None
+                  else _kf_make(t0, val(t0), _curve_xml(sub)))
+            k1 = rk if abs(t1 - rt) < 1e-9 else _kf_make(t1, val(t1), curve)
+            cand = [k0, k1]
+            good = True
+            for i in range(1, 8):
+                t = t0 + (t1 - t0) * i / 8.0
+                if not _same(val(t), _between(k0, t0, k1, t1, t, quat), quat):
+                    good = False
+                    break
+            if good:
+                out = cand
+    if out is None:
+        # 逐格補：兩格之間走直線，中點跟原本差太多就再對半切（最細切到 1/480 秒）
+        times = [t0, t1]
+        n = max(1, int((t1 - t0) / step + 0.999))
+        times = [t0 + (t1 - t0) * i / n for i in range(n + 1)]
+        todo = list(zip(times, times[1:]))
+        times = set(times)
+        while todo:
+            ta, tb = todo.pop()
+            if tb - ta <= 1.0 / 480:
+                continue
+            tm = (ta + tb) / 2
+            if not _same(val(tm), _mix(val(ta), val(tb), 0.5, quat), quat, 1e-5):
+                times.add(tm)
+                todo += [(ta, tm), (tm, tb)]
+        times = sorted(times)
+        out = []
+        for i, t in enumerate(times):
+            if i == 0 and first is not None:
+                out.append(_kf_set(first, curve=_LINEAR_CURVE))
+            elif i == len(times) - 1 and abs(t1 - rt) < 1e-9:
+                out.append(rk)
+            else:
+                out.append(_kf_make(t, val(t), _LINEAR_CURVE if i < len(times) - 1 else curve))
+    return out
+
+
+def clip_keyframes(kfs, t_lo, t_hi, quat, curve):
+    """
+    把一條軌道裁成只剩 t_lo～t_hi 之間的關鍵影格，**範圍內的動作完全不變**。
+
+    作者常把第一格放在 0 秒之前、最後一格放在時長之後：範圍內看到的動作是
+    「往界外那一格走到一半」。直接把界外的丟掉，那一小段就變成停住不動。
+    這裡在邊界上補一格算出來的值，並把曲線換成原曲線被切下來的那一段，所以播起來一模一樣。
+
+    kfs：[<keyframe…>…</keyframe>, …]；quat：值是不是四元數；curve：補新格時的預設曲線。
+    回傳 (新的清單, 開頭丟掉幾格, 結尾丟掉幾格, 結尾最遠原本到幾秒)。
+    """
+    items = sorted(((_kf_time(k), k) for k in kfs), key=lambda x: x[0])
+    eps = 1e-9
+    before = [it for it in items if it[0] < t_lo - eps]
+    after = [it for it in items if it[0] > t_hi + eps]
+    mid = [it for it in items if t_lo - eps <= it[0] <= t_hi + eps]
+    n_head, n_tail = len(before), len(after)
+    far = after[-1][0] if after else None
+    if not before and not after:
+        return [k for _t, k in items], 0, 0, None
+
+    if not mid:
+        if before and after:
+            # 範圍內一格都沒有，動作是從界外走到界外：整段補出來
+            (lt, lk), (rt, rk_) = before[-1], after[0]
+            return _cut_span(lk, lt, rk_, rt, t_lo, t_hi, quat, curve), n_head, n_tail, far
+        # 整條都在同一邊的界外：範圍內本來就是固定值
+        src = before[-1][1] if before else after[0][1]
+        return [_kf_set(src, t=t_lo)], n_head, n_tail, far
+
+    out = [k for _t, k in mid]
+    if before and mid[0][0] > t_lo + eps:
+        (lt, lk), (rt, rk_) = before[-1], mid[0]
+        out = _cut_span(lk, lt, rk_, rt, t_lo, rt, quat, curve)[:-1] + out
+    if after and mid[-1][0] < t_hi - 1e-6:
+        (lt, lk), (rt, rk_) = mid[-1], after[0]
+        out = out[:-1] + _cut_span(lk, lt, rk_, rt, lt, t_hi, quat, curve)
+    return out, n_head, n_tail, far
+
+
 def lead_camera_chain_zero(scene, chains, warn, hold=0.01, starts=None):
     """讓每條相機鏈在「輪到自己之前」待在原點。
 
@@ -4007,25 +4640,48 @@ def lead_camera_chain_zero(scene, chains, warn, hold=0.01, starts=None):
                 if not timed:
                     continue
                 timed.sort(key=lambda x: x[0])
-                first, first_kf = timed[0]
                 lead = t0 - hold
                 if lead <= 1e-6:
                     continue
-                hm = re.match(r'<interpolable\b[^>]*?>', blk)
-                if not hm:
-                    continue
+                quat = tid == "guideObjectRot"
+                ident_vals = [float(v) for v in re.findall(r'="([-\d.eE+]+)"', ident)]
+
+                def is_ident(kf, _iv=ident_vals, _q=quat):
+                    v = _kf_values(kf)
+                    return len(v) == len(_iv) and _same(v, _iv, _q, 1e-6)
+
+                # 起點之前已經有的關鍵影格分兩種：
+                #   * 單位值的 —— 上一次合併補的「待在原點」那兩格（合併過的卡再拿來合併時會有）。
+                #     整批換掉。以前是不管三七二十一再補兩格，結果同一個時間有兩格：
+                #     Timeline 讀到時間重複的關鍵影格會把**整條軌道丟掉**，
+                #     症狀就是「合併過的卡再合併，每張卡只有第一段的鏡頭是對的」。
+                #   * 不是單位值的 —— 作者放在 0 秒之前的真格（舊版整理的卡會留著）。
+                #     起點的鏡位要照它內插出來，算好補在起點上，然後才能收掉。
+                pre = [x for x in timed if x[0] < t0 - 1e-6]
+                post = [x for x in timed if x[0] >= t0 - 1e-6]
+                real_pre = [x for x in pre if not is_ident(x[1])]
+                if real_pre:
+                    lt, lk = real_pre[-1]
+                    if not post:
+                        post = [(t0, _kf_set(lk, t=t0))]
+                    elif post[0][0] > t0 + 1e-6:
+                        rt, rk_ = post[0]
+                        span = _cut_span(lk, lt, rk_, rt, t0, rt, quat, curve)
+                        post = [(_kf_time(k), k) for k in span[:-1]] + post
                 add = ('<keyframe time="0" %s>%s</keyframe>' % (ident, curve)
                        + '<keyframe time="%s" %s>%s</keyframe>'
                        % (S.fmt_time(lead), ident, curve))
                 # 作者的第一格晚於這一段的起點時，原卡在「起點到第一格」之間
                 # 維持的是第一格的值（timeline 的 hold-before-first）。
                 # 不補這一格的話，那一段會從原點慢慢飄到第一格，而不是定在那裡。
-                if first > t0 + 1e-6:
+                if post and post[0][0] > t0 + 1e-6:
                     vals = re.sub(r'^<keyframe\s+time="[^"]*"\s*', "",
-                                  first_kf.split(">")[0]).strip()
+                                  post[0][1].split(">")[0]).strip()
                     add += '<keyframe time="%s" %s>%s</keyframe>' % (
                         S.fmt_time(t0), vals, curve)
-                blk = blk[:hm.end()] + add + blk[hm.end():]
+                spans = list(RE_KEYFRAME.finditer(blk))
+                blk = (blk[:spans[0].start()] + add + "".join(k for _t, k in post)
+                       + blk[spans[-1].end():])
                 body = body[:m.start()] + blk + body[m.end():]
                 n += 1
     scene.set_timeline_xml(head + body + tail)
@@ -4063,35 +4719,34 @@ def zero_camera_chain(scene, chain_nodes, t_end, warn, hold=0.01):
                 if not kfs:
                     continue
 
-                # 先砍掉「超過這張卡時長」的關鍵影格，再補歸零。
+                # 先把軌道裁成只剩 0 秒～這張卡的結尾，再補歸零。
                 #
-                # timeline 的「時長」只是播放長度；作者留在時長之後的關鍵影格
-                # 在原卡永遠播不到，是死資料。但合併時整段會平移，那些死資料就
-                # 落進**下一張卡的區間**，而且排在我們補的歸零後面 —— 歸零直接失效。
-                #
-                # 實際踩過：Scenecard 第二張卡的 POV M3 旋轉軌道，
-                # 最後一格在 82.16069 而卡片時長是 82.0（超出 0.16 秒）。
-                # 合併後歸零那格落在 190.01、那顆死資料落在 190.17，
+                # timeline 的「時長」只是播放長度；作者留在時長之後的關鍵影格在原卡
+                # 永遠播不到，但合併時整段會平移，它們就落進**下一張卡的區間**，
+                # 而且排在我們補的歸零後面 —— 歸零直接失效。
+                # 實際踩過：Scenecard 第二張卡的 POV M3 旋轉軌道，最後一格在 82.16069
+                # 而卡片時長是 82.0。合併後歸零那格落在 190.01、那顆落在 190.17，
                 # 於是 190.17 之後整條軌道停在 (-0.417,-0.151,0.087,0.892)，
-                # 第三、第四段的鏡頭全部跟著歪掉，而且畫面上看不出是哪裡來的。
+                # 第三、第四段的鏡頭全部跟著歪掉。
+                # 0 秒之前的關鍵影格也一樣：平移後落進**上一張卡的區間**，
+                # 還會跟「輪到自己之前待在原點」那兩格攪在一起。
+                #
+                # 但不能只是丟掉：時長之內看到的動作是「往界外那一格走到一半」，
+                # 丟掉之後結尾前那一小段鏡頭會停住不動（實測過一位作者的卡，每段結尾
+                # 停 0.1～1.9 秒；開頭有一條軌道從 -3.2 秒一路內插到 11.3 秒，
+                # 丟掉之後前 11 秒的鏡位全錯）。clip_keyframes 在邊界補上算好的那一格，
+                # 動作不變。
                 cut = t_end - hold
-                keep, drop = [], []
-                for kf in kfs:
-                    kt = float(re.search(r'time="([-\d.eE+]+)"', kf).group(1))
-                    (keep if kt <= cut + 1e-9 else drop).append((kt, kf))
-                if not keep:
-                    # 整條都在界外（很罕見）：留第一格並把它拉回 0 秒當基準值，
-                    # 這樣至少還有東西可以「維持原值」，不會變成空軌道。
-                    kt, kf = drop.pop(0)
-                    keep.append((0.0, re.sub(r'^(<keyframe\s+time=")[^"]*"',
-                                             r'\g<1>0"', kf, count=1)))
-                for _, kf in drop:
-                    blk = blk.replace(kf, "", 1)
-                if drop:
-                    dropped_kfs.append((node["data"].get("name") or "?", tid,
-                                        len(drop), max(t for t, _ in drop)))
-
-                lt, last = keep[-1]
+                quat = tid == "guideObjectRot"
+                new_kfs, n_head, n_tail, far = clip_keyframes(kfs, 0.0, cut, quat, curve)
+                if n_head or n_tail:
+                    first_at = RE_KEYFRAME.search(blk).start()
+                    last_end = list(RE_KEYFRAME.finditer(blk))[-1].end()
+                    blk = blk[:first_at] + "".join(new_kfs) + blk[last_end:]
+                    dropped_kfs.append((node["data"].get("name") or "?", tid, n_head, n_tail,
+                                        far if far is not None else t_end))
+                kfs = new_kfs
+                lt, last = _kf_time(kfs[-1]), kfs[-1]
                 vals = re.sub(r'^<keyframe\s+time="[^"]*"\s*', "", last.split(">")[0]).strip()
                 add = ""
                 if lt < cut - 1e-6:
@@ -4114,21 +4769,19 @@ def zero_camera_chain(scene, chain_nodes, t_end, warn, hold=0.01):
     scene.set_timeline_xml(head + body + tail)
     if n_new:
         warn.append(f"相機鏈歸零：有 {n_new} 條軌道原本不存在，已用資料夾目前的座標新建")
-    for nm, tid, cnt, mx in dropped_kfs:
-        warn.append(f"相機鏈歸零：{nm} 的 {tid} 有 {cnt} 格關鍵影格超過卡片時長"
-                    f"（最遠 {mx:.5f}，時長 {t_end:.5f}），已刪除 —— "
-                    f"留著的話合併後會蓋掉歸零，後面每一段的鏡頭都會跟著歪")
     if dropped_kfs:
-        # 這是最容易踩的坑：卡片宣告 30 秒、實際運鏡畫到 120 秒，
-        # 用宣告時長去歸零就等於把後面 90 秒的運鏡整段剪掉，
-        # 載入後鏡位就跟原卡完全不一樣。GUI 會替每一段填實際長度，
-        # 所以不會踩到；命令列忘了給 --duration 就會。
-        need = max(mx for _n, _t, _c, mx in dropped_kfs)
-        total = sum(c for _n, _t, c, _m in dropped_kfs)
-        warn.append(f"相機鏈歸零：總共剪掉 {total} 格運鏡。這張卡的鏡頭畫到 "
-                    f"{need:.2f} 秒，但時長只宣告 {t_end:.2f} 秒 —— "
-                    f"要保留完整運鏡，prep 時加上 --duration {need:.2f}"
-                    f"（或在 GUI 把這一段的時長設成至少這個值）")
+        # 時長之內的運鏡完全保留（邊界上補了算好的那一格）；被收掉的是原卡單獨播也播不到的部分。
+        n_h = sum(h for _n, _t, h, _tl, _f in dropped_kfs)
+        n_t = sum(tl for _n, _t, _h, tl, _f in dropped_kfs)
+        far = max(f for _n, _t, _h, _tl, f in dropped_kfs)
+        msg = "相機鏈：" + "、".join(x for x in (
+            f"0 秒之前的 {n_h} 格" if n_h else "", f"時長之後的 {n_t} 格" if n_t else "") if x)
+        msg += (f"關鍵影格已收掉（{len(dropped_kfs)} 條軌道），並在邊界補上算好的鏡位 —— "
+                f"0～{t_end:.2f} 秒的運鏡跟原卡一樣。")
+        if n_t and far > t_end + 0.5:
+            msg += (f"這張卡的鏡頭最遠畫到 {far:.2f} 秒，時長之後那一段原卡單獨播也播不到；"
+                    f"想把它也播出來才需要把這一段的時長改成 {far:.2f}")
+        warn.append(msg)
     return n_add + n_new
 
 if __name__ == "__main__":

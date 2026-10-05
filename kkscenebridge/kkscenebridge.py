@@ -22,20 +22,26 @@ from pathlib import Path
 from PyQt6.QtCore import QObject, QProcess, Qt, QThread, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices, QFont, QPixmap
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox,
     QFileDialog, QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
     QMainWindow, QMessageBox, QPlainTextEdit, QPushButton, QSplitter,
     QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 
 import kkaudiotab
+import kkbridgetab
+import kkcutmerge as CM
 import kkcuttab
 import kktreetab
 import kkscenemerge as KM
 import kkvnsound as V
+import kklang
+
+# 「人物卡合卡」分頁（原本的 kkbridge）用自己那張翻譯表，語言跟著這邊走
+kklang.set_lang(L.Current)
 
 APP_NAME = "kkscenebridge"
-VERSION = "1.0.0"
+VERSION = "1.1.3"
 RED = "#c0392b"
 
 
@@ -89,6 +95,8 @@ DEFAULTS = {
     "tree_save_treestate": True,
     "tree_backup": True,
     "after_merge": "ask",
+    # 合併時，各張卡已經做好的 F7 設定（cutscene.json）一起接起來
+    "merge_cut": True,
     # 刻意不收進來的：cut_video / cut_card / cut_files / cut_unchecked /
     # cut_active / tree_card。那幾個是「上次開的是哪張卡」，不是設定 ——
     # 寫死在這裡會讓全新的一份一啟動就去載某張 1.3 GB 的卡。
@@ -302,8 +310,11 @@ class MergeWorker(QObject):
                                  if str(opts.get("shader_type", "")).strip()
                                  else None),
                     post=post)
+                note = ""
+                if opts.get("cut"):
+                    note = self._merge_cut(jobs, out_path, res, opts["cut"])
                 self.finished_.emit(
-                    True, T("完成：{0}（{1}，總時長 {2}）").format(out_path, fmt_size(res['size']), fmt_dur(res['duration'])))
+                    True, T("完成：{0}（{1}，總時長 {2}）").format(out_path, fmt_size(res['size']), fmt_dur(res['duration'])) + note)
             except SystemExit as e:                     # noqa: BLE001
                 self.finished_.emit(False, str(e))
             except Exception as e:                      # noqa: BLE001
@@ -311,6 +322,51 @@ class MergeWorker(QObject):
                 self.finished_.emit(False, f"{type(e).__name__}: {e}")
             finally:
                 KM.log = old_log
+
+    @staticmethod
+    def _merge_cut(jobs, out_path, res, cut):
+        """卡片接好之後，把各張卡的 cutscene.json 照同樣的順序接成一份。
+
+        這一步失敗不算合併失敗 —— 卡片已經寫出來了，設定檔可以之後再處理。
+        回傳要接在完成訊息後面的一句話。
+        """
+        try:
+            parts = CM.make_parts([{"card": j["path"], "json": c.get("json") or ""}
+                                   for j, c in zip(jobs, cut["cards"])])
+            offs = [c["off"] for c in (res.get("cards") or [])]
+            if len(offs) != len(parts):
+                raise CM.CutMergeError("合併回報的卡片數量跟清單對不上")
+            for p, j, o in zip(parts, jobs, offs):
+                p["off"] = o
+                p["dur"] = j.get("duration")        # 只有手動改過時長才有值（縮短時要把超出的音軌拿掉）
+            stem = Path(out_path).stem
+            out_dir = cut.get("out_dir") or str(Path(out_path).parent)
+            out_json = os.path.join(out_dir, stem + ".cutscene.json")
+            KM.log("")
+            KM.log(T("接 F7 設定（cutscene.json）…"))
+            r = CM.merge(parts, out_path, out_json, rows=cut.get("rows"), log=KM.log)
+            for w in r["warnings"]:
+                KM.log("[注意] " + w)
+            if not r["json"]:
+                return ""
+            # 寫完馬上體檢，跟「產生 cutscene.json」同一套
+            try:
+                import contextlib
+                import io
+                import kkcutscene as K
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    K.run_check(r["json"])
+                for ln in buf.getvalue().splitlines():
+                    if ln.strip():
+                        KM.log(ln)
+            except Exception:                           # noqa: BLE001
+                pass
+            return T("；F7 設定已接好：{0}").format(r["json"])
+        except Exception as e:                          # noqa: BLE001
+            KM.log(traceback.format_exc())
+            KM.log(T("[提醒] F7 設定（cutscene.json）沒有接成：{0}").format(e))
+            return T("；F7 設定沒有接成（看紀錄）")
 
     @staticmethod
     def _apply_rows(scene, rows, audio_root, rel_prefix, mode=None):
@@ -513,7 +569,9 @@ class CardTable(QTableWidget):
             self.rows.append({"path": p, "name": Path(p).stem, "camera": None,
                               "info": None, "state": T("等待讀卡"), "prepped": False,
                               "duration": None,
-                              "audio_files": [], "audio_primary": None})
+                              "audio_files": [], "audio_primary": None,
+                              # 這張卡已經做好的 F7 設定檔（合併時可以一起接）
+                              "cut_json": CM.find_json(p, [self.settings.get("cut_out_dir", "")])})
         self.rebuild()
         self.changed.emit()
 
@@ -729,6 +787,9 @@ class CardTable(QTableWidget):
                 st.setForeground(Qt.GlobalColor.darkYellow)
             if row.get("error"):
                 st.setToolTip(row["error"])
+            elif row.get("cut_json"):
+                st.setText(txt + T("｜有 F7 設定"))
+                st.setToolTip(T("這張卡已經有 F7 的設定檔，合併時可以一起接：\n{0}").format(row["cut_json"]))
             self.setItem(i, COL_STATE, st)
         self.blockSignals(False)
 
@@ -793,6 +854,13 @@ class CardTable(QTableWidget):
                  "primary": r.get("audio_primary")}
                 for r in self.rows if r.get("audio_files")]
 
+    def cut_cards(self):
+        """每張卡的 F7 設定檔（沒有的是空字串），照目前的順序。加卡之後才做好的也找得到。"""
+        d = [self.settings.get("cut_out_dir", "")]
+        for r in self.rows:
+            r["cut_json"] = CM.find_json(r["path"], d)
+        return [{"card": r["path"], "json": r.get("cut_json") or ""} for r in self.rows]
+
     def jobs(self):
         return [{"path": r["path"], "name": r["name"], "camera": r["camera"],
                  "prepped": r["prepped"], "duration": r.get("duration"),
@@ -819,6 +887,85 @@ class CardTable(QTableWidget):
         return True, ""
 
 
+class CutMergeDialog(QDialog):
+    """兩張以上的卡各有自己的配音時，決定合併後的每個配音版本在每張卡用哪一個音檔。
+
+    音檔和影片不會動：設定檔記下「播到這張卡時，這個配音版本用哪個檔」，F7 播放時自己換檔。
+    每一列可以自己改配對、改名、增減。
+    """
+
+    def __init__(self, parent, parts):
+        super().__init__(parent)
+        self.setWindowTitle(T("接 F7 設定：配音怎麼配"))
+        self.resize(820, 420)
+        self.parts = parts
+        self.aud = CM.audio_parts(parts)
+        lay = QVBoxLayout(self)
+        tip = QLabel(T("每一列是合併後的一個配音版本（F7 面板上的一顆按鈕），每張卡挑一個版本。\n音檔和影片不會動：播到哪張卡，F7 就換成那張卡挑的音檔。版本比較少的卡可以重複用同一個。"))
+        tip.setWordWrap(True)
+        lay.addWidget(tip)
+        self.tbl = QTableWidget(0, 1 + len(self.aud))
+        self.tbl.setHorizontalHeaderLabels(
+            [T("合併後的名稱")] + [T("第 {0} 張　{1}").format(i + 1, Path(parts[i]["card"]).stem[:22])
+                                 for i in self.aud])
+        h = self.tbl.horizontalHeader()
+        h.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        for c in range(1, 1 + len(self.aud)):
+            h.setSectionResizeMode(c, QHeaderView.ResizeMode.Stretch)
+        lay.addWidget(self.tbl, 1)
+        for r in CM.default_rows(parts):
+            self._add_row(r)
+
+        br = QHBoxLayout()
+        b = QPushButton(T("加一列"))
+        b.clicked.connect(lambda: self._add_row(None))
+        br.addWidget(b)
+        b = QPushButton(T("刪除這列"))
+        b.clicked.connect(self._del_row)
+        br.addWidget(b)
+        br.addStretch(1)
+        lay.addLayout(br)
+
+        no = [str(i + 1) for i, p in enumerate(parts) if not p["cfg"]]
+        if no:
+            lab = QLabel(T("第 {0} 張沒有 cutscene.json，那一段不會有配音和過場。").format("、".join(no)))
+            lab.setStyleSheet("color:%s" % RED)
+            lay.addWidget(lab)
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        bb.button(QDialogButtonBox.StandardButton.Ok).setText(T("開始合併"))
+        bb.button(QDialogButtonBox.StandardButton.Cancel).setText(T("取消"))
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def _add_row(self, row):
+        r = self.tbl.rowCount()
+        self.tbl.insertRow(r)
+        self.tbl.setItem(r, 0, QTableWidgetItem(row["name"] if row else ""))
+        for c, i in enumerate(self.aud, 1):
+            cb = QComboBox()
+            for nm, fp in self.parts[i]["vars"]:
+                cb.addItem(nm, nm)
+                cb.setItemData(cb.count() - 1, fp, Qt.ItemDataRole.ToolTipRole)
+            want = (row or {}).get("pick", {}).get(i)
+            k = cb.findData(want) if want else 0
+            cb.setCurrentIndex(k if k >= 0 else 0)
+            self.tbl.setCellWidget(r, c, cb)
+
+    def _del_row(self):
+        r = self.tbl.currentRow()
+        if r > 0:
+            self.tbl.removeRow(r)
+
+    def rows(self):
+        out = []
+        for r in range(self.tbl.rowCount()):
+            it = self.tbl.item(r, 0)
+            pick = {i: self.tbl.cellWidget(r, c).currentData() for c, i in enumerate(self.aud, 1)}
+            out.append({"name": (it.text().strip() if it else ""), "pick": pick})
+        return CM.normalize_rows(self.parts, out)
+
+
 # ============================================================ 主視窗
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -833,10 +980,15 @@ class MainWindow(QMainWindow):
         settings_tab = self._settings_tab()      # 先建，合併分頁的 run() 會用到裡面的勾選
         self.cut_tab = kkcuttab.CutTab(self.settings)
         self.tree_tab = kktreetab.TreeTab(self.settings)
+        # 原本獨立的 kkbridge：人物卡附加飾品／移植換裝／修卡，以及 F6 的工單監看
+        self.bridge_tab = kkbridgetab.BridgeTab(
+            self.settings, save=lambda: save_settings(self.settings), settings_path=SETTINGS_PATH)
         self.tabs.addTab(self._merge_tab(), T("合併場景"))
         self.tabs.addTab(self.cut_tab, T("添加動畫音頻"))
         self.tabs.addTab(self.audio_tab, T("VNGE音頻"))
         self.tabs.addTab(self.tree_tab, T("整理"))
+        i = self.tabs.addTab(self.bridge_tab, T("人物卡合卡"))
+        self.tabs.setTabToolTip(i, T("原本的 kkbridge：人物卡附加飾品、移植整套換裝、修卡。\nF6（StudioCharTools）的「添加飾品」「保持服裝換人」要這個程式開著、而且這一頁的「監看工單」在監看中。"))
         self.tabs.addTab(settings_tab, T("設定"))
 
         self.log = QPlainTextEdit()
@@ -888,6 +1040,8 @@ class MainWindow(QMainWindow):
         self.cut_tab.status.connect(lambda m: self.status.showMessage(m, 8000))
         self.tree_tab.log_line.connect(self.append_log)
         self.tree_tab.status.connect(lambda m: self.status.showMessage(m, 8000))
+        self.bridge_tab.log_line.connect(self.append_log)
+        self.bridge_tab.status.connect(lambda m: self.status.showMessage(m, 8000))
         self.audio_tab.edit_root.setText(self.settings.get("audio_root", ""))
         # 音頻分頁改路徑時即時同步回 settings —— 合併分頁每列的「選音頻…」要用
         for key, w in (("audio_root", self.audio_tab.edit_root),
@@ -896,6 +1050,8 @@ class MainWindow(QMainWindow):
             w.textChanged.connect(
                 lambda t, k=key: self.settings.__setitem__(k, t.strip()))
         self.table.mode_changed.connect(self.audio_tab.sync_mode)
+        # 紀錄欄和訊號都接好了才開始監看工單
+        self.bridge_tab.autostart()
 
     def _apply_base_name(self):
         base = self.edit_base.text().strip()
@@ -966,6 +1122,11 @@ class MainWindow(QMainWindow):
         self.edit_cam = QLineEdit(self.settings.get("cam_name", ""))
         self.edit_cam.setPlaceholderText(T("留空＝取各場景相機的共同開頭"))
         gl.addWidget(self.edit_cam, 1)
+        self.chk_cut = QCheckBox(T("F7 設定（cutscene.json）一起接"))
+        self.chk_cut.setChecked(bool(self.settings.get("merge_cut", True)))
+        self.chk_cut.setToolTip(
+            T("卡片各自已經做好 F7 的設定檔（狀態欄有「有 F7 設定」）時，合併完順便把設定也接成一份，\n不用重新量對應點。音檔和影片不會動：設定檔記下每張卡各用哪個檔，F7 播到哪張卡就換哪個檔\n（需要 F7 1.14.0 以上）。"))
+        gl.addWidget(self.chk_cut)
         lay.addWidget(g)
 
         # 輸出
@@ -1276,6 +1437,8 @@ class MainWindow(QMainWindow):
             self.out.refresh_reset()
         self.settings["game_root"] = new
         self.audio_tab._refresh_defaults()
+        if hasattr(self, "bridge_tab"):
+            self.bridge_tab.set_game_root(new)
 
     def on_out_default_changed(self, text):
         """「輸出預設資料夾」改了，主頁面下方那格也跟著換（同樣只在沒被改過時）。"""
@@ -1297,6 +1460,8 @@ class MainWindow(QMainWindow):
                     tab.save_state()
                 except Exception:
                     self.append_log(T("儲存分頁狀態時出錯：\n") + traceback.format_exc())
+        if getattr(self, "bridge_tab", None) is not None:
+            self.bridge_tab.collect()
         self.settings.update({
             "game_root": self.p_root.text(),
             "scene_dir": self.p_scene.text(),
@@ -1326,6 +1491,7 @@ class MainWindow(QMainWindow):
             "audio_dir": self.audio_tab.edit_dir.text().strip(),
             "audio_mode": self.audio_tab.combo_mode.currentData(),
             "after_merge": self.cmb_after.currentData(),
+            "merge_cut": self.chk_cut.isChecked(),
         })
         save_settings(self.settings)
         self.append_log(T("設定已儲存（含各分頁的狀態）：") + str(SETTINGS_PATH))
@@ -1445,6 +1611,12 @@ class MainWindow(QMainWindow):
             "audio_mode": self.settings.get("audio_mode", V.MODE_REL),
             "audio_rows": self.table.audio_rows(),
         }
+        opts["cut"] = None
+        if self.chk_cut.isChecked():
+            cut = self._prepare_cut()
+            if cut is False:
+                return                       # 在配對視窗按了取消
+            opts["cut"] = cut
         if opts["audio_rows"] and not opts["audio_root"]:
             QMessageBox.warning(self, T("還不能執行"),
                                 T("有列選了音頻，但還沒在設定頁指定音頻根目錄（相對路徑是從那裡往下算的）"))
@@ -1458,6 +1630,34 @@ class MainWindow(QMainWindow):
                         (T("開始整理 ") + rows[0]["name"] + T("（只有一張卡，不接卡）")))
         self._last_out = out
         self.worker.submit(self.table.jobs(), out, opts)
+
+    def _prepare_cut(self):
+        """合併前先把「要不要接 F7 設定、配音怎麼配對」問清楚。
+
+        回傳 None＝沒有設定檔可以接；False＝使用者取消整個合併；dict＝交給 MergeWorker。
+        """
+        cards = self.table.cut_cards()
+        if not any(c["json"] for c in cards):
+            return None
+        out_dir = self.settings.get("cut_out_dir", "") or ""
+        if hasattr(self, "cut_tab") and self.cut_tab.ed_out.text().strip():
+            out_dir = self.cut_tab.ed_out.text().strip()
+        cut = {"cards": cards, "rows": None, "out_dir": out_dir}
+        try:
+            parts = CM.make_parts(cards)
+        except Exception as e:                          # noqa: BLE001
+            self.append_log(T("[提醒] 讀 cutscene.json 時出錯，這次不接：{0}").format(e))
+            return None
+        aud = CM.audio_parts(parts)
+        n_json = sum(1 for p in parts if p["cfg"])
+        self.append_log(T("F7 設定：{0} 張卡裡有 {1} 張有 cutscene.json，合併完會一起接").format(len(parts), n_json))
+        if len(aud) < 2:
+            return cut                       # 只有一張卡有配音：音檔沿用它的，沒有東西要問
+        dlg = CutMergeDialog(self, parts)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return False
+        cut["rows"] = dlg.rows()
+        return cut
 
     def on_started(self):
         one = len(self.table.rows) == 1
@@ -1531,6 +1731,7 @@ class MainWindow(QMainWindow):
         self.audio_tab.shutdown()
         self.cut_tab.shutdown()
         self.tree_tab.shutdown()
+        self.bridge_tab.shutdown()
         for obj, th in ((self.loader, self.lthread), (self.worker, self.wthread)):
             obj.stop()
             th.quit()

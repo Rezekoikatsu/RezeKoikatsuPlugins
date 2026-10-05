@@ -2201,6 +2201,124 @@ A('已切換成 {0}。要現在重新啟動嗎？',
   '{0} に切り替えました。今すぐ再起動しますか？')
 
 
+# ---- 依長度自動設定對應點、合併場景時接 F7 設定
+A('接 F7 設定（cutscene.json）…',
+  'Joining F7 configs (cutscene.json)…',
+  'F7 設定（cutscene.json）を結合中…')
+A('；F7 設定已接好：{0}',
+  '; F7 config joined: {0}',
+  '；F7 設定を結合しました：{0}')
+A('[提醒] F7 設定（cutscene.json）沒有接成：{0}',
+  '[Note] The F7 config (cutscene.json) could not be joined: {0}',
+  '[注意] F7 設定（cutscene.json）を結合できませんでした：{0}')
+A('；F7 設定沒有接成（看紀錄）',
+  '; F7 config was not joined (see the log)',
+  '；F7 設定は結合できませんでした（ログを確認）')
+A('｜有 F7 設定',
+  ' | has F7 config',
+  '｜F7 設定あり')
+A('這張卡已經有 F7 的設定檔，合併時可以一起接：\n{0}',
+  'This card already has an F7 config; it can be joined when merging:\n{0}',
+  'このカードには F7 の設定ファイルがあり、結合時に一緒につなげられます：\n{0}')
+A('接 F7 設定：配音怎麼配',
+  'Join F7 configs: how to pair the voices',
+  'F7 設定の結合：ボイスの組み合わせ')
+A('合併後的名稱',
+  'Name after merging',
+  '結合後の名前')
+A('第 {0} 張　{1}',
+  'Card {0}  {1}',
+  '{0} 枚目　{1}')
+A('加一列',
+  'Add row',
+  '行を追加')
+A('第 {0} 張沒有 cutscene.json，那一段不會有配音和過場。',
+  'Card {0} has no cutscene.json; that part will have no voice or cutscenes.',
+  '{0} 枚目には cutscene.json がないため、その区間はボイスもムービーもありません。')
+A('開始合併',
+  'Start merging',
+  '結合開始')
+A('取消',
+  'Cancel',
+  'キャンセル')
+A('F7 設定（cutscene.json）一起接',
+  'Join F7 configs (cutscene.json) too',
+  'F7 設定（cutscene.json）も一緒につなげる')
+A('[提醒] 讀 cutscene.json 時出錯，這次不接：{0}',
+  '[Note] Error while reading cutscene.json; not joining this time: {0}',
+  '[注意] cutscene.json の読み込み中にエラー。今回は結合しません：{0}')
+A('F7 設定：{0} 張卡裡有 {1} 張有 cutscene.json，合併完會一起接',
+  'F7 config: {1} of {0} cards have a cutscene.json; they will be joined after merging',
+  'F7 設定：{0} 枚中 {1} 枚に cutscene.json があり、結合後に一緒につなげます')
+A('依長度自動設定',
+  'Auto-set by length',
+  '長さで自動設定')
+A('清單裡有音檔（或影片）跟場景卡大致一樣長的時候用：\n這種音檔是照著場景從頭播到尾的，每一段的頭尾直接對上，不用自己量。\n把音檔拖進來時，對應點表格是空的就會自動做一次。',
+  'Use this when an audio (or video) file in the list is about as long as the scene card:\nsuch a file plays alongside the scene from start to end, so the start and end of every segment line up directly and nothing has to be measured.\nIt runs once automatically when you drop files in while the sync point table is empty.',
+  'リスト内の音声（または動画）がシーンカードとほぼ同じ長さのときに使います：\nこの種の音声はシーンに合わせて最初から最後まで流れるので、各区間の頭と末尾をそのまま合わせられ、自分で測る必要がありません。\n対応点の表が空のときに音声をドロップすると、自動で 1 回実行されます。')
+A('先把音檔（或影片）加進清單',
+  'Add audio (or video) files to the list first',
+  '先に音声（または動画）をリストに追加してください')
+A('對應點表格裡已經有東西了，長度對得上的話會整個換掉。要繼續嗎？',
+  'The sync point table already has entries; if the lengths match it will be replaced entirely. Continue?',
+  '対応点の表にはすでに内容があります。長さが合えば全部置き換えます。続けますか？')
+A('比對音檔長度和場景卡…（大卡要等一下）',
+  'Comparing audio length with the scene card… (large cards take a moment)',
+  '音声の長さとシーンカードを照合中…（大きいカードは少し待ちます）')
+A('依長度自動設定：讀不了這張卡（%s）',
+  'Auto-set by length: cannot read this card (%s)',
+  '長さで自動設定：このカードを読めません（%s）')
+A('讀不了這張卡：\n%s',
+  'Cannot read this card:\n%s',
+  'このカードを読めません：\n%s')
+A('（timeline %s，有時間流速軌道）',
+  ' (timeline %s, has a time-scale track)',
+  '（timeline %s、時間の速度トラックあり）')
+A('沒有一個檔案的長度跟場景卡對得上（場景 %s，容許差 %.1f 秒）：%s',
+  'No file matches the scene card in length (scene %s, tolerance %.1f s): %s',
+  'シーンカードと長さが合うファイルがありません（シーン %s、許容差 %.1f 秒）：%s')
+A('依長度自動設定：',
+  'Auto-set by length: ',
+  '長さで自動設定：')
+A('最接近的是 %s（差 %+.2f 秒）。要不管長度，直接頭對頭、尾對尾套上去嗎？\n音檔裡有開場動畫或過場的話，這樣會整段對不上。',
+  'The closest is %s (off by %+.2f s). Ignore the length and fit it start-to-start, end-to-end anyway?\nIf the audio contains an intro or cutscenes, the whole thing will be out of sync.',
+  '一番近いのは %s（差 %+.2f 秒）です。長さを無視して、頭と頭・末尾と末尾で合わせますか？\n音声にオープニングやムービーが含まれていると、全体がずれます。')
+A('音檔長度跟場景卡不一樣，對應點要自己量',
+  'Audio length differs from the scene card; sync points must be measured manually',
+  '音声の長さがシーンカードと違うため、対応点は自分で測ってください')
+A('依長度自動設定：%s 長 %s，場景 %s（差 %+.2f 秒）→ 頭對頭、尾對尾，帶入 %d 個對應點（尚未存檔）',
+  'Auto-set by length: %s is %s long, scene %s (off by %+.2f s) → start-to-start, end-to-end; %d sync points filled in (not saved yet)',
+  '長さで自動設定：%s は %s、シーン %s（差 %+.2f 秒）→ 頭と頭・末尾と末尾で合わせ、対応点 %d 個を入力（未保存）')
+A("<span style='color:#1a7f37'><b>音檔長度跟場景卡一致（%s）—— 對應點已經自動設好，確認配音有打勾就可以直接按「產生 cutscene.json」。</b></span>",
+  "<span style='color:#1a7f37'><b>Audio length matches the scene card (%s) — sync points were set automatically. Make sure the voices are checked, then press \"Generate cutscene.json\".</b></span>",
+  "<span style='color:#1a7f37'><b>音声の長さがシーンカードと一致（%s）— 対応点は自動で設定済みです。ボイスにチェックが入っているのを確認して「cutscene.json を生成」を押してください。</b></span>")
+A('已自動帶入 %d 個對應點（音檔長度跟場景卡一致）',
+  '%d sync points filled in automatically (audio length matches the scene card)',
+  '対応点 %d 個を自動入力しました（音声の長さがシーンカードと一致）')
+A('這份設定是接出來的',
+  'This config was joined from several cards',
+  'この設定は結合で作られたものです')
+A('這張卡現有的 cutscene.json 是「合併場景」時從各張卡的設定接起來的。\n在這裡重新產生會蓋掉它，而且後面幾張卡的過場和音訊位置會算錯。\n\n要改的話，建議改原本各張卡的設定，再回「合併場景」重新接一次。\n\n還是要在這裡重新產生嗎？',
+  'This card\'s current cutscene.json was joined from each card\'s config in "Merge scenes".\nRegenerating it here overwrites it, and the cutscenes and audio positions of the later cards will come out wrong.\n\nTo change something, edit the original cards\' configs and join again in "Merge scenes".\n\nRegenerate here anyway?',
+  'このカードの cutscene.json は「シーン結合」で各カードの設定をつなげて作ったものです。\nここで再生成すると上書きされ、後ろのカードのムービーや音声位置がずれます。\n\n変更したい場合は、元の各カードの設定を直してから「シーン結合」でもう一度つなげてください。\n\nそれでもここで再生成しますか？')
+
+
+A('每一列是合併後的一個配音版本（F7 面板上的一顆按鈕），每張卡挑一個版本。\n音檔和影片不會動：播到哪張卡，F7 就換成那張卡挑的音檔。版本比較少的卡可以重複用同一個。',
+  'Each row is one voice version of the merged scene (one button on the F7 panel); pick one version per card.\nAudio and video files are left untouched: F7 switches to the file picked for whichever card is playing. A card with fewer versions can reuse the same one.',
+  '各行が結合後のボイス 1 バージョン（F7 パネルのボタン 1 つ）で、カードごとに 1 つ選びます。\n音声と動画はそのまま：再生中のカードで選んだ音声に F7 が切り替えます。バージョンが少ないカードは同じものを繰り返し使えます。')
+
+A('卡片各自已經做好 F7 的設定檔（狀態欄有「有 F7 設定」）時，合併完順便把設定也接成一份，\n不用重新量對應點。音檔和影片不會動：設定檔記下每張卡各用哪個檔，F7 播到哪張卡就換哪個檔\n（需要 F7 1.14.0 以上）。',
+  'When the cards already have their own F7 configs (the Status column says "has F7 config"), the configs are joined into one after merging,\nso sync points don\'t have to be measured again. Audio and video files are left untouched: the config records which file each card uses, and F7 switches files as playback moves from card to card\n(needs F7 1.14.0 or later).',
+  'カードごとに F7 の設定ファイルが出来ている場合（状態欄に「F7 設定あり」）、結合後に設定も 1 つにつなげます。\n対応点を測り直す必要はありません。音声と動画はそのまま：カードごとにどのファイルを使うかを設定に記録し、再生がカードをまたぐと F7 がファイルを切り替えます\n（F7 1.14.0 以降が必要）。')
+
+# ---- 人物卡合卡分頁（原本的 kkbridge）
+A('人物卡合卡',
+  'Chara card merge',
+  'キャラカード合成')
+A('原本的 kkbridge：人物卡附加飾品、移植整套換裝、修卡。\nF6（StudioCharTools）的「添加飾品」「保持服裝換人」要這個程式開著、而且這一頁的「監看工單」在監看中。',
+  'Formerly kkbridge: add accessories to a character card, transplant whole outfits, repair cards.\nF6 (StudioCharTools) "Add accessories" and "Swap keeping outfit" need this program open with "Watch jobs" on this tab running.',
+  '旧 kkbridge：キャラカードへのアクセサリ追加、衣装まるごと移植、カード修復。\nF6（StudioCharTools）の「アクセサリ追加」「衣装を保ったまま入れ替え」は、このプログラムを開いてこのタブの「ジョブ監視」を動かしておく必要があります。')
+
 # ---------------------------------------------------------------- 檢查
 _PH = re.compile(r"\{(\d+)(![rsa])?(:[^}]*)?\}")
 _PCT = re.compile(r"%[-+ #0]*\d*(?:\.\d+)?[sdfgrx%]")

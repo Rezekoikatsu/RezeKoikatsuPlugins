@@ -52,6 +52,58 @@ namespace StudioCutScene
         bool freeRun;
         public bool HasClip { get { return clip != null; } }
 
+        // ---- 每一段各自的音檔（多張卡接成一張、音檔不合併）----
+        //
+        // 換檔要重新讀一整個 wav，當場讀的話交界會空掉一小段。所以快到下一段時
+        // 先在背景把下一個檔讀好（nextClip），到了交界只是把指標換過去。
+        // 同時最多留兩個檔在記憶體：現在這個和下一個。
+        AudioClip nextClip;
+        string nextPath = "";
+        string nextLoadingPath = "";
+        bool nextLoading;
+        int nextGen;
+        string failedPath = "";     // 這個檔載不進來（不存在／格式不對），不要每一幀重試
+        string failedMsg = "";
+        const float PRELOAD_LEAD = 30f;   // 離下一段還有幾秒（timeline）就開始預載
+
+        // 過場指定要用哪一條音軌的音檔。設了之後一直載著它，直到 EndFreeRun。
+        AudioTrack pin;
+
+        /// <summary>過場開始前呼叫：這一段過場的聲音在 tr 那條音軌的音檔裡，先把它載進來。</summary>
+        public void Pin(AudioTrack tr) { pin = tr; }
+
+        /// <summary>指定的音檔已經載好、可以開始自由播了。沒有指定就一律算好了。</summary>
+        public bool PinReady
+        {
+            get { return pin == null || (clip != null && !loading && loadedPath == ResolveAudio(pin)); }
+        }
+
+        /// <summary>指定的音檔載不進來（檔案不在、格式不對）。</summary>
+        public bool PinFailed
+        {
+            get
+            {
+                if (pin == null) return false;
+                string p = ResolveAudio(pin);
+                return string.IsNullOrEmpty(p) || p == failedPath;
+            }
+        }
+
+        /// <summary>
+        /// 現在的秒數換算要以哪一條音軌為準：過場指定的那條優先，否則是時間軸上正在播的那條。
+        /// 單一音檔的設定檔每一條音軌都一樣，回傳哪一條結果都相同。
+        /// </summary>
+        AudioTrack Ctx
+        {
+            get
+            {
+                if (pin != null) return pin;
+                if (cfg != null && cfg.tracks != null && curTrack >= 0 && curTrack < cfg.tracks.Length)
+                    return cfg.tracks[curTrack];
+                return null;
+            }
+        }
+
         public void BeginFreeRun(float audioStart)
         {
             freeRun = true;
@@ -67,26 +119,24 @@ namespace StudioCutScene
         /// </summary>
         public void BeginFreeRunMain(float mainSec)
         {
-            BeginFreeRun(mainSec < 0f ? -1f : VariantSec(ActiveVariant, mainSec));
+            BeginFreeRun(mainSec < 0f ? -1f : VariantSec(Ctx, mainSec));
         }
 
         /// <summary>過場期間音軌正在自由播（＝它才是這段過場的主時鐘）。</summary>
         public bool FreeRunning { get { return freeRun && clip != null && src != null; } }
 
-        string ActiveVariant { get { return cfg == null ? "" : cfg.activeVariant; } }
-
         /// <summary>自由播時音訊現在播到哪，換算成**主配音**（＝影片）的秒數。</summary>
         public float FreeRunMainSec()
         {
             if (!FreeRunning) return -1f;
-            return MainSec(ActiveVariant, src.time);
+            return MainSec(Ctx, src.time);
         }
 
         /// <summary>自由播時把音訊跳到主配音的某一秒。快轉／倒轉用。</summary>
         public bool FreeRunSeekMain(float mainSec)
         {
             if (!FreeRunning) return false;
-            float want = VariantSec(ActiveVariant, mainSec);
+            float want = VariantSec(Ctx, mainSec);
             if (want < 0f) want = 0f;
             if (want > clip.length - 0.05f) want = Mathf.Max(0f, clip.length - 0.05f);
             SeekTo(want);
@@ -97,6 +147,7 @@ namespace StudioCutScene
         public void EndFreeRun()
         {
             freeRun = false;
+            pin = null;
             // 不強制 seek —— 位置按設計就該是對的，
             // 真的有偏差交給 Update 裡的 slew / hardSeek 處理。
         }
@@ -138,8 +189,68 @@ namespace StudioCutScene
         {
             loadedPath = "";
             curTrack = -1;
+            failedPath = "";
+            DropNext();
             ResetDiag();
             if (src != null) src.Stop();
+        }
+
+        /// <summary>丟掉預載的下一個音檔（正在載的那一個載完也會被丟）。</summary>
+        void DropNext()
+        {
+            nextGen++;
+            nextPath = "";
+            if (nextClip != null) { UnityEngine.Object.Destroy(nextClip); nextClip = null; }
+        }
+
+        /// <summary>要的檔已經預載好了就直接換過去，不用重新讀檔。</summary>
+        bool TakePreloaded(string path)
+        {
+            if (nextClip == null || nextPath != path) return false;
+            if (clip != null) { src.Stop(); src.clip = null; UnityEngine.Object.Destroy(clip); }
+            clip = nextClip;
+            nextClip = null;
+            nextPath = "";
+            src.clip = clip;
+            loadedPath = path;
+            curTrack = -1;              // 強迫下一幀重新對位
+            return true;
+        }
+
+        /// <summary>
+        /// 讓 path 變成現在載入的音檔。回傳 true ＝ 已經是了（或剛從預載換過來）。
+        /// false ＝ 還在讀，或讀不了。
+        /// </summary>
+        bool Want(string path)
+        {
+            if (path == loadedPath && clip != null) return true;
+            if (loading) return false;
+            if (TakePreloaded(path)) return true;
+            if (nextLoading && nextLoadingPath == path) return false;   // 預載到一半，等它
+            if (path == failedPath) return false;
+            StartCoroutine(LoadRoutine(path));
+            return false;
+        }
+
+        /// <summary>
+        /// 時間上的下一條音軌用的是另一個音檔、而且快到了 → 先在背景讀進來。
+        /// </summary>
+        void MaybePreload(AudioTrack cur, float t, bool now)
+        {
+            if (cfg == null || cfg.tracks == null || cur == null) return;
+            if (loading || nextLoading) return;
+            AudioTrack best = null;
+            for (int i = 0; i < cfg.tracks.Length; i++)
+            {
+                var tr = cfg.tracks[i];
+                if (tr == null || tr.mute || tr.from <= cur.from) continue;
+                if (best == null || tr.from < best.from) best = tr;
+            }
+            if (best == null) return;
+            if (!now && best.from - t > PRELOAD_LEAD) return;
+            string p = ResolveAudio(best);
+            if (string.IsNullOrEmpty(p) || p == loadedPath || p == nextPath || p == failedPath) return;
+            StartCoroutine(PreloadRoutine(p));
         }
 
         /// <summary>
@@ -154,7 +265,13 @@ namespace StudioCutScene
         {
             StopAllCoroutines();               // 可能有 LoadRoutine 正在跑，先停掉
             loading = false;
+            nextLoading = false;
+            nextLoadingPath = "";
             loadedPath = "";
+            failedPath = "";
+            pin = null;
+            freeRun = false;
+            DropNext();
             curTrack = -1;
             lastT = -1f;
             fadeGain = 1f;
@@ -169,6 +286,13 @@ namespace StudioCutScene
         void Update()
         {
             if (cfg == null || !cfg.tracksEnabled) { Status = "未啟用"; return; }
+
+            // 過場指定了音軌：一直確保載著的是它的音檔，並趁過場期間把再下一個檔也讀好
+            if (pin != null)
+            {
+                string pp = ResolveAudio(pin);
+                if (!string.IsNullOrEmpty(pp) && Want(pp)) MaybePreload(pin, 0f, true);
+            }
 
             // 過場播放中：AudioListener.pause 已經把這條音軌一起暫停了，不要動它
             var ov = CutOverlay.Instance;
@@ -190,6 +314,9 @@ namespace StudioCutScene
                 else Status = "過場中（已隨全域暫停）";
                 return;
             }
+
+            // 過場的音檔還在準備（影片還沒開始）：這時不要照時間軸去換檔，不然兩邊搶來搶去
+            if (pin != null) { Status = PinFailed ? failedMsg : "載入中…"; return; }
 
             if (!TimelineBridge.Ready) { Status = "Timeline 未就緒"; return; }
 
@@ -217,16 +344,18 @@ namespace StudioCutScene
 
             if (path != loadedPath)
             {
-                if (!loading) StartCoroutine(LoadRoutine(path));
-                Status = "載入中…";
+                // 載不進來的檔（不存在／格式不對）不要每一幀重試，Status 留著失敗原因
+                if (!Want(path)) Status = path == failedPath ? failedMsg : "載入中…";
                 lastT = t;
                 return;
             }
             if (clip == null) { Status = "音檔未載入"; lastT = t; return; }
 
+            MaybePreload(tr, t, false);
+
             // anchors 給的是**主配音**的秒數；目前在放的若是別版，再換算一次。
             // 沒有對照表時 VariantSec 原樣回傳，跟以前一模一樣。
-            float want = VariantSec(VariantOf(tr), MapToAudio(tr, t));
+            float want = VariantSec(tr, MapToAudio(tr, t));
             WantPos = want;
 
             if (want < 0f || want >= clip.length)
@@ -317,7 +446,7 @@ namespace StudioCutScene
                                    ((src.time - want) * 1000f).ToString("F0"))
                      + "  pitch " + src.pitch.ToString("F3")
                      + "   track#" + idx + (nA >= 2 ? "  anchors " + nA : Lang.T("  無 anchors"))
-                     + MapNote(VariantOf(tr));
+                     + MapNote(tr);
             lastT = t;
         }
 
@@ -367,34 +496,57 @@ namespace StudioCutScene
             return A[n - 1] + (t - T[n - 1]) * slN;
         }
 
-        /// <summary>
         /// <summary>診斷列要顯示的配音對照狀態。沒有對照表就什麼都不顯示。</summary>
-        string MapNote(string name)
+        string MapNote(AudioTrack tr)
         {
-            if (cfg == null || cfg.variantMaps == null || string.IsNullOrEmpty(name)) return "";
-            for (int i = 0; i < cfg.variantMaps.Length; i++)
-            {
-                var m = cfg.variantMaps[i];
-                if (m != null && m.name == name && m.refT != null && m.refT.Length > 0)
-                    return string.Format(Lang.T("  配音對照 {0} 點"), m.refT.Length);
-            }
-            return "";
+            VariantMap m = MapFor(tr);
+            return m == null ? "" : string.Format(Lang.T("  配音對照 {0} 點"), m.refT.Length);
         }
 
         /// <summary>
         /// 這條音軌實際在放哪一個配音版本的名稱。
         /// "@" = 目前選的那個；"@名稱" = 指定的那個；直接寫路徑的話沒有版本可言。
+        /// 音軌自己帶音檔的話，沒有那個名稱就退回它的第一個。
         /// </summary>
         public string VariantOf(AudioTrack tr)
         {
             if (cfg == null || tr == null) return "";
             string p = tr.audio;
             if (string.IsNullOrEmpty(p) || p[0] != '@') return "";
-            return p.Length > 1 ? p.Substring(1) : cfg.activeVariant;
+            string want = p.Length > 1 ? p.Substring(1) : cfg.activeVariant;
+            return tr.HasFiles ? tr.PickName(want) : want;
         }
 
         /// <summary>
-        /// 主配音的秒數 → 指定配音版本的秒數。
+        /// 這條音軌現在該套哪一份配音對照表；不用換算就回傳 null。
+        ///
+        /// 音軌自己帶音檔的話只看它自己的 maps —— 最上層那份是別的音檔的秒數。
+        /// tr 是 null（沒有任何音軌可以參考）時用最上層的、目前選的配音，跟以前一樣。
+        /// </summary>
+        VariantMap MapFor(AudioTrack tr)
+        {
+            if (cfg == null) return null;
+            string name;
+            VariantMap[] maps;
+            if (tr == null) { name = cfg.activeVariant; maps = cfg.variantMaps; }
+            else
+            {
+                name = VariantOf(tr);
+                maps = tr.HasFiles ? tr.maps : cfg.variantMaps;
+            }
+            if (maps == null || string.IsNullOrEmpty(name)) return null;
+            for (int i = 0; i < maps.Length; i++)
+            {
+                var m = maps[i];
+                if (m != null && m.name == name && m.refT != null && m.outT != null
+                    && Mathf.Min(m.refT.Length, m.outT.Length) > 0)
+                    return m;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 主配音的秒數 → 這條音軌現在放的那個配音版本的秒數。
         ///
         /// 找不到對照表（或那一版就是主配音）時原樣回傳 —— 也就是「兩版同步」，
         /// 這正是所有舊 cutscene.json 的行為，所以加了這一層不會動到任何既有的卡。
@@ -402,56 +554,42 @@ namespace StudioCutScene
         /// 兩端之外用最靠近的那一段斜率外推，跟 MapToAudio 同一套規矩：
         /// 對照點通常只量在中間，頭尾一定落在區間外，硬夾住的話開頭結尾就歪了。
         /// </summary>
-        public float VariantSec(string name, float refSec)
+        public float VariantSec(AudioTrack tr, float refSec)
         {
-            if (cfg == null || cfg.variantMaps == null || string.IsNullOrEmpty(name))
-                return refSec;
-            for (int i = 0; i < cfg.variantMaps.Length; i++)
-            {
-                var m = cfg.variantMaps[i];
-                if (m == null || m.name != name) continue;
-                var R = m.refT; var O = m.outT;
-                int n = (R == null || O == null) ? 0 : Mathf.Min(R.Length, O.Length);
-                if (n == 0) return refSec;
-                if (n == 1) return O[0] + (refSec - R[0]);
-                if (refSec <= R[0])
-                    return O[0] + (refSec - R[0]) * Slope(R[0], O[0], R[1], O[1]);
-                for (int k = 0; k < n - 1; k++)
-                    if (refSec <= R[k + 1])
-                        return O[k] + (refSec - R[k]) * Slope(R[k], O[k], R[k + 1], O[k + 1]);
-                return O[n - 1] + (refSec - R[n - 1])
-                       * Slope(R[n - 2], O[n - 2], R[n - 1], O[n - 1]);
-            }
-            return refSec;
+            VariantMap m = MapFor(tr);
+            if (m == null) return refSec;
+            var R = m.refT; var O = m.outT;
+            int n = Mathf.Min(R.Length, O.Length);
+            if (n == 1) return O[0] + (refSec - R[0]);
+            if (refSec <= R[0])
+                return O[0] + (refSec - R[0]) * Slope(R[0], O[0], R[1], O[1]);
+            for (int k = 0; k < n - 1; k++)
+                if (refSec <= R[k + 1])
+                    return O[k] + (refSec - R[k]) * Slope(R[k], O[k], R[k + 1], O[k + 1]);
+            return O[n - 1] + (refSec - R[n - 1])
+                   * Slope(R[n - 2], O[n - 2], R[n - 1], O[n - 1]);
         }
 
         /// <summary>
-        /// VariantSec 的反函數：指定配音版本的秒數 → 主配音的秒數。
+        /// VariantSec 的反函數：這條音軌現在放的那個配音版本的秒數 → 主配音的秒數。
         ///
         /// 過場快轉時需要它 —— 影片的秒數是主配音那一套，音訊播到哪卻是這一版的，
         /// 兩邊要對齊就得能雙向換算。沒有對照表時原樣回傳，跟 VariantSec 一致。
         /// </summary>
-        public float MainSec(string name, float outSec)
+        public float MainSec(AudioTrack tr, float outSec)
         {
-            if (cfg == null || cfg.variantMaps == null || string.IsNullOrEmpty(name))
-                return outSec;
-            for (int i = 0; i < cfg.variantMaps.Length; i++)
-            {
-                var m = cfg.variantMaps[i];
-                if (m == null || m.name != name) continue;
-                var R = m.refT; var O = m.outT;
-                int n = (R == null || O == null) ? 0 : Mathf.Min(R.Length, O.Length);
-                if (n == 0) return outSec;
-                if (n == 1) return R[0] + (outSec - O[0]);
-                if (outSec <= O[0])
-                    return R[0] + (outSec - O[0]) * Slope(O[0], R[0], O[1], R[1]);
-                for (int k = 0; k < n - 1; k++)
-                    if (outSec <= O[k + 1])
-                        return R[k] + (outSec - O[k]) * Slope(O[k], R[k], O[k + 1], R[k + 1]);
-                return R[n - 1] + (outSec - O[n - 1])
-                       * Slope(O[n - 2], R[n - 2], O[n - 1], R[n - 1]);
-            }
-            return outSec;
+            VariantMap m = MapFor(tr);
+            if (m == null) return outSec;
+            var R = m.refT; var O = m.outT;
+            int n = Mathf.Min(R.Length, O.Length);
+            if (n == 1) return R[0] + (outSec - O[0]);
+            if (outSec <= O[0])
+                return R[0] + (outSec - O[0]) * Slope(O[0], R[0], O[1], R[1]);
+            for (int k = 0; k < n - 1; k++)
+                if (outSec <= O[k + 1])
+                    return R[k] + (outSec - O[k]) * Slope(O[k], R[k], O[k + 1], R[k + 1]);
+            return R[n - 1] + (outSec - O[n - 1])
+                   * Slope(O[n - 2], R[n - 2], O[n - 1], R[n - 1]);
         }
 
         static float Slope(float t0, float a0, float t1, float a1)
@@ -488,7 +626,8 @@ namespace StudioCutScene
             if (p == "@" || p.StartsWith("@"))
             {
                 string want = p.Length > 1 ? p.Substring(1) : cfg.activeVariant;
-                p = VariantFile(want);
+                // 這一段自己帶音檔的話用它的，不然用整份設定檔共用的
+                p = tr.HasFiles ? tr.FileFor(want) : VariantFile(want);
                 if (string.IsNullOrEmpty(p)) return "";
             }
             return ResolvePath(p, cfg.audioRoot);
@@ -518,16 +657,19 @@ namespace StudioCutScene
 
         // ------------------------------------------------------------------ 載入
 
-        IEnumerator LoadRoutine(string path)
+        /// <summary>讀一個音檔的結果。clip 是 null 就看 error。</summary>
+        class Fetch
         {
-            loading = true;
-            if (clip != null) { src.Stop(); src.clip = null; UnityEngine.Object.Destroy(clip); clip = null; }
-            loadedPath = "";
+            public AudioClip clip;
+            public string error = "";
+        }
 
+        /// <summary>把一個音檔讀成 AudioClip。現在要用的和預載的都走這裡。</summary>
+        IEnumerator FetchRoutine(string path, Fetch f)
+        {
             if (!File.Exists(path))
             {
-                Status = Lang.T("找不到音檔: ") + path;
-                loading = false;
+                f.error = Lang.T("找不到音檔: ") + path;
                 yield break;
             }
 
@@ -538,8 +680,7 @@ namespace StudioCutScene
             else if (ext == ".ogg") { at = AudioType.OGGVORBIS; stream = true; }
             else
             {
-                Status = Lang.T("音檔格式不支援（只吃 .wav / .ogg）: ") + ext;
-                loading = false;
+                f.error = Lang.T("音檔格式不支援（只吃 .wav / .ogg）: ") + ext;
                 yield break;
             }
 
@@ -547,33 +688,79 @@ namespace StudioCutScene
             while (!www.isDone) yield return null;
             if (!string.IsNullOrEmpty(www.error))
             {
-                Status = Lang.T("載入失敗: ") + www.error;
-                loading = false;
+                f.error = Lang.T("載入失敗: ") + www.error;
                 yield break;
             }
 
-            clip = www.GetAudioClip(false, stream, at);
+            AudioClip c = www.GetAudioClip(false, stream, at);
             float t0 = Time.realtimeSinceStartup;
-            while (clip != null && clip.loadState == AudioDataLoadState.Loading)
+            while (c != null && c.loadState == AudioDataLoadState.Loading)
             {
                 if (Time.realtimeSinceStartup - t0 > 60f) break;
                 yield return null;
             }
 
-            if (clip == null || clip.loadState == AudioDataLoadState.Failed)
+            if (c == null || c.loadState == AudioDataLoadState.Failed)
             {
-                Status = Lang.T("解碼失敗: ") + Path.GetFileName(path);
-                clip = null;
+                f.error = Lang.T("解碼失敗: ") + Path.GetFileName(path);
+                if (c != null) UnityEngine.Object.Destroy(c);
+                yield break;
+            }
+            f.clip = c;
+        }
+
+        IEnumerator LoadRoutine(string path)
+        {
+            loading = true;
+            if (clip != null) { src.Stop(); src.clip = null; UnityEngine.Object.Destroy(clip); clip = null; }
+            loadedPath = "";
+
+            var f = new Fetch();
+            var it = FetchRoutine(path, f);
+            while (it.MoveNext()) yield return it.Current;
+
+            if (f.clip == null)
+            {
+                Status = f.error;
+                failedPath = path;
+                failedMsg = f.error;
                 loading = false;
                 yield break;
             }
 
+            clip = f.clip;
             src.clip = clip;
             loadedPath = path;
+            failedPath = "";
             curTrack = -1;              // 強迫下一幀重新對位
             Status = Lang.T("已載入 ") + Path.GetFileName(path)
                      + "  " + clip.length.ToString("F1") + "s / " + clip.frequency + "Hz";
             loading = false;
+        }
+
+        /// <summary>在背景把下一段的音檔讀好，放在 nextClip 等交界時換過去。</summary>
+        IEnumerator PreloadRoutine(string path)
+        {
+            nextLoading = true;
+            nextLoadingPath = path;
+            DropNext();
+            int my = nextGen;
+
+            var f = new Fetch();
+            var it = FetchRoutine(path, f);
+            while (it.MoveNext()) yield return it.Current;
+
+            nextLoading = false;
+            nextLoadingPath = "";
+            if (my != nextGen)
+            {
+                // 讀到一半被取消（換了配音、換了設定檔）→ 丟掉
+                if (f.clip != null) UnityEngine.Object.Destroy(f.clip);
+                yield break;
+            }
+            if (f.clip == null) { failedPath = path; failedMsg = f.error; yield break; }
+            nextClip = f.clip;
+            nextPath = path;
         }
 
         public string LoadedName()

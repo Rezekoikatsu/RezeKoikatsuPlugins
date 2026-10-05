@@ -31,6 +31,14 @@ namespace StudioCutScene
         public float videoStart = -1f;
         public float videoEnd = -1f;
 
+        // 多張卡接成一張時用（各卡的影片、音檔不合併）：
+        //   source —— 這一段的「共用來源片」。空的就用設定檔最上層的 videoFile。
+        //             跟 video 不一樣：video 是整支播完，source 只播 videoStart～videoEnd。
+        //   track  —— 過場期間沿用哪一條音軌的音檔（tracks 的索引）。
+        //             -1 = 目前載入的那一個（單一音檔的設定檔一直是這樣）。
+        public string source = "";
+        public int track = -1;
+
         [NonSerialized] public bool done;
     }
 
@@ -49,6 +57,47 @@ namespace StudioCutScene
         // 場景有「時間流速」軌道時，非用不可 —— 否則誤差會一路累積。
         public float[] anchorT = new float[0];
         public float[] anchorA = new float[0];
+
+        // 這一段自己的配音檔。多張卡接成一張、各卡的音檔不合併時用：
+        // 每一段是原本那張卡的音檔，播到哪一段就換哪個檔。
+        //   fileNames[i] 這個配音版本 → filePaths[i] 這個檔
+        // 有填的話 "@" / "@名稱" 就在這裡找（找不到那個名稱就用第一個），
+        // 配音對照表也改用這一段自己的 maps —— 最上層的 variantFiles / variantMaps
+        // 是另一個音檔的秒數，套過來一定錯。
+        public string[] fileNames = new string[0];
+        public string[] filePaths = new string[0];
+        public VariantMap[] maps = new VariantMap[0];
+
+        public bool HasFiles
+        {
+            get { return fileNames != null && filePaths != null
+                         && fileNames.Length > 0 && filePaths.Length >= fileNames.Length; }
+        }
+
+        /// <summary>這一段實際會用哪個配音名稱：有那個名稱就用它，沒有就用第一個。</summary>
+        public string PickName(string want)
+        {
+            if (!HasFiles) return want;
+            for (int i = 0; i < fileNames.Length; i++)
+                if (fileNames[i] == want) return want;
+            return fileNames[0];
+        }
+
+        public string FileFor(string want)
+        {
+            if (!HasFiles) return "";
+            for (int i = 0; i < fileNames.Length; i++)
+                if (fileNames[i] == want) return filePaths[i];
+            return filePaths[0];
+        }
+
+        public bool HasName(string want)
+        {
+            if (!HasFiles) return false;
+            for (int i = 0; i < fileNames.Length; i++)
+                if (fileNames[i] == want) return true;
+            return false;
+        }
     }
 
     /// <summary>
@@ -151,7 +200,7 @@ namespace StudioCutScene
     {
         public const string GUID = "reze.studio.cutscene";
         public const string NAME = "Studio CutScene";
-        public const string VERSION = "1.13.1";
+        public const string VERSION = "1.14.0";
 
         // 對應折線只擋「倒退」，不擋「陡」。
         // 斜率 = 該處的 1/timeScale：卡片把時間流速調到 0.03（近乎定格）時
@@ -1903,8 +1952,14 @@ namespace StudioCutScene
             // 過場的聲音沿用音軌（原始音檔那一段）時，就不能把全域音訊暫停掉，
             // 改成讓音軌自由播 —— 過場長度本來就等於那段音訊的長度，接回去剛好吻合。
             var tp = TrackPlayer.Instance;
+            // 多張卡接起來的設定檔：這一段過場的聲音在「它那張卡的音檔」裡，
+            // 不一定是現在載入的那個（開場排在卡片交界，這時載著的還是上一張卡的）。
+            AudioTrack cutTrack = (e.track >= 0 && cfg.tracks != null && e.track < cfg.tracks.Length)
+                                  ? cfg.tracks[e.track] : null;
             bool useTrack = e.useTrackAudio && string.IsNullOrEmpty(e.audio)
-                            && tp != null && tp.HasClip && cfg.tracksEnabled;
+                            && tp != null && cfg.tracksEnabled
+                            && (tp.HasClip || cutTrack != null);
+            bool pinned = false;
 
             try
             {
@@ -1917,6 +1972,26 @@ namespace StudioCutScene
                 TimelineBridge.Hold();
                 cutResumeWanted = false;
                 if (cfg.freezeTimeScale) { Time.timeScale = 0f; scaleSetByUs = true; }
+
+                // 指定了音軌 → 先確定那個音檔已經載入。通常快到交界時就預載好了，
+                // 這裡只是保險；真的要等的話時間軸已經釘住，不會跑掉。
+                if (useTrack && cutTrack != null)
+                {
+                    tp.Pin(cutTrack);
+                    pinned = true;
+                    float w0 = Time.realtimeSinceStartup;
+                    while (!tp.PinReady && !tp.PinFailed
+                           && Time.realtimeSinceStartup - w0 < 20f)
+                        yield return null;
+                    if (!tp.PinReady)
+                    {
+                        Logger.LogWarning("[CutScene] 過場 @" + e.t.ToString("F2")
+                                          + " 的音檔載不進來，這一段過場沒有聲音：" + tp.Status);
+                        tp.EndFreeRun();
+                        pinned = false;
+                        useTrack = false;
+                    }
+                }
 
                 // 音軌的自由播掛在「影片真的開始播」那一刻，不是現在 ——
                 // 中間還有 Prepare / seek，先啟動的話音訊會領先那段時間。
@@ -1953,7 +2028,7 @@ namespace StudioCutScene
             }
             finally
             {
-                if (useTrack && tp != null) tp.EndFreeRun();
+                if ((useTrack || pinned) && tp != null) tp.EndFreeRun();
                 if (audioPausedByUs && !manualAudioPause) AudioListener.pause = false;
                 if (scaleSetByUs) Time.timeScale = savedScale <= 0f ? 1f : savedScale;
                 audioPausedByUs = false;
@@ -2017,6 +2092,64 @@ namespace StudioCutScene
             return s;
         }
 
+        /// <summary>
+        /// 讀一份配音對照表：{ "配音名稱": [[主配音秒, 這一版的秒], ...] }。
+        /// 最上層的 variantMaps 和每條音軌自己的 maps 是同一個格式，共用這裡。
+        /// </summary>
+        VariantMap[] ParseMaps(JNode vm, string where)
+        {
+            var maps = new System.Collections.Generic.List<VariantMap>();
+            if (vm != null && vm.Kind == JNode.OBJ && vm.Obj != null)
+            {
+                foreach (var kv in vm.Obj)
+                {
+                    JNode arr = kv.Value;
+                    if (arr == null || arr.Kind != JNode.ARR) continue;
+                    var rt = new System.Collections.Generic.List<float>();
+                    var ot = new System.Collections.Generic.List<float>();
+                    for (int k = 0; k < arr.Count; k++)
+                    {
+                        JNode pr = arr.At(k);
+                        if (pr == null || pr.Kind != JNode.ARR || pr.Count < 2) continue;
+                        JNode a0 = pr.At(0), a1 = pr.At(1);
+                        if (a0 == null || a1 == null
+                            || a0.Kind != JNode.NUM || a1.Kind != JNode.NUM) continue;
+                        rt.Add((float)a0.Num); ot.Add((float)a1.Num);
+                    }
+                    // 依主配音秒數排序（手改時順序寫錯也不會壞）
+                    for (int x = 1; x < rt.Count; x++)
+                        for (int y = x; y > 0 && rt[y] < rt[y - 1]; y--)
+                        {
+                            float f0 = rt[y]; rt[y] = rt[y - 1]; rt[y - 1] = f0;
+                            float f1 = ot[y]; ot[y] = ot[y - 1]; ot[y - 1] = f1;
+                        }
+                    // 兩邊都必須嚴格遞增：時間只會往前走。
+                    // 倒退的點一定是量錯或抄錯，留著會讓那一帶的音訊來回跳。
+                    var kr = new System.Collections.Generic.List<float>();
+                    var ko = new System.Collections.Generic.List<float>();
+                    int bad = 0;
+                    for (int x = 0; x < rt.Count; x++)
+                    {
+                        if (kr.Count > 0
+                            && (rt[x] - kr[kr.Count - 1] <= 1e-6f
+                                || ot[x] - ko[ko.Count - 1] <= -1e-6f))
+                        { bad++; continue; }
+                        kr.Add(rt[x]); ko.Add(ot[x]);
+                    }
+                    if (bad > 0)
+                        Logger.LogWarning("[CutScene] " + where + "配音對照「" + kv.Key + "」丟掉 "
+                                          + bad + " 個倒退的點，剩 " + kr.Count + " 點。");
+                    if (kr.Count == 0) continue;
+                    var m = new VariantMap();
+                    m.name  = kv.Key;
+                    m.refT  = kr.ToArray();
+                    m.outT  = ko.ToArray();
+                    maps.Add(m);
+                }
+            }
+            return maps.ToArray();
+        }
+
         void LoadConfig(string path)
         {
             path = CleanPath(path);
@@ -2063,59 +2196,7 @@ namespace StudioCutScene
                 // variantMaps: { "配音名稱": [[主配音秒, 這一版的秒], ...] }
                 // 整個欄位不在、或某個配音沒列進去，就是「跟主配音同步」——
                 // 舊的 cutscene.json 因此完全不受影響。
-                {
-                    JNode vm = root.Get("variantMaps");
-                    var maps = new System.Collections.Generic.List<VariantMap>();
-                    if (vm != null && vm.Kind == JNode.OBJ && vm.Obj != null)
-                    {
-                        foreach (var kv in vm.Obj)
-                        {
-                            JNode arr = kv.Value;
-                            if (arr == null || arr.Kind != JNode.ARR) continue;
-                            var rt = new System.Collections.Generic.List<float>();
-                            var ot = new System.Collections.Generic.List<float>();
-                            for (int k = 0; k < arr.Count; k++)
-                            {
-                                JNode pr = arr.At(k);
-                                if (pr == null || pr.Kind != JNode.ARR || pr.Count < 2) continue;
-                                JNode a0 = pr.At(0), a1 = pr.At(1);
-                                if (a0 == null || a1 == null
-                                    || a0.Kind != JNode.NUM || a1.Kind != JNode.NUM) continue;
-                                rt.Add((float)a0.Num); ot.Add((float)a1.Num);
-                            }
-                            // 依主配音秒數排序（手改時順序寫錯也不會壞）
-                            for (int x = 1; x < rt.Count; x++)
-                                for (int y = x; y > 0 && rt[y] < rt[y - 1]; y--)
-                                {
-                                    float f0 = rt[y]; rt[y] = rt[y - 1]; rt[y - 1] = f0;
-                                    float f1 = ot[y]; ot[y] = ot[y - 1]; ot[y - 1] = f1;
-                                }
-                            // 兩邊都必須嚴格遞增：時間只會往前走。
-                            // 倒退的點一定是量錯或抄錯，留著會讓那一帶的音訊來回跳。
-                            var kr = new System.Collections.Generic.List<float>();
-                            var ko = new System.Collections.Generic.List<float>();
-                            int bad = 0;
-                            for (int x = 0; x < rt.Count; x++)
-                            {
-                                if (kr.Count > 0
-                                    && (rt[x] - kr[kr.Count - 1] <= 1e-6f
-                                        || ot[x] - ko[ko.Count - 1] <= -1e-6f))
-                                { bad++; continue; }
-                                kr.Add(rt[x]); ko.Add(ot[x]);
-                            }
-                            if (bad > 0)
-                                Logger.LogWarning("[CutScene] 配音對照「" + kv.Key + "」丟掉 "
-                                                  + bad + " 個倒退的點，剩 " + kr.Count + " 點。");
-                            if (kr.Count == 0) continue;
-                            var m = new VariantMap();
-                            m.name  = kv.Key;
-                            m.refT  = kr.ToArray();
-                            m.outT  = ko.ToArray();
-                            maps.Add(m);
-                        }
-                    }
-                    c.variantMaps = maps.ToArray();
-                }
+                c.variantMaps = ParseMaps(root.Get("variantMaps"), "");
 
                 c.tracksEnabled = root.B("tracksEnabled", true);
                 c.trackVolume   = root.F("trackVolume", 1f);
@@ -2144,6 +2225,27 @@ namespace StudioCutScene
                         tr.offset = e.F("offset", 0f);
                         tr.volume = e.F("volume", 1f);
                         tr.mute   = e.B("mute", false);
+
+                        // files: { "配音名稱": "這一段的音檔", ... } —— 這一段自己的配音檔
+                        // maps : 同 variantMaps 的格式，秒數是這一段自己那個音檔的
+                        {
+                            JNode fn = e.Get("files");
+                            if (fn != null && fn.Kind == JNode.OBJ && fn.Obj != null)
+                            {
+                                var nm = new System.Collections.Generic.List<string>();
+                                var fp = new System.Collections.Generic.List<string>();
+                                foreach (var kv in fn.Obj)
+                                {
+                                    if (kv.Value == null || kv.Value.Kind != JNode.STR) continue;
+                                    string fpath = CleanPath(kv.Value.Str);
+                                    if (fpath.Length == 0) continue;
+                                    nm.Add(kv.Key); fp.Add(fpath);
+                                }
+                                tr.fileNames = nm.ToArray();
+                                tr.filePaths = fp.ToArray();
+                            }
+                            tr.maps = ParseMaps(e.Get("maps"), "音軌 " + i + " 的");
+                        }
 
                         // anchors: [[timeline秒, 音檔秒], ...]
                         JNode an = e.Get("anchors");
@@ -2235,6 +2337,8 @@ namespace StudioCutScene
                         ce.fadeOutOv     = e.F("fadeOut", -1f);
                         ce.videoStart    = e.F("videoStart", -1f);
                         ce.videoEnd      = e.F("videoEnd", -1f);
+                        ce.source        = CleanPath(e.S("source", ""));
+                        ce.track         = e.I("track", -1);
                         if (ce.videoStart >= 0f && ce.videoEnd > ce.videoStart && ce.durationSec <= 0f)
                             ce.durationSec = ce.videoEnd - ce.videoStart;
                     }
@@ -2273,15 +2377,49 @@ namespace StudioCutScene
         void CheckFiles()
         {
             videoOk = string.IsNullOrEmpty(cfg.videoFile) || Exists(cfg.videoFile);
-            int n = cfg.variantFiles == null ? 0 : cfg.variantFiles.Length;
+            // 過場自己帶來源片的（多張卡接起來的設定檔），每一支都要在
+            if (cfg.cuts != null)
+                foreach (var ce in cfg.cuts)
+                    if (ce != null && !ce.skip && !string.IsNullOrEmpty(ce.source) && !Exists(ce.source))
+                        videoOk = false;
+
+            // 有任何一條音軌自己帶音檔 → 這份設定檔是「每一段各自的音檔」
+            multiFile = false;
+            if (cfg.tracks != null)
+                foreach (var tr in cfg.tracks)
+                    if (tr != null && tr.HasFiles) { multiFile = true; break; }
+
+            int n = cfg.variantNames == null ? 0 : cfg.variantNames.Length;
+            if (!multiFile) n = cfg.variantFiles == null ? 0 : cfg.variantFiles.Length;
             variantOk = new bool[n];
             variantLen = new float[n];
             for (int i = 0; i < n; i++)
             {
-                variantOk[i] = Exists(cfg.variantFiles[i]);
-                variantLen[i] = variantOk[i] ? WavSeconds(cfg.variantFiles[i]) : -1f;
+                if (!multiFile)
+                {
+                    variantOk[i] = Exists(cfg.variantFiles[i]);
+                    variantLen[i] = variantOk[i] ? WavSeconds(cfg.variantFiles[i]) : -1f;
+                    continue;
+                }
+                // 每一段各自的音檔：這個配音版本在每一段要用的檔都在才算好
+                string name = cfg.variantNames[i];
+                bool ok = true;
+                foreach (var tr in cfg.tracks)
+                {
+                    if (tr == null || tr.mute) continue;
+                    string f;
+                    if (tr.HasFiles) f = tr.FileFor(name);
+                    else if (!string.IsNullOrEmpty(tr.audio) && tr.audio[0] != '@') continue;   // 寫死路徑的不歸這裡管
+                    else f = (cfg.variantFiles != null && i < cfg.variantFiles.Length) ? cfg.variantFiles[i] : "";
+                    if (!Exists(f)) { ok = false; break; }
+                }
+                variantOk[i] = ok;
+                variantLen[i] = -1f;      // 每一段長度都不同，沒有「這一版的長度」可言
             }
         }
+
+        /// <summary>這份設定檔是不是「每一段音軌各自帶音檔」（多張卡接起來、音檔不合併）。</summary>
+        bool multiFile;
 
         /// <summary>
         /// WAV 的長度（秒）：只讀檔頭（fmt 的 byteRate、data 的大小），不載入音訊。
@@ -2333,6 +2471,7 @@ namespace StudioCutScene
         /// </summary>
         bool SameLengthAsRef(int v)
         {
+            if (multiFile) return true;     // 對照表跟著每一段走，這裡沒辦法也不需要比
             if (variantLen == null || cfg.variantNames == null || v < 0 || v >= variantLen.Length) return false;
             string rv = string.IsNullOrEmpty(cfg.refVariant)
                         ? (cfg.variantNames.Length > 0 ? cfg.variantNames[0] : "")
@@ -2355,6 +2494,19 @@ namespace StudioCutScene
         string MapMark(string name)
         {
             if (string.IsNullOrEmpty(name)) return "";
+            if (multiFile)
+            {
+                // 每一段各自的對照表：只要有一段在換算就標 ⇄，其餘不標
+                foreach (var tr in cfg.tracks)
+                {
+                    if (tr == null || tr.maps == null || !tr.HasName(name)) continue;
+                    for (int i = 0; i < tr.maps.Length; i++)
+                        if (tr.maps[i] != null && tr.maps[i].name == name
+                            && tr.maps[i].refT != null && tr.maps[i].refT.Length > 0)
+                            return "⇄";
+                }
+                return "";
+            }
             string rv = string.IsNullOrEmpty(cfg.refVariant)
                         ? (cfg.variantNames != null && cfg.variantNames.Length > 0
                            ? cfg.variantNames[0] : "")

@@ -64,6 +64,19 @@ or written by hand in the format below.
 the panel. When a version has a different edit (missing intro, say), `variantMaps` stores "main voice time →
 this version's time" and switching converts automatically. Versions as long as the main voice need no map.
 
+**Several cards joined into one** (since 1.14.0; this is what kkscenebridge's "Merge scenes" writes): each card's
+audio and video files stay separate, and the plugin switches files as playback moves from segment to segment.
+
+- A track can carry its own audio files: `"files": { "voice name": "this segment's audio file", … }`, plus its own
+  `"maps"` (same format as `variantMaps`, in that file's seconds). When present, `"@"` is looked up there, and the
+  voice buttons on the panel still switch versions
+- When the next segment uses a different audio file, it is read in the background shortly before the boundary,
+  so there is no gap
+- A cutscene can carry its own source video: `"source": "video path"` (used with `videoStart` / `videoEnd`; unlike
+  `video`, which plays the whole file), plus `"track": track index` — whose audio file to keep playing during
+  the cutscene
+- Configs without these fields behave exactly as before
+
 kkscenebridge also writes a `pairs` array into the json holding each segment's head and tail
 correspondence points. If a segment's `anchors` array ends up empty (which happens when the
 generator can't solve the curve), the plugin fills the head and tail back in from `pairs`,

@@ -375,8 +375,10 @@ namespace StudioCutScene
             lastSeekSec = 0f;
             preparedFor = null;
 
-            // 每段自己的影片檔，或整支共用來源片（videoStart/videoEnd 指定區間）
-            string file = !string.IsNullOrEmpty(e.video) ? e.video : SharedFile;
+            // 每段自己的影片檔，或整支共用來源片（videoStart/videoEnd 指定區間）。
+            // 多張卡接起來的設定檔，每一段可以自己指定來源片（source），沒指定才用整份共用的。
+            string shared = !string.IsNullOrEmpty(e.source) ? e.source : SharedFile;
+            string file = !string.IsNullOrEmpty(e.video) ? e.video : shared;
             sharedMode = string.IsNullOrEmpty(e.video) && e.videoStart >= 0f;
 
             if (string.IsNullOrEmpty(file) || !File.Exists(file))

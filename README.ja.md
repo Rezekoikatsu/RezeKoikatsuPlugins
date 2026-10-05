@@ -56,6 +56,8 @@ CharaStudio を VR で使うための操作一式。**Meta Quest 3 でのみ試�
 キャラカードのオフライン合成：アクセ追加、コーデ移植、カード修復。**v1.0.1 から `kkscenebridge.exe` の「キャラカード合成」タブになりました**。起動する exe は 1 つだけです。
 `StudioCharTools.zip` に `kkbridge.exe` は入っていません。F6 のカード合成は `kkscenebridge.exe` を起動しておく必要があります。単体版のソースは [`kkbridge/`](kkbridge/) に残してあります。
 
+kkscenebridge を使いたくない場合は、[v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) の `StudioCharTools.zip` に入っている単体版の `kkbridge.exe` が現在の F6 でもそのまま使えます。ただし両方を同時に起動しないでください（ジョブが二重に処理されます）。
+
 ---
 
 ## 📋 必要なもの

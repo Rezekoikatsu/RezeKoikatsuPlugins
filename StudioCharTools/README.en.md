@@ -169,6 +169,7 @@ companion external tool **kkscenebridge** (the formerly separate `kkbridge.exe` 
 - The job folder defaults to `UserData\chara\female\Temp`; with defaults on both sides there is nothing to set. If you change it, F6's Settings and kkscenebridge must point at the same folder
 - Set the game root once in kkscenebridge's **Settings** tab and the folders used for merging are filled in automatically
 - See [`kkscenebridge/`](../kkscenebridge/README.en.md#chara-card-merge-formerly-kkbridge)
+- If you would rather not use kkscenebridge, download the standalone `kkbridge.exe` from [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) (inside its `StudioCharTools.zip`); it works the same as before. Don't run both at the same time, or every job is done twice
 
 ## Settings
 

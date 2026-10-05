@@ -153,6 +153,7 @@ https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 - 工單資料夾預設是 `UserData\chara\female\Temp`，兩邊都用預設就不用設定；要改的話 F6 的設置和 kkscenebridge 要指到同一個資料夾
 - kkscenebridge 的「設定」分頁填好遊戲根目錄，合卡用的資料夾就會自動帶好
 - 說明見 [`kkscenebridge/`](../kkscenebridge/README.md#人物卡合卡原本的-kkbridge)
+- 不想用 kkscenebridge 的話，可以到 [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) 下載獨立版的 `kkbridge.exe`（在那一版的 `StudioCharTools.zip` 裡），用法跟以前一樣；兩個不要同時開，不然工單會被做兩次
 
 ## 設定
 

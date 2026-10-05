@@ -6,7 +6,8 @@
 
 > [!NOTE]
 > **v1.0.1 から kkbridge は [kkscenebridge](../kkscenebridge/README.ja.md) の「キャラカード合成」タブに統合されました**。機能とジョブの形式は同じです。
-> Releases に `kkbridge.exe` は含まれません。F6 のカード合成には `kkscenebridge.exe` を起動してください。ここには単体版のソースと説明を残しています。
+> 新しい Releases に `kkbridge.exe` は含まれません。F6 のカード合成は `kkscenebridge.exe` を起動しておけば使えます。
+> **kkscenebridge を使いたくない場合は、[v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) の `StudioCharTools.zip` に入っている単体版の `kkbridge.exe` をダウンロードしてください。**現在の F6 でもそのまま使えます。ただし両方を同時に起動しないでください（ジョブが二重に処理されます）。
 
 コイカツのキャラカードをオフラインで合成するツールです。`kkbridge.exe` が GUI、`kkmerge.exe` は同じエンジンの
 コマンドライン版です。F6（Studio Character Tools）のカード合成機能はこれを使います。

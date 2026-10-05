@@ -6,7 +6,8 @@
 
 > [!NOTE]
 > **Since v1.0.1 kkbridge is the "Chara card merge" tab of [kkscenebridge](../kkscenebridge/README.en.md)**; features and the job format are unchanged.
-> Releases no longer ship `kkbridge.exe` — run `kkscenebridge.exe` for F6's card merging. This folder keeps the source and docs of the standalone version.
+> Newer releases no longer ship `kkbridge.exe` — F6's card merging works with `kkscenebridge.exe` running.
+> **If you would rather not use kkscenebridge, download the standalone `kkbridge.exe` from [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0)** (inside its `StudioCharTools.zip`); it still works with the current F6. Just don't run both at the same time, or every job is done twice.
 
 Offline character card merging for Koikatsu. `kkbridge.exe` is the GUI; `kkmerge.exe` is the same engine
 as a command-line tool. F6 (Studio Character Tools) uses it for its card-merging features.

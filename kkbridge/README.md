@@ -6,11 +6,12 @@
 
 > [!NOTE]
 > **v1.0.1 起 kkbridge 已經併進 [kkscenebridge](../kkscenebridge/README.md#人物卡合卡原本的-kkbridge) 的「人物卡合卡」分頁**，功能和工單格式都沒變。
-> Releases 不再附 `kkbridge.exe`，F6 的合卡功能請改開 `kkscenebridge.exe`。這裡是獨立版的原始碼與說明，留著給想自己打包的人。
+> 新版的 Releases 不再附 `kkbridge.exe`，F6 的合卡功能開著 `kkscenebridge.exe` 就能用。
+> **不想用 kkscenebridge 的話，可以到 [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) 下載獨立版的 `kkbridge.exe`**（在那一版的 `StudioCharTools.zip` 裡），新版 F6 照樣可以搭配；兩個不要同時開，不然工單會被做兩次。
 
 恋活角色卡的離線合卡工具。`kkbridge.exe` 是介面,`kkmerge.exe` 是同一套引擎的命令列版。
 
-**下載**:v1.0.0 的 `StudioCharTools.zip` 裡有 `kkbridge.exe`;之後的版本請用 `kkscenebridge.exe`,或照下面「打包」自己做。
+**下載**:[v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) 的 `StudioCharTools.zip` 裡有 `kkbridge.exe`(解壓後在遊戲根目錄);之後的版本沒有附,要用就從那一版拿,或照下面「打包」自己做。
 
 ## 語言 / Language / 言語
 

@@ -56,6 +56,8 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 角色卡離線合卡：附加飾品、移植整套換裝、修卡。**v1.0.1 起併進 `kkscenebridge.exe` 的「人物卡合卡」分頁**，只要開一個 exe；
 `StudioCharTools.zip` 不再附 `kkbridge.exe`，F6 的合卡功能改成要開著 `kkscenebridge.exe`。獨立版的原始碼仍留在 [`kkbridge/`](kkbridge/)。
 
+不想用 kkscenebridge 的話，可以到 [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) 下載獨立版的 `kkbridge.exe`（在那一版的 `StudioCharTools.zip` 裡），新版 F6 照樣可以搭配；兩個不要同時開，不然工單會被做兩次。
+
 ---
 
 ## 📋 需求

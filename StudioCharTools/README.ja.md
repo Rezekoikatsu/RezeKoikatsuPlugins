@@ -157,6 +157,7 @@ https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 - ジョブフォルダの既定は `UserData\chara\female\Temp` です。両方とも既定のままなら設定不要。変える場合は F6 の設定と kkscenebridge で同じフォルダを指定してください
 - kkscenebridge の「設定」タブでゲームのルートを一度指定すれば、合成に使うフォルダは自動で入ります
 - 説明は [`kkscenebridge/`](../kkscenebridge/README.ja.md#キャラカード合成旧-kkbridge) を参照
+- kkscenebridge を使いたくない場合は、[v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) の `StudioCharTools.zip` に入っている単体版の `kkbridge.exe` を使えます（使い方は以前と同じ）。両方を同時に起動しないでください（ジョブが二重に処理されます）
 
 ## 設定
 

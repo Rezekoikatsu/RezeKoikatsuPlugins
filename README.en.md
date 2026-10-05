@@ -57,6 +57,8 @@ Everything for using CharaStudio in VR. **Only tried on a Meta Quest 3; other he
 Offline character card merging: add accessories, transfer outfits, repair cards. **Since v1.0.1 it is the "Chara card merge" tab of `kkscenebridge.exe`**, so there is only one exe to run;
 `StudioCharTools.zip` no longer contains `kkbridge.exe`, and F6's card merging needs `kkscenebridge.exe` running instead. The source of the standalone version is still in [`kkbridge/`](kkbridge/).
 
+If you would rather not use kkscenebridge, the standalone `kkbridge.exe` from [v1.0.0](https://github.com/Rezekoikatsu/RezeKoikatsuPlugins/releases/tag/v1.0.0) (inside its `StudioCharTools.zip`) still works with the current F6 — just don't run both at the same time, or every job is done twice.
+
 ---
 
 ## 📋 Requirements

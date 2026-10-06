@@ -237,6 +237,97 @@ A('第 {0} 張沒有相機（可在設定勾「沒有相機時自動新增」）
 A('卡片的 studio 版本不一致：{0}',
   'Cards have different Studio versions: {0}',
   'カードの Studio バージョンが一致しません：{0}')
+# ---- 合併引擎裡要使用者照著做的訊息（kkscenemerge.py 用 _T 查這張表）----
+A('、',
+  ', ',
+  '、')
+A('指定要存成 {0}，但這幾張卡沒有這個版本（{1}），改用最新的',
+  'Asked to save as {0}, but none of these cards has that version ({1}); using the newest instead',
+  '{0} で保存するよう指定されましたが、このバージョンのカードがありません（{1}）。最新のバージョンを使います')
+A('{0} 個物件的動畫樣式',
+  'the animation pattern of {0} item(s)',
+  'アイテム {0} 個のアニメパターン')
+A('天空設定',
+  'sky settings',
+  '空の設定')
+A('場景的著色類型（shaderType）',
+  'the scene shader type (shaderType)',
+  'シーンのシェーダータイプ（shaderType）')
+A('  studio 版本不一致（{0}）→ 合併卡存成 {1}',
+  '  Studio versions differ ({0}) -> merged card saved as {1}',
+  '  Studio バージョンが一致しません（{0}）→ 結合カードは {1} で保存')
+A('這幾張卡的 studio 版本不一樣（{0}；1.0.x 是 Koikatsu、1.1.x 是 Koikatsu Sunshine 存的卡），合併卡存成 {1}。',
+  'These cards have different Studio versions ({0}; 1.0.x is saved by Koikatsu, 1.1.x by Koikatsu Sunshine). The merged card is saved as {1}. ',
+  'カードの Studio バージョンが違います（{0}。1.0.x はコイカツ、1.1.x はコイカツサンシャインで保存したカード）。結合カードは {1} で保存します。')
+A('新版才有的欄位不會存進去（這次會掉：{0}）。',
+  'Fields that only exist in the newer version are not saved (lost this time: {0}). ',
+  '新しいバージョンにしかない項目は保存されません（今回失われるもの：{0}）。')
+A('新版才有的欄位不會存進去（這次沒有用到那些欄位）。',
+  'Fields that only exist in the newer version are not saved (none of them were in use this time). ',
+  '新しいバージョンにしかない項目は保存されません（今回は使われていませんでした）。')
+A('較新那幾張卡裡的角色是新版格式的人物資料，遊戲讀不讀得了要進遊戲確認',
+  'The characters in the newer cards are stored in the newer character format — check in game whether they load',
+  '新しい方のカードのキャラは新しい形式のキャラデータです。読み込めるかどうかはゲームで確認してください')
+A('合併卡要用開得了 {0} 那張原卡的遊戲／外掛來開，裡面各段的角色、物件認不認得也跟單獨開原卡時一樣',
+  'Open the merged card with the game / plugins that can open the {0} source card; whether each segment\'s characters and items are recognised is the same as when that source card is opened alone',
+  '結合カードは {0} の元カードを開ける環境（ゲーム／プラグイン）で開いてください。各シーンのキャラやアイテムが認識されるかどうかは、元カードを単体で開いたときと同じです')
+A('KKPE 碰撞器隔離失敗（合併照常完成）：{0}',
+  'KKPE collider isolation failed (the merge itself completed): {0}',
+  'KKPE コライダーの分離に失敗しました（結合自体は完了）：{0}')
+A('(沒有名字)',
+  '(no name)',
+  '(名前なし)')
+A('(角色)',
+  '(character)',
+  '(キャラ)')
+A('KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」',
+  'KKPE colliders: different characters / items share the same KKPE id (uniqueId), so collider settings may land on the wrong one; use F6 "Repair collider bindings" after loading',
+  'KKPE コライダー：別のキャラ／アイテムが KKPE 内で同じ番号（uniqueId）を持っているため、コライダーの設定が別の対象に適用される可能性があります。読み込み後に F6 の「コライダー結合を一括修復」を使ってください')
+A('  KKPE 碰撞器：{0} 顆碰撞器補上 {1} 筆「別段的角色/物件不吃這顆」（不補的話別段的人整個會被它拉住）',
+  '  KKPE colliders: added {1} "disabled for other segments" entries to {0} collider(s) (without them, characters of other segments get pulled by the collider)',
+  '  KKPE コライダー：{0} 個のコライダーに「他のシーンのキャラ／アイテムには効かせない」項目を {1} 件追加しました（追加しないと他のシーンのキャラが引っ張られます）')
+A(' 等 {0} 個角色',
+  ' and others ({0} characters in total)',
+  ' ほか（合計 {0} キャラ）')
+A('KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」',
+  'KKPE colliders: {0} use hair / clothes / accessories different from the characters the collider lists know about, so only the common dynamic bones (breasts, hips, skirt…) could be disabled; the card has no list of their own hair / accessory bones. If something is still pulled after loading, use F6 "Repair collider bindings"',
+  'KKPE コライダー：{0} は、コライダーのリストにデータがあるキャラと髪型／衣装／アクセサリーが違うため、共通の揺れ物（胸・尻・スカート…）しか無効にできません。固有の髪型／アクセサリーの揺れ物はカードに一覧が無いため追加できません。読み込み後にまだ引っ張られる箇所があれば、F6 の「コライダー結合を一括修復」を使ってください')
+A('KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，這幾個沒有補；載入後如果碰撞器怪怪的，用 F6 的「一鍵修復碰撞器綁定」',
+  'KKPE colliders: different characters / items share the same KKPE id (uniqueId); those were skipped. If colliders behave oddly after loading, use F6 "Repair collider bindings"',
+  'KKPE コライダー：別のキャラ／アイテムが KKPE 内で同じ番号（uniqueId）を持っているため、それらには追加していません。読み込み後にコライダーの動きがおかしければ、F6 の「コライダー結合を一括修復」を使ってください')
+A('KKPE 碰撞器：要補的筆數超過 {0}，後面的碰撞器沒有補（載入後用 F6 的「一鍵修復碰撞器綁定」）',
+  'KKPE colliders: more than {0} entries would be needed, so the remaining colliders were left as they are (use F6 "Repair collider bindings" after loading)',
+  'KKPE コライダー：追加が必要な件数が {0} を超えたため、残りのコライダーには追加していません（読み込み後に F6 の「コライダー結合を一括修復」を使ってください）')
+A('合併後的場景名稱',
+  'Merged scene name',
+  '結合後のシーン名')
+A('留空＝自動命名（共同名稱_merge_時間）',
+  'Empty = automatic (common name_merge_time)',
+  '空欄＝自動（共通名_merge_時刻）')
+A('合併出來那張場景卡的檔名（不用打 .png）。\n留空就照以前的方式自動取名：<各卡的共同名稱>_merge_<時間>.png。\nF7 的設定檔會跟著用同一個名字。',
+  'File name of the merged scene card (no need to type .png).\nLeave empty to name it automatically as before: <common name of the cards>_merge_<time>.png.\nThe F7 config file uses the same name.',
+  '結合したシーンカードのファイル名（.png は不要）。\n空欄なら従来どおり自動で名前を付けます：<カードの共通名>_merge_<時刻>.png。\nF7 の設定ファイルも同じ名前になります。')
+A('合併後的場景名稱跟清單裡的來源卡一樣，會把來源卡蓋掉。請換一個名稱。',
+  'The merged scene name is the same as one of the source cards and would overwrite it. Choose another name.',
+  '結合後のシーン名がリスト内の元カードと同じで、上書きしてしまいます。別の名前にしてください。')
+A('（請選擇）',
+  '(choose one)',
+  '（選択してください）')
+A('⚠ 偵測到不同的 studio 版本（{0}），合併卡存成：',
+  '⚠ Different Studio versions detected ({0}). Save the merged card as:',
+  '⚠ 異なる Studio バージョンを検出しました（{0}）。結合カードの保存形式：')
+A('混用不同版本的卡可能會出問題，合併後請進遊戲確認',
+  'Mixing cards of different versions may cause problems — check the result in game',
+  'バージョンの違うカードを混ぜると問題が出ることがあります。結合後にゲームで確認してください')
+A('卡片的 studio 版本不一樣，請先在「選項」選要存成哪個版本',
+  'The cards have different Studio versions — choose which version to save as under "Options" first',
+  'カードの Studio バージョンが違います。先に「オプション」で保存するバージョンを選んでください')
+A('卡片的 studio 版本不一樣（{0}）。\n請先在「選項」選合併卡要存成哪個版本。\n\n混用不同版本的卡可能會出問題，合併後請進遊戲確認。',
+  'The cards have different Studio versions ({0}).\nChoose which version the merged card is saved as under "Options" first.\n\nMixing cards of different versions may cause problems — check the result in game.',
+  'カードの Studio バージョンが違います（{0}）。\n先に「オプション」で結合カードを保存するバージョンを選んでください。\n\nバージョンの違うカードを混ぜると問題が出ることがあります。結合後にゲームで確認してください。')
+A('合併卡只能用一個版本存。\n・存成較新的：舊卡的內容都留得住；要用開得了新版本原卡的遊戲／外掛來開。\n・存成較舊的：新版本才有的欄位不會存進去（物件的動畫樣式、天空設定、著色類型）。\n不管選哪個，另一個版本那幾段的角色、物件遊戲認不認得都要進遊戲確認。',
+  'The merged card can only be saved as one version.\n- Newer: everything from the older cards is kept; open it with the game / plugins that can open the newer source card.\n- Older: fields that only exist in the newer version are not saved (item animation pattern, sky settings, shader type).\nEither way, check in game whether the characters and items from the other version are recognised.',
+  '結合カードは 1 つのバージョンでしか保存できません。\n・新しい方：古いカードの内容はすべて残ります。新しい方の元カードを開ける環境（ゲーム／プラグイン）で開いてください。\n・古い方：新しいバージョンにしかない項目は保存されません（アイテムのアニメパターン、空の設定、シェーダータイプ）。\nどちらを選んでも、もう一方のバージョンのキャラやアイテムが認識されるかはゲームで確認してください。')
 A('{0} {1} — 恋活場景卡合併',
   '{0} {1} — Koikatsu scene card merger',
   '{0} {1} — コイカツ シーンカード結合')

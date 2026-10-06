@@ -41,7 +41,7 @@ import kklang
 kklang.set_lang(L.Current)
 
 APP_NAME = "kkscenebridge"
-VERSION = "1.1.3"
+VERSION = "1.1.4"
 RED = "#c0392b"
 
 
@@ -309,6 +309,7 @@ class MergeWorker(QObject):
                     shader_type=(int(opts["shader_type"])
                                  if str(opts.get("shader_type", "")).strip()
                                  else None),
+                    save_version=(opts.get("save_version") or None),
                     post=post)
                 note = ""
                 if opts.get("cut"):
@@ -881,9 +882,8 @@ class CardTable(QTableWidget):
             if (not (r["info"].get("cameras") or [])
                     and not r["info"].get("camera_path") and not self.auto_camera):
                 return False, T("第 {0} 張沒有相機（可在設定勾「沒有相機時自動新增」）").format(i)
-        vers = {r["info"].get("version") for r in self.rows}
-        if len(vers) > 1:
-            return False, T("卡片的 studio 版本不一致：{0}").format('、'.join(sorted(vers)))
+        # studio 版本不一樣（Koikatsu 1.0.x 和 Sunshine 1.1.x 混在一起）不在這裡擋：
+        # 主視窗的「選項」會多出一列要使用者選存成哪個版本，沒選不能執行。
         return True, ""
 
 
@@ -1117,11 +1117,45 @@ class MainWindow(QMainWindow):
 
         # 只留這一個 —— 其餘全部搬到設定頁的「詳細設定」，預設值就是常用值
         g = QGroupBox(T("選項"))
-        gl = QHBoxLayout(g)
+        gv = QVBoxLayout(g)
+
+        # 卡片的 studio 版本不一樣時才出現：一定要選一個版本來存
+        self.ver_row = QWidget()
+        vl = QHBoxLayout(self.ver_row)
+        vl.setContentsMargins(0, 0, 0, 0)
+        self.lbl_ver = QLabel()
+        self.lbl_ver.setStyleSheet("color:#c0392b; font-weight:bold;")
+        vl.addWidget(self.lbl_ver)
+        self.cmb_ver = QComboBox()
+        self.cmb_ver.setToolTip(
+            T("合併卡只能用一個版本存。\n"
+              "・存成較新的：舊卡的內容都留得住；要用開得了新版本原卡的遊戲／外掛來開。\n"
+              "・存成較舊的：新版本才有的欄位不會存進去（物件的動畫樣式、天空設定、著色類型）。\n"
+              "不管選哪個，另一個版本那幾段的角色、物件遊戲認不認得都要進遊戲確認。"))
+        self.cmb_ver.currentIndexChanged.connect(lambda _i: self.refresh_out())
+        vl.addWidget(self.cmb_ver)
+        self.lbl_ver_hint = QLabel(T("混用不同版本的卡可能會出問題，合併後請進遊戲確認"))
+        self.lbl_ver_hint.setStyleSheet("color:#777;")
+        vl.addWidget(self.lbl_ver_hint, 1)
+        self.ver_row.setVisible(False)
+        self._ver_kinds = []
+        gv.addWidget(self.ver_row)
+
+        gl = QHBoxLayout()
+        gv.addLayout(gl)
         gl.addWidget(QLabel(T("新相機名稱")))
         self.edit_cam = QLineEdit(self.settings.get("cam_name", ""))
         self.edit_cam.setPlaceholderText(T("留空＝取各場景相機的共同開頭"))
         gl.addWidget(self.edit_cam, 1)
+        # 合併後那張卡的檔名。不存進設定檔 —— 每次合併的名字都不一樣。
+        gl.addWidget(QLabel(T("合併後的場景名稱")))
+        self.edit_outname = QLineEdit()
+        self.edit_outname.setPlaceholderText(T("留空＝自動命名（共同名稱_merge_時間）"))
+        self.edit_outname.setToolTip(
+            T("合併出來那張場景卡的檔名（不用打 .png）。\n"
+              "留空就照以前的方式自動取名：<各卡的共同名稱>_merge_<時間>.png。\n"
+              "F7 的設定檔會跟著用同一個名字。"))
+        gl.addWidget(self.edit_outname, 1)
         self.chk_cut = QCheckBox(T("F7 設定（cutscene.json）一起接"))
         self.chk_cut.setChecked(bool(self.settings.get("merge_cut", True)))
         self.chk_cut.setToolTip(
@@ -1520,8 +1554,64 @@ class MainWindow(QMainWindow):
                                       if self.table.rows else "")
             if d:
                 self.out.set(d)
+        self._refresh_version_row()
         ok, why = self.table.ready()
+        if ok and getattr(self, "_ver_kinds", None) and not self.chosen_version():
+            ok, why = False, T("卡片的 studio 版本不一樣，請先在「選項」選要存成哪個版本")
         self.status.showMessage(T("就緒") if ok else why)
+
+    @staticmethod
+    def _version_label(v):
+        if str(v).startswith("1.0."):
+            return v + "（Koikatsu）"
+        if str(v).startswith("1.1."):
+            return v + "（Koikatsu Sunshine）"
+        return str(v)
+
+    def _refresh_version_row(self):
+        """清單裡的卡 studio 版本不只一種時，顯示「存成哪個版本」那一列。"""
+        if not hasattr(self, "cmb_ver"):
+            return
+        kinds = sorted({r["info"].get("version") for r in self.table.rows
+                        if r.get("info") is not None and r["info"].get("version")},
+                       key=KM._ver_key)
+        if len(kinds) < 2:
+            kinds = []
+        if kinds == self._ver_kinds:
+            return
+        keep = self.chosen_version()
+        self._ver_kinds = kinds
+        self.cmb_ver.blockSignals(True)
+        self.cmb_ver.clear()
+        if kinds:
+            self.cmb_ver.addItem(T("（請選擇）"), "")
+            for v in kinds:
+                self.cmb_ver.addItem(self._version_label(v), v)
+            i = self.cmb_ver.findData(keep) if keep else -1
+            self.cmb_ver.setCurrentIndex(i if i > 0 else 0)
+            self.lbl_ver.setText(T("⚠ 偵測到不同的 studio 版本（{0}），合併卡存成：")
+                                 .format("、".join(kinds)))
+        self.cmb_ver.blockSignals(False)
+        self.ver_row.setVisible(bool(kinds))
+
+    def custom_out_name(self):
+        """使用者填的合併後場景名稱（不含 .png）；沒填回傳空字串。
+
+        檔名不能用的字元（\\ / : * ? " < > |）換成底線，頭尾的空白和句點拿掉。
+        """
+        if not hasattr(self, "edit_outname"):
+            return ""
+        nm = self.edit_outname.text().strip()
+        if nm.lower().endswith(".png"):
+            nm = nm[:-4]
+        nm = "".join("_" if (c in '\\/:*?"<>|' or ord(c) < 32) else c for c in nm)
+        return nm.strip(" .")
+
+    def chosen_version(self):
+        """使用者選的存檔版本；版本都一樣（不用選）或還沒選時回傳空字串。"""
+        if not getattr(self, "_ver_kinds", None):
+            return ""
+        return self.cmb_ver.currentData() or ""
 
     def on_info(self, path, info):
         self.table.set_info(path, info)
@@ -1573,6 +1663,14 @@ class MainWindow(QMainWindow):
         if not ok:
             QMessageBox.warning(self, T("還不能執行"), why)
             return
+        self._refresh_version_row()
+        if self._ver_kinds and not self.chosen_version():
+            QMessageBox.warning(
+                self, T("還不能執行"),
+                T("卡片的 studio 版本不一樣（{0}）。\n請先在「選項」選合併卡要存成哪個版本。\n\n"
+                  "混用不同版本的卡可能會出問題，合併後請進遊戲確認。")
+                .format("、".join(self._ver_kinds)))
+            return
         d = self.out.text()
         if not d:
             QMessageBox.warning(self, T("還不能執行"), T("請先指定輸出資料夾"))
@@ -1585,6 +1683,26 @@ class MainWindow(QMainWindow):
             return
         self.out.set(str(p))
         out = str(p / auto_out_name([r["name"] for r in self.table.rows]))
+        custom = self.custom_out_name()
+        if custom:
+            out = str(p / (custom + ".png"))
+            same = os.path.normcase(os.path.abspath(out))
+            if any(os.path.normcase(os.path.abspath(r["path"])) == same for r in self.table.rows):
+                QMessageBox.warning(self, T("還不能執行"),
+                                    T("合併後的場景名稱跟清單裡的來源卡一樣，會把來源卡蓋掉。請換一個名稱。"))
+                return
+            # 同名的卡、或同名的 F7 設定檔已經在那裡的話先問（自動命名帶時間，不會撞到）
+            clash = [out] if os.path.isfile(out) else []
+            if self.chk_cut.isChecked():
+                jd = self.settings.get("cut_out_dir", "") or str(p)
+                jp = os.path.join(jd, custom + ".cutscene.json")
+                if os.path.isfile(jp):
+                    clash.append(jp)
+            if clash and QMessageBox.question(
+                    self, T("已經有這個檔"),
+                    T("%s 已存在，要覆蓋嗎？") % "、".join(os.path.basename(x) for x in clash)
+                    ) != QMessageBox.StandardButton.Yes:
+                return
         self.save_ui_settings()
         opts = {
             "gap": self.spin_gap.value(),
@@ -1605,6 +1723,7 @@ class MainWindow(QMainWindow):
             "enable_all_tracks": self.chk_enall.isChecked(),
             "cam_tracks": self.chk_camtr.isChecked(),
             "cam_name": self.edit_cam.text().strip(),
+            "save_version": self.chosen_version(),
             "audio_root": self.settings.get("audio_root", ""),
             "audio_rel_prefix": self.settings.get("audio_rel_prefix", ""),
             "audio_dir": self.settings.get("audio_dir", ""),

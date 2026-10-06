@@ -49,6 +49,14 @@ The tool then does all of this:
   a `[MAPINFO]` / `[ENV]` marker folder. With F7 installed they switch automatically during playback;
   **unchecking a marker folder turns that segment's map off**
 - Already-prepared cards (with `(CAM)` at the root) are used as-is
+- (1.1.4) **Merged scene name**: type the file name of the merged card under "Options"; leave it empty for the automatic
+  `<common name>_merge_<time>.png`. An existing file is only overwritten after you confirm, and a name equal to a source card
+  is refused; the F7 config file uses the same name
+- (1.1.4) **Cards saved by different studio versions can be merged together** (Koikatsu saves 1.0.4.2, Sunshine saves 1.1.2.1):
+  an extra row appears under "Options" where you must choose which version the merged card is saved as.
+  Newer: everything from the older cards is kept; open it with the game / plugins that can open the newer source card.
+  Older: fields that only exist in the newer version are not saved (item animation pattern, sky settings, shader type); the log lists what was dropped.
+  Either way, check in game whether the characters and items from the other version are recognised
 - (1.1.3) KKPE colliders: a "Dynamic Bone Collider" item affects **every dynamic bone of any character that is not in its list**.
   After merging, characters of the other segments are not in the list, so their hair / breasts / skirt get pulled by a collider
   that belongs to another segment. The merge now adds "disabled" entries for the other segments' characters and items.

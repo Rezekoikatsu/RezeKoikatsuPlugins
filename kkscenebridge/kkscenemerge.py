@@ -43,6 +43,15 @@ def log(*a):
     print(*a, file=sys.stderr)
 
 
+# 給使用者看、需要他照著做的訊息（版本不一致、碰撞器…）走介面的翻譯表；
+# 這支也可以單獨當命令列工具跑，所以翻譯表不在的時候就原樣用中文。
+try:
+    from kksblang import T as _T
+except Exception:                                           # noqa: BLE001
+    def _T(zh):
+        return zh
+
+
 # ================================================================ 小工具
 def _inner(kkex, guid, key):
     vb = kkex.get(guid, key)
@@ -652,9 +661,8 @@ def _merge_into(A, B, off, warn, group_name_a=None, group_name_b=None,
 
     回傳 B 的包裝資料夾 / (CAM) 根資料夾在合併後的 dicKey。
     """
-    if A.version != B.version:
-        raise SystemExit(f"版本不同（{A.version} vs {B.version}），"
-                         f"先用同一個 studio 各存一次再合併")
+    # studio 版本不同（Koikatsu 1.0.x / Sunshine 1.1.x）也照搬：節點讀進來之後是同一種形狀，
+    # 存檔時統一用最新的版本寫（merge_many 最後的 unify_scene_version）。
 
     a_nodes = S.node_dickeys(A.objects)
     b_nodes_old = S.node_dickeys(B.objects)
@@ -904,7 +912,8 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
                enable_tracks=True, post=None, sync_static=True,
                fov_track=True, shader_type=None,
                tl_clean=False, tl_mismatch=True, nc_enable_tracks=False,
-               clear_frame=True, enable_all_tracks=True, collider_fix=True):
+               clear_frame=True, enable_all_tracks=True, collider_fix=True,
+               save_version=None):
     """把一串已經 prep 好的場景卡按順序接成一張。
 
     第一張是底卡，其餘照順序接在後面。中間的搬運一張一張疊（省記憶體），
@@ -933,6 +942,10 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
     # 的話，後面幾段的材質/FX 會整段用底卡那一套著色（頭髮、眼睛最看得出來），
     # 而原卡單獨打開是好的。這裡把各段的值記下來，最後不一致就講出來。
     shaders = [(1, _src_label(paths[0], 1), getattr(A.sc, "shaderType", None))]
+    # 各張卡的 studio 版本（Koikatsu 是 1.0.4.2、Sunshine 是 1.1.2.1）。
+    # 不一樣的話最後整張存成最新的那個，見 unify_scene_version。
+    vers = [(_src_label(paths[0], 1), A.version)]
+    newest = (_ver_key(A.version), getattr(A.sc, "skyInfo", None))
     # 每張原卡一載入時的相機縮放 / FOV（原卡沒有這兩條軌道時用這個值）
     cards = [{"off": 0.0, "label": _src_label(paths[0], 1), "seg0": 0,
               "saved": saved_camera_values(A), "mapinfo": saved_map_info(A)}]
@@ -955,6 +968,9 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
         log(f"接上第 {i} 張 {_src_label(p, i)}")
         B = _to_scene(p)
         shaders.append((i, _src_label(p, i), getattr(B.sc, "shaderType", None)))
+        vers.append((_src_label(p, i), B.version))
+        if _ver_key(B.version) > newest[0]:
+            newest = (_ver_key(B.version), getattr(B.sc, "skyInfo", None))
         if tl_clean or tl_mismatch:
             clean_broken_timeline(B, _src_label(p, i), warn,
                                   known=tl_clean, mismatch=tl_mismatch)
@@ -990,6 +1006,7 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
             cam_roots.append(r["cam"])
         card_end = off + b_dur
         del B
+    unify_scene_version(A, vers, newest[1], warn, target=save_version)
     total = card_end
     starts = [x["start"] for x in segs]
     ends = [x["end"] for x in segs]
@@ -1415,7 +1432,8 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
         try:
             isolate_colliders(A, warn, wraps)
         except Exception as e:                              # noqa: BLE001
-            warn.append(f"KKPE 碰撞器隔離失敗（合併照常完成）：{type(e).__name__}: {e}")
+            warn.append(_T("KKPE 碰撞器隔離失敗（合併照常完成）：{0}")
+                        .format("%s: %s" % (type(e).__name__, e)))
     elif collider_fix:
         _skip_note("colliderfix", warn)
 
@@ -1455,6 +1473,83 @@ def merge_many(paths, out_path, gap=0.01, park=True, park_lead=0.0, group=True,
     return {"out": out_path, "size": size, "duration": total,
             "warnings": sorted(seen),
             "cards": [{"off": float(c["off"]), "label": c["label"]} for c in cards]}
+
+
+def _ver_key(v):
+    """'1.0.4.2' -> (1, 0, 4, 2)，拿來比新舊。"""
+    out = []
+    for x in str(v or "0").split("."):
+        try:
+            out.append(int(x))
+        except ValueError:
+            out.append(0)
+    return tuple(out)
+
+
+def unify_scene_version(scene, vers, newest_sky, warn, target=None):
+    """各張卡的 studio 版本不一樣時，決定合併卡用哪個版本存。
+
+    場景卡的格式只會往上加欄位（kkloader 讀舊卡時缺的欄位會補預設值）：
+        1.1.0.0  場景多一個 shaderType
+        1.1.1.0  物件多一個動畫樣式（anime_pattern，舊卡讀進來是 0）
+        1.1.2.0  場景多一個 skyInfo（天空）
+    節點讀進來之後是同一種形狀，所以兩個方向都寫得出去：
+        存成新的 —— 舊卡的節點補預設值，什麼都不會掉；
+        存成舊的 —— 上面那幾個新欄位不會寫進去（存檔時照版本判斷）。
+
+    target 是使用者指定的版本（必須是這幾張卡裡出現過的）；沒給就用最新的。
+    底卡比較舊、又要存成新的時候，場景層級的 skyInfo 拿最新那張卡的
+    （shaderType 另外有一段在處理）。
+    """
+    kinds = sorted({v for _l, v in vers if v}, key=_ver_key)
+    if len(kinds) < 2:
+        return False
+    if target and target not in kinds:
+        warn.append(_T("指定要存成 {0}，但這幾張卡沒有這個版本（{1}），改用最新的")
+                    .format(target, _T("、").join(kinds)))
+        target = None
+    target = target or kinds[-1]
+    old = scene.sc.version
+    tk = _ver_key(target)
+
+    # 存成舊版會掉的東西先數出來（要在改版本之前看）
+    lost = []
+    if tk < _ver_key(kinds[-1]):
+        if tk < (1, 1, 1, 0):
+            n_anim = sum(1 for n, _d, _p in S.iter_nodes(scene.objects)
+                         if n.get("type") == 1 and n["data"].get("anime_pattern"))
+            if n_anim:
+                lost.append(_T("{0} 個物件的動畫樣式").format(n_anim))
+        if tk < (1, 1, 2, 0):
+            sky = newest_sky if isinstance(newest_sky, dict) else getattr(scene.sc, "skyInfo", None)
+            if isinstance(sky, dict) and sky.get("Enable"):
+                lost.append(_T("天空設定"))
+        if tk < (1, 1, 0, 0) and getattr(scene.sc, "shaderType", 0):
+            lost.append(_T("場景的著色類型（shaderType）"))
+
+    if _ver_key(old) != tk:
+        if _ver_key(old) < (1, 1, 2, 0) <= tk and newest_sky is not None:
+            scene.sc.skyInfo = newest_sky
+        scene.sc.version = target
+        if hasattr(scene.sc, "dataVersion"):
+            scene.sc.dataVersion = target
+
+    sep = _T("、")
+    detail = sep.join("%s %s" % (l, v) for l, v in vers)
+    log(_T("  studio 版本不一致（{0}）→ 合併卡存成 {1}").format(detail, target))
+    msg = _T("這幾張卡的 studio 版本不一樣（{0}；1.0.x 是 Koikatsu、1.1.x 是 Koikatsu Sunshine 存的卡），"
+             "合併卡存成 {1}。").format(sep.join(kinds), target)
+    if tk < _ver_key(kinds[-1]):
+        if lost:
+            msg += _T("新版才有的欄位不會存進去（這次會掉：{0}）。").format(sep.join(lost))
+        else:
+            msg += _T("新版才有的欄位不會存進去（這次沒有用到那些欄位）。")
+        msg += _T("較新那幾張卡裡的角色是新版格式的人物資料，遊戲讀不讀得了要進遊戲確認")
+    else:
+        msg += _T("合併卡要用開得了 {0} 那張原卡的遊戲／外掛來開，"
+                  "裡面各段的角色、物件認不認得也跟單獨開原卡時一樣").format(target)
+    warn.append(msg)
+    return True
 
 
 def renumber_scene_folders(scene, segs):
@@ -2468,6 +2563,8 @@ def main(argv=None):
                    help="不要在每段開頭切換相機縮放（cameraOZoom）和相機FOV（cameraFOV）。"
                         "預設會切：每段開頭放一格那張原卡的值，下一段開頭瞬間換掉；"
                         "原卡自己有的格子不動。")
+    p.add_argument("--save-version", default=None,
+                   help="各張卡的 studio 版本不一樣時，合併卡要存成哪一個（例如 1.0.4.2）。不給就用最新的。")
     p.add_argument("--no-collider-fix", action="store_true",
                    help="不要幫 KKPE 的碰撞器補上『別段的角色不吃這顆』")
     p.add_argument("--no-sync-static", action="store_true",
@@ -2542,7 +2639,8 @@ def main(argv=None):
                    nc_enable_tracks=a.nc_enable_tracks,
                    clear_frame=not a.keep_frame,
                    enable_all_tracks=not a.no_enable_all_tracks,
-                   collider_fix=not a.no_collider_fix)
+                   collider_fix=not a.no_collider_fix,
+                   save_version=a.save_version)
         return 0
     return 1
 
@@ -2978,9 +3076,9 @@ def _char_label(node):
     try:
         p = node["data"]["character"]["Parameter"].data
         nm = ("%s %s" % (p.get("lastname") or "", p.get("firstname") or "")).strip()
-        return nm or "(沒有名字)"
+        return nm or _T("(沒有名字)")
     except Exception:                                       # noqa: BLE001
-        return "(角色)"
+        return _T("(角色)")
 
 
 def isolate_colliders(scene, warn, wraps=None):
@@ -3132,28 +3230,29 @@ def isolate_colliders(scene, warn, wraps=None):
             last = m.end()
     if not n_add:
         if dup_hit:
-            warn.append("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
-                        "碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」")
+            warn.append(_T("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
+                           "碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」"))
         return 0, 0
     out.append(body[last:])
     scene.kkex.set("kkpe", "sceneInfo", pack(head + "".join(out) + tail))
 
-    log(f"  KKPE 碰撞器：{n_col} 顆碰撞器補上 {n_add} 筆「別段的角色/物件不吃這顆」"
-        f"（不補的話別段的人整個會被它拉住）")
+    log(_T("  KKPE 碰撞器：{0} 顆碰撞器補上 {1} 筆「別段的角色/物件不吃這顆」"
+           "（不補的話別段的人整個會被它拉住）").format(n_col, n_add))
     if partial:
-        who = "、".join("%s（%s）" % (_char_label(c["node"]), seg_name.get(c["seg"]) or "?")
-                       for c in list(partial.values())[:6])
+        who = _T("、").join("%s (%s)" % (_char_label(c["node"]), seg_name.get(c["seg"]) or "?")
+                           for c in list(partial.values())[:6])
         if len(partial) > 6:
-            who += f" 等 {len(partial)} 個角色"
-        warn.append(f"KKPE 碰撞器：{who} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，"
-                    f"只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨"
-                    f"卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」")
+            who += _T(" 等 {0} 個角色").format(len(partial))
+        warn.append(_T("KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，"
+                       "只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨"
+                       "卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」")
+                    .format(who))
     if dup_hit or dup:
-        warn.append("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
-                    "這幾個沒有補；載入後如果碰撞器怪怪的，用 F6 的「一鍵修復碰撞器綁定」")
+        warn.append(_T("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
+                       "這幾個沒有補；載入後如果碰撞器怪怪的，用 F6 的「一鍵修復碰撞器綁定」"))
     if over:
-        warn.append(f"KKPE 碰撞器：要補的筆數超過 {COLLIDER_MAX_ADD}，後面的碰撞器沒有補"
-                    f"（載入後用 F6 的「一鍵修復碰撞器綁定」）")
+        warn.append(_T("KKPE 碰撞器：要補的筆數超過 {0}，後面的碰撞器沒有補"
+                       "（載入後用 F6 的「一鍵修復碰撞器綁定」）").format(COLLIDER_MAX_ADD))
     return n_col, n_add
 
 

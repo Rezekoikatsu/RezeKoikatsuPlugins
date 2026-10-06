@@ -8,6 +8,14 @@ A scene-character manager for CharaStudio. Press **F6** to open the character li
 one row per character on stage — and swap cards, change outfits, manage accessories,
 lock blendshapes, repair colliders, and capture thumbnails, all from one place.
 
+## Koikatsu Sunshine
+
+Since 1.1.0 there is a Koikatsu Sunshine build: download `StudioCharTools_KKS.zip` and extract it in Sunshine's game root. It has the same features as the Koikatsu build; what differs:
+
+- Outfit slots follow the game: Sunshine has four (Casual / Swimsuit / Pajamas / Bath, plus any added by MoreOutfits), and "save all outfits" saves those
+- Card merging still goes through `kkscenebridge.exe`: fill in "Koikatsu Sunshine root folder" on its Settings tab and jobs from both games are watched
+- The DLLs of the two games are not interchangeable
+
 ## Requirements
 
 Only the **mandatory** ones are listed. Common plugins nearly everyone already has (KKAPI, More Accessories, ABMX…) are not listed separately.

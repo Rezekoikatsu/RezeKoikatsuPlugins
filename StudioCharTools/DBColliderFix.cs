@@ -98,7 +98,7 @@ namespace StudioCharTools
 
                 if (tPoseController == null || tCollidersEditor == null)
                 {
-                    initError = "找不到 KKPE（HSPE）的型別，確認 KKPE.dll 有載入";
+                    initError = "找不到 KKPE（HSPE）的型別，確認 KKPE 有載入（Sunshine 是 KKSPE.dll）";
                     return;
                 }
 

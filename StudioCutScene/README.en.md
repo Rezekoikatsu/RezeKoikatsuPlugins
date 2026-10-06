@@ -13,6 +13,15 @@ matching config.
 > **Requires the Timeline plugin** (Joan6694's). This plugin is built entirely around Timeline
 > and does almost nothing without it.
 
+## Koikatsu Sunshine
+
+Since 1.15.0 there is a Koikatsu Sunshine build: download `StudioCutScene_KKS.zip` and extract it in Sunshine's game root (Timeline is required there too). The config format is the same as the Koikatsu build, so configs can be shared. Current limitations:
+
+- The VR view and controller features need F9, which has no Sunshine build yet, so they do nothing in Sunshine
+- Per-segment sky and shader type (scene settings only Sunshine has) are not switched in merged cards; the card's own values are used throughout
+- Merged cards made in Koikatsu and played in Sunshine: the stock maps and times of day are numbered differently in the two games, so maps and time of day may not match; a map that isn't installed is skipped
+- The DLLs of the two games are not interchangeable
+
 ## Requirements
 
 Only the **mandatory** ones are listed. Common plugins nearly everyone already has (KKAPI, More Accessories, ABMX…) are not listed separately.

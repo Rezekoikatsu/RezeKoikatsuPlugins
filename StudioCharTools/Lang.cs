@@ -1523,6 +1523,27 @@ namespace StudioCharTools
             A("❌ 找不到 AssignCoordinate(CoordinateType, ChaFileCoordinate)",
               "❌ AssignCoordinate(CoordinateType, ChaFileCoordinate) not found",
               "❌ AssignCoordinate(CoordinateType, ChaFileCoordinate) が見つかりません");
+            A("等待操作...",
+              "Waiting for input...",
+              "操作待ち...");
+            A("❌ 請先在左側選擇一個角色！",
+              "❌ Select a character on the left first!",
+              "❌ 先に左側でキャラを選択してください！");
+            A("❌ 無法取得節點資訊！",
+              "❌ Can't get the node information!",
+              "❌ ノード情報を取得できません！");
+            A("❌ 選擇的節點不是角色！",
+              "❌ The selected node is not a character!",
+              "❌ 選択したノードはキャラではありません！");
+            A("❌ 無法取得 nowCoordinate",
+              "❌ Can't get nowCoordinate",
+              "❌ nowCoordinate を取得できません");
+            A("❌ 找不到 LoadFile(string)",
+              "❌ LoadFile(string) not found",
+              "❌ LoadFile(string) が見つかりません");
+            A("❌ 讀取服裝卡失敗，請確認檔案格式！",
+              "❌ Failed to read the outfit card; check the file format!",
+              "❌ 衣装カードの読み込みに失敗しました。ファイル形式を確認してください！");
             A("✅ 服裝替換成功！",
               "✅ Outfit replaced!",
               "✅ 服装を置き換えました！");

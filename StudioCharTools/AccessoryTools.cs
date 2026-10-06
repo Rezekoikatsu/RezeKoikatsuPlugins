@@ -248,7 +248,16 @@ namespace StudioCharTools
                     null, new[] { typeof(int), typeof(int), typeof(int), typeof(string), typeof(bool) }, null);
                 if (m != null)
                 {
-                    m.Invoke(cha, new object[] { slot, EmptyType, 0, "", true });
+                    // 包起來：其他外掛會掛在這個方法後面（例如 HairAccessoryCustomizer 的掛鉤
+                    // 假設人在角色編輯裡，在工作室會丟 NullReference）。那時遊戲自己的部分已經做完、
+                    // 飾品已經卸下，丟例外的只是別人的收尾。不接住的話，下面「兩份陣列都清」整段
+                    // 不會執行，結果就是畫面上不見了、存檔裡還在，而且回報「移除失敗」。
+                    try { m.Invoke(cha, new object[] { slot, EmptyType, 0, "", true }); }
+                    catch (Exception hookEx)
+                    {
+                        sb.AppendLine("  卸下時掛在後面的其他外掛丟了例外（已略過，繼續清除）: "
+                                      + hookEx.GetBaseException().Message);
+                    }
                     sb.AppendLine("  卸下後 now=" + peek(GetPartsArray(cha)) + "  file=" + peek(fileParts()));
                 }
                 else

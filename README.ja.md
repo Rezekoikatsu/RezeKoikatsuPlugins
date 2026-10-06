@@ -8,6 +8,9 @@
 キャラ入れ替え・着替え・カード保存から、複数のシーンカードをムービーとボイス付きの 1 本の作品にまとめ、
 ヘッドセットで見るところまで、一連の流れをすべてカバーします。作者：**Reze**
 
+> [!NOTE]
+> **Koikatsu Sunshine（サンシャイン）にも対応**：F6・F7 には Sunshine 版があります（ファイル名に `_KKS` が付くもの）。kkscenebridge は両方のゲームのカードを扱えます。F9（VR）は今のところコイカツ版のみです。
+
 > [!TIP]
 > どれも単体で導入できます。一緒に入れると自動で連携します（ヘッドセット内で F7 のムービーを見る、コントローラーで F7 を操作する など）。
 
@@ -92,10 +95,15 @@ kkscenebridge を使いたくない場合は、[v1.0.0](https://github.com/Rezek
 | `StudioCharTools.zip` | F6 プラグイン（カード合成には `kkscenebridge.exe` の起動が必要） | ゲームのルート |
 | `StudioCutScene.zip` | F7 プラグイン | ゲームのルート |
 | `StudioVrTools.zip` | F9 プラグイン | ゲームのルート |
+| `StudioCharTools_KKS.zip` | F6 プラグイン、**Koikatsu Sunshine 版** | Sunshine のゲームルート |
+| `StudioCutScene_KKS.zip` | F7 プラグイン、**Koikatsu Sunshine 版** | Sunshine のゲームルート |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge ＋ ffmpeg。解凍すればすぐ使えます | どこでも |
 | `kkscenebridge.zip` | kkscenebridge のみ（小さい。ffmpeg を既に持っている場合や、後で exe だけ更新する場合に） | どこでも |
 
 kkscenebridge の zip はどちらか一方で構いません。
+
+2 つのゲームの DLL に**互換性はありません**：コイカツは `_KKS` の付かないもの、Koikatsu Sunshine は `_KKS` の付くものを使ってください。前提プラグインも Sunshine 用のもの（KKSAPI、Timeline、KKSPE、KKSABMX、KKS_MaterialEditor など。HF Patch for KKS に同梱）になります。
+Sunshine の F6 でカード合成を使う場合は、kkscenebridge の「設定」タブで「Koikatsu Sunshine のルートフォルダー」を入力してください。
 
 設定は `BepInEx\config\reze.studio.*.cfg` です。すべて初期値に戻すには、リポジトリ直下の `重置插件設定.bat` を実行してください
 （設定ファイルを移動するだけで、何も削除しません）。
@@ -123,6 +131,9 @@ kkscenebridge の zip はどちらか一方で構いません。
   ```
   msbuild StudioPlugins.sln /p:Configuration=Release
   ```
+- **Koikatsu Sunshine 版**：ソリューション内の `StudioCharTools.KKS`・`StudioCutScene.KKS` プロジェクトが、同じソースを
+  Sunshine のアセンブリ（.NET Framework 4.7.2）に対してビルドします。`Directory.Build.props` の `KoikatsuSunshineDir` を
+  Sunshine のフォルダに変更してください。Sunshine が無い場合は、Visual Studio でこの 2 つのプロジェクトをアンロードすれば大丈夫です。
 - **ツール**：Python 3.11 以上が必要です。各フォルダの `build.bat` をダブルクリック。kkscenebridge は `run_source.bat` でソースから直接実行もできます。
 
 ## 🙏 クレジット

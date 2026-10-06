@@ -75,14 +75,14 @@ namespace StudioCharTools
                     }
                     catch { }
                 }
-                if (tPushup == null) { initError = "沒有裝 KK_Pushup，胸托修復跳過"; return; }
+                if (tPushup == null) { initError = "沒有裝 Pushup 外掛，胸托修復跳過"; return; }
 
                 BindingFlags nf = BindingFlags.Public | BindingFlags.NonPublic;
                 tController = tPushup.GetNestedType("PushupController", nf);
                 tBodyData = tPushup.GetNestedType("BodyData", nf);
                 if (tController == null || tBodyData == null)
                 {
-                    initError = "KK_Pushup 內部型別與預期不符（版本不同？）";
+                    initError = "Pushup 外掛內部型別與預期不符（版本不同？）";
                     return;
                 }
 
@@ -105,7 +105,7 @@ namespace StudioCharTools
 
                 if (mGetCharaController == null || fBaseData == null || mCopyTo == null)
                 {
-                    initError = "KK_Pushup 缺少 GetCharaController / BaseData / CopyTo";
+                    initError = "Pushup 外掛缺少 GetCharaController / BaseData / CopyTo";
                     return;
                 }
                 available = true;

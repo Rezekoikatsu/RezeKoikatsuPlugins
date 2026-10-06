@@ -8,6 +8,9 @@
 從換人、換裝、拍卡，到把好幾張場景卡接成一部有過場影片和配音的作品、再戴上頭顯去看 ——
 整條流程都在這裡。作者：**Reze**
 
+> [!NOTE]
+> **Koikatsu Sunshine 也能用**：F6、F7 另外有 Sunshine 版（下載檔名有 `_KKS` 的），kkscenebridge 兩款遊戲的卡都能處理。F9（VR）目前只有 Koikatsu 版。
+
 > [!TIP]
 > 每一支都可以單獨安裝。一起裝的話會自動互相接上（例如在頭顯裡看 F7 的過場、用手柄遙控 F7 播放）。
 
@@ -92,10 +95,15 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
 | `StudioCharTools.zip` | F6 外掛（合卡功能要另外開著 `kkscenebridge.exe`） | 遊戲根目錄 |
 | `StudioCutScene.zip` | F7 外掛 | 遊戲根目錄 |
 | `StudioVrTools.zip` | F9 外掛 | 遊戲根目錄 |
+| `StudioCharTools_KKS.zip` | F6 外掛，**Koikatsu Sunshine 版** | Sunshine 的遊戲根目錄 |
+| `StudioCutScene_KKS.zip` | F7 外掛，**Koikatsu Sunshine 版** | Sunshine 的遊戲根目錄 |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge ＋ ffmpeg，解壓就能用 | 任何地方 |
 | `kkscenebridge.zip` | 只有 kkscenebridge（檔案小；已經有 ffmpeg，或之後只更新 exe 時用） | 任何地方 |
 
 兩個 kkscenebridge 的 zip 二選一即可。
+
+兩款遊戲的 dll **不能互換**：Koikatsu 用沒有 `_KKS` 的，Koikatsu Sunshine 用有 `_KKS` 的。需要的外掛也換成 Sunshine 對應的版本（KKSAPI、Timeline、KKSPE、KKSABMX、KKS_MaterialEditor…，HF Patch for KKS 都內建）。
+Sunshine 的 F6 要用合卡功能的話，到 kkscenebridge 的「設定」分頁填「Koikatsu Sunshine 根目錄」。
 
 設定檔在 `BepInEx\config\reze.studio.*.cfg`。要全部回到預設，執行根目錄的 `重置插件設定.bat`（只會搬移設定檔，不刪任何東西）。
 
@@ -122,6 +130,9 @@ CharaStudio 在 VR 裡的操作總成。**只在 Meta Quest 3 上試用過，不
   ```
   msbuild StudioPlugins.sln /p:Configuration=Release
   ```
+- **Koikatsu Sunshine 版**：方案裡的 `StudioCharTools.KKS`、`StudioCutScene.KKS` 兩個專案，原始碼跟 Koikatsu 版是同一份，
+  只是換一組參照（.NET Framework 4.7.2）。把 `Directory.Build.props` 的 `KoikatsuSunshineDir` 改成你的 Sunshine 路徑即可；
+  沒有 Sunshine 的話，在 Visual Studio 把這兩個專案卸載就好。
 - **工具**：需要 Python 3.11 以上，雙擊各資料夾的 `build.bat`。kkscenebridge 也可以用 `run_source.bat` 直接從原始碼執行。
 
 ## 🙏 致謝

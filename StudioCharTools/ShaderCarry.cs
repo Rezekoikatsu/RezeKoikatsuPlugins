@@ -155,14 +155,22 @@ namespace StudioCharTools
         {
             try
             {
-                Type pb = HarmonyLib.AccessTools.TypeByName("MaterialEditorAPI.MaterialEditorPluginBase");
-                FieldInfo f = pb == null ? null : pb.GetField("LoadedShaders",
-                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                var d = f == null ? null : f.GetValue(null) as System.Collections.IDictionary;
+                // 型別只找一次：TypeByName 找不到時會把所有外掛的型別整個翻一遍，不能每個部位都來一次。
+                if (!_shaderTableProbed)
+                {
+                    _shaderTableProbed = true;
+                    Type pb = HarmonyLib.AccessTools.TypeByName("MaterialEditorAPI.MaterialEditorPluginBase");
+                    _shaderTableField = pb == null ? null : pb.GetField("LoadedShaders",
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                }
+                var d = _shaderTableField == null ? null : _shaderTableField.GetValue(null) as System.Collections.IDictionary;
                 return d == null || d.Contains(name);
             }
             catch { return true; }
         }
+
+        static bool _shaderTableProbed;
+        static FieldInfo _shaderTableField;
 
         // ------------------------------------------------------------ 換人後：套到新角色
         public static int Apply(ChaControl cha, Snapshot snap)

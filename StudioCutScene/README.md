@@ -12,6 +12,15 @@
 > **需要 Timeline 外掛**（Joan6694 的那支）。這支插件整個是圍著 Timeline 做的，
 > 沒有它幾乎沒有功能。
 
+## Koikatsu Sunshine
+
+1.15.0 起有 Koikatsu Sunshine 版：下載 `StudioCutScene_KKS.zip`，在 Sunshine 的遊戲根目錄解壓縮（一樣需要 Timeline）。設定檔格式跟 Koikatsu 版相同，可以共用。目前的限制：
+
+- VR 視角、手柄遙控需要 F9，而 F9 還沒有 Sunshine 版，所以這兩項在 Sunshine 不會作用
+- 合併卡每一段的天空、著色器類型（Sunshine 才有的場景設定）不會跟著切換，整張卡用卡片本身存的那一份
+- Koikatsu 做的合併卡拿到 Sunshine 播：兩款遊戲原版地圖的編號、時段的編號不一樣，地圖和時段可能對不上；本機沒有的地圖會略過不切換
+- 兩款遊戲的 dll 不能互換
+
 ## 前置需求
 
 只列**必裝**的。KKAPI、More Accessories、ABMX 這類幾乎人人都有的一般外掛不另外列。

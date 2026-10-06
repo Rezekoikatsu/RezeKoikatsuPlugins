@@ -7,6 +7,14 @@
 CharaStudio 的場景角色總管。按 **F6** 開啟「選擇場景角色」面板，場上每個角色一列，
 換人、換裝、管飾品、鎖形態鍵、修碰撞器、拍縮圖存卡，全部在同一個地方。
 
+## Koikatsu Sunshine
+
+1.1.0 起有 Koikatsu Sunshine 版：下載 `StudioCharTools_KKS.zip`，在 Sunshine 的遊戲根目錄解壓縮。功能跟 Koikatsu 版相同，幾個不一樣的地方：
+
+- 服裝槽照遊戲本身的來：Sunshine 是私服／泳裝／睡衣／入浴四套（MoreOutfits 加的也算），「存全部換裝」就存這幾套
+- 合卡一樣靠 `kkscenebridge.exe`：到它的「設定」分頁填「Koikatsu Sunshine 根目錄」，兩款遊戲的工單就會一起監看
+- 兩款遊戲的 dll 不能互換
+
 ## 前置需求
 
 只列**必裝**的。KKAPI、More Accessories、ABMX 這類幾乎人人都有的一般外掛不另外列。

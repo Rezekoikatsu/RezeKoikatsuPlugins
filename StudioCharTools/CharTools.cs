@@ -2714,25 +2714,20 @@ namespace StudioCharTools
             }
         }
 
-        // 讀卡片縮圖。優先用 KKAPI 的 PngAssist (裁切過的正式縮圖)，沒裝
-        // KKAPI 就退回直接把整張 PNG 當圖片讀 (畫質沒那麼漂亮但至少能動)。
+        // 讀卡片縮圖：卡片檔最前面那一張 PNG 就是縮圖，後面接的才是角色資料。
+        //
+        // 只讀前面那張圖，不把整個檔案讀進來 —— 一張卡可以到兩三百 MB（貼圖都包在裡面），
+        // 整個讀進來只為了顯示一張小圖，選卡視窗一開就會一頓一頓的。
+        //
+        // （以前這裡還會先去找一個叫 KKAPI.Utilities.PngAssist 的型別，但那個名字其實不存在，
+        //   每張縮圖都白找一次：把所有已載入外掛的型別整個翻過一遍，再寫一行警告到 log。
+        //   外掛裝得多的時候，這比讀圖本身還慢，所以拿掉了。）
         Texture2D LoadCardThumbnail(string path)
         {
             try
             {
-                Type pngAssistType = AccessTools.TypeByName("KKAPI.Utilities.PngAssist");
-                if (pngAssistType != null)
-                {
-                    MethodInfo m = AccessTools.Method(pngAssistType, "LoadTexture", new[] { typeof(string) });
-                    if (m != null)
-                        return m.Invoke(null, new object[] { path }) as Texture2D;
-                }
-            }
-            catch { }
-
-            try
-            {
-                byte[] bytes = System.IO.File.ReadAllBytes(path);
+                byte[] bytes = ReadFirstPng(path);
+                if (bytes == null) bytes = System.IO.File.ReadAllBytes(path);   // 不是預期的格式就照舊整個讀
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(bytes);
                 return tex;
@@ -2741,6 +2736,53 @@ namespace StudioCharTools
             {
                 return null;
             }
+        }
+
+        /// <summary>只把檔案開頭那一張 PNG（讀到 IEND 為止）讀出來。不是 PNG 或格式不對回 null。</summary>
+        static byte[] ReadFirstPng(string path)
+        {
+            try
+            {
+                using (var fs = new System.IO.FileStream(path, System.IO.FileMode.Open,
+                                                         System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                using (var ms = new System.IO.MemoryStream())
+                {
+                    byte[] head = new byte[8];
+                    if (fs.Read(head, 0, 8) != 8) return null;
+                    if (head[0] != 0x89 || head[1] != 0x50 || head[2] != 0x4E || head[3] != 0x47) return null;
+                    ms.Write(head, 0, 8);
+
+                    byte[] buf = new byte[65536];
+                    const long Limit = 64L * 1024 * 1024;       // 縮圖不可能這麼大，超過就當作格式不對
+                    while (true)
+                    {
+                        // 每一塊：長度 4 bytes（大端）＋類型 4 bytes＋資料＋CRC 4 bytes
+                        int got = 0;
+                        while (got < 8)
+                        {
+                            int n = fs.Read(head, got, 8 - got);
+                            if (n <= 0) return null;
+                            got += n;
+                        }
+                        long len = ((long)head[0] << 24) | ((long)head[1] << 16) | ((long)head[2] << 8) | head[3];
+                        if (len > Limit) return null;
+                        ms.Write(head, 0, 8);
+
+                        long remain = len + 4;
+                        while (remain > 0)
+                        {
+                            int n = fs.Read(buf, 0, (int)Math.Min(buf.Length, remain));
+                            if (n <= 0) return null;
+                            ms.Write(buf, 0, n);
+                            remain -= n;
+                        }
+                        if (head[4] == 'I' && head[5] == 'E' && head[6] == 'N' && head[7] == 'D') break;
+                        if (ms.Length > Limit) return null;
+                    }
+                    return ms.ToArray();
+                }
+            }
+            catch { return null; }
         }
 
         void DrawGenericCardPicker(int id)

@@ -8,6 +8,9 @@ A set of BepInEx plugins for Koikatsu **CharaStudio**, plus a few companion Wind
 From swapping characters, changing outfits and saving cards, to joining several scene cards into one piece with
 cutscene videos and voices — and then watching it in a headset — the whole pipeline is here. Author: **Reze**
 
+> [!NOTE]
+> **Koikatsu Sunshine is supported too**: F6 and F7 have Sunshine builds (the downloads with `_KKS` in the name), and kkscenebridge handles cards from both games. F9 (VR) is Koikatsu-only for now.
+
 > [!TIP]
 > Each one installs on its own. Installed together they connect automatically (watch F7's cutscenes in the headset,
 > drive F7 playback from the controller, …).
@@ -93,10 +96,15 @@ If you would rather not use kkscenebridge, the standalone `kkbridge.exe` from [v
 | `StudioCharTools.zip` | F6 plugin (card merging needs `kkscenebridge.exe` running) | game root |
 | `StudioCutScene.zip` | F7 plugin | game root |
 | `StudioVrTools.zip` | F9 plugin | game root |
+| `StudioCharTools_KKS.zip` | F6 plugin, **Koikatsu Sunshine build** | Sunshine's game root |
+| `StudioCutScene_KKS.zip` | F7 plugin, **Koikatsu Sunshine build** | Sunshine's game root |
 | `kkscenebridge_ffmpeg.zip` | kkscenebridge + ffmpeg, works right after extracting | anywhere |
 | `kkscenebridge.zip` | kkscenebridge only (small; for when you already have ffmpeg, or just want to update the exe later) | anywhere |
 
 Pick one of the two kkscenebridge zips.
+
+The DLLs of the two games are **not interchangeable**: Koikatsu uses the ones without `_KKS`, Koikatsu Sunshine the ones with `_KKS`. The plugins they rely on are the Sunshine counterparts (KKSAPI, Timeline, KKSPE, KKSABMX, KKS_MaterialEditor…; all bundled in HF Patch for KKS).
+To use F6's card merging in Sunshine, fill in "Koikatsu Sunshine root folder" on kkscenebridge's Settings tab.
 
 Settings live in `BepInEx\config\reze.studio.*.cfg`. To reset everything, run `重置插件設定.bat` from the repo root
 (it only moves the config files; nothing is deleted).
@@ -124,6 +132,9 @@ Everything supports **Traditional Chinese / English / Japanese**:
   ```
   msbuild StudioPlugins.sln /p:Configuration=Release
   ```
+- **Koikatsu Sunshine builds**: the `StudioCharTools.KKS` and `StudioCutScene.KKS` projects in the solution compile the same
+  sources against Sunshine's assemblies (.NET Framework 4.7.2). Set `KoikatsuSunshineDir` in `Directory.Build.props` to your
+  Sunshine folder; if you don't have Sunshine, just unload those two projects in Visual Studio.
 - **Tools**: need Python 3.11+. Double-click `build.bat` in each folder. kkscenebridge can also run straight from source with `run_source.bat`.
 
 ## 🙏 Credits

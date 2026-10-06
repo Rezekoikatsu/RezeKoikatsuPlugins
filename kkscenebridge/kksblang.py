@@ -424,6 +424,15 @@ A('資料夾',
 A('改了這個，底下三個路徑與主頁面的輸出資料夾會一起換成對應的位置；自己填過的那一個就不動了。',
   'Changing this moves the three paths below and the main output folder to match; any path you set yourself is left alone.',
   '変更すると下の 3 つのパスとメイン画面の出力フォルダも連動します。自分で設定したものは変わりません。')
+A('Koikatsu Sunshine 根目錄（選填）',
+  'Koikatsu Sunshine root folder (optional)',
+  'Koikatsu Sunshine のルートフォルダー（任意）')
+A('Koikatsu Sunshine 根目錄',
+  'Koikatsu Sunshine root folder',
+  'Koikatsu Sunshine のルートフォルダー')
+A('有填的話，「人物卡合卡」的工單監看會同時監看這款遊戲的工單資料夾（UserData\\chara\\female\\Temp），Sunshine 裡 F6 的合卡功能才有人接。其他設定不受影響。',
+  'When set, the job watcher on the "Chara card merge" tab also watches this game\'s job folder (UserData\\chara\\female\\Temp), so F6\'s card merging works in Sunshine too. Nothing else is affected.',
+  '入力すると、「キャラカード合成」タブのジョブ監視がこのゲームのジョブフォルダー（UserData\\chara\\female\\Temp）も監視し、Sunshine の F6 のカード合成が使えるようになります。ほかの設定には影響しません。')
 A('遊戲根目錄',
   'Game folder',
   'ゲームフォルダ')

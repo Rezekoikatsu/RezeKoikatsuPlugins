@@ -124,12 +124,25 @@ def guess_game_root() -> str:
     return ""
 
 
+def guess_kks_root() -> str:
+    for d in ("C:/KoikatsuSunshine", "D:/KoikatsuSunshine", "E:/KoikatsuSunshine",
+              "F:/KoikatsuSunshine", "C:/Illusion/KoikatsuSunshine",
+              "D:/Illusion/KoikatsuSunshine"):
+        if (Path(d) / "UserData").is_dir():
+            return d
+    return ""
+
+
 def load_settings() -> dict:
     s = dict(DEFAULTS)
     try:
         s.update(json.loads(SETTINGS_PATH.read_text("utf-8")))
     except Exception:                                   # noqa: BLE001
         pass
+    # Koikatsu Sunshine 根目錄：設定檔裡從來沒有這一項才去猜（第一次）；
+    # 使用者自己清空的就維持空的，不要每次開程式又幫他填回來。
+    if "game_root_kks" not in s:
+        s["game_root_kks"] = guess_kks_root()
     if not s.get("game_root"):
         s["game_root"] = guess_game_root()
     root = s.get("game_root") or ""
@@ -1200,6 +1213,18 @@ class MainWindow(QMainWindow):
         self.p_root.edit.textChanged.connect(self.on_root_changed)
         gl.addWidget(self.p_root)
 
+        gl.addWidget(QLabel(T("Koikatsu Sunshine 根目錄（選填）")))
+        hint2 = QLabel(T("有填的話，「人物卡合卡」的工單監看會同時監看這款遊戲的工單資料夾"
+                         "（UserData\\chara\\female\\Temp），Sunshine 裡 F6 的合卡功能才有人接。"
+                         "其他設定不受影響。"))
+        hint2.setStyleSheet("color:#777;")
+        hint2.setWordWrap(True)
+        gl.addWidget(hint2)
+        self.p_root_kks = PathPicker(T("Koikatsu Sunshine 根目錄"), is_dir=True)
+        self.p_root_kks.set(self.settings.get("game_root_kks", ""))
+        self.p_root_kks.edit.textChanged.connect(self.on_kks_root_changed)
+        gl.addWidget(self.p_root_kks)
+
         gl.addWidget(QLabel(T("讀卡預設資料夾")))
         self.p_scene = PathPicker(
             T("場景卡資料夾"), is_dir=True, reveal=True,
@@ -1474,6 +1499,13 @@ class MainWindow(QMainWindow):
         if hasattr(self, "bridge_tab"):
             self.bridge_tab.set_game_root(new)
 
+    def on_kks_root_changed(self, text):
+        """Koikatsu Sunshine 根目錄改了：只影響「人物卡合卡」多監看哪一個工單資料夾。"""
+        new = (text or "").strip()
+        self.settings["game_root_kks"] = new
+        if hasattr(self, "bridge_tab"):
+            self.bridge_tab.set_kks_root(new)
+
     def on_out_default_changed(self, text):
         """「輸出預設資料夾」改了，主頁面下方那格也跟著換（同樣只在沒被改過時）。"""
         new = (text or "").strip()
@@ -1498,6 +1530,7 @@ class MainWindow(QMainWindow):
             self.bridge_tab.collect()
         self.settings.update({
             "game_root": self.p_root.text(),
+            "game_root_kks": self.p_root_kks.text(),
             "scene_dir": self.p_scene.text(),
             "output_dir": self.p_out.text(),
             "gap": self.spin_gap.value(),

@@ -140,7 +140,7 @@ KKPE 的碰撞器（1.1.3 起）：場景裡的「Dynamic Bone Collider」物件
 - **移植整套換裝**：來源角色卡的整套換裝搬到目標角色卡，右邊那欄可以指定放到第幾套；中間可以先附加一張服裝卡的飾品
 - **修卡**：清掉指向空飾品欄位的殘留擴充資料（某套換裝材質會亂、切到別套再切回來才正常的卡）
 - **監看工單**：F6 把 `*.job.json` 丟進這個資料夾（預設 `UserData\chara\female\Temp`），做完在旁邊寫 `*.done.json`
-  - （1.1.5 起）可以同時監看好幾個資料夾，用 `;` 隔開。Koikatsu 和 Koikatsu Sunshine 兩邊的 F6 都要用合卡的話，把兩款遊戲的 `UserData\chara\female\Temp` 都填進去，例如 `D:\Koikatu\UserData\chara\female\Temp;D:\KoikatsuSunshine\UserData\chara\female\Temp`
+  - （1.1.5 起）Koikatsu Sunshine 的 F6 也要用合卡的話：到「設定」分頁填「Koikatsu Sunshine 根目錄」，就會同時監看那款遊戲的 `UserData\chara\female\Temp`，不用另外設定
 - **合卡設定**：讀卡的預設資料夾、輸出資料夾、胸托（Pushup）和皮膚 overlay（KSOX）跟誰走、自動清殘渣、自動監看。
   遊戲根目錄和語言用最右邊「設定」分頁的
 - 設定存在 `kkscenebridge_settings.json` 的 `bridge` 底下。第一次啟動時如果找得到舊的 `kkbridge_settings.json`

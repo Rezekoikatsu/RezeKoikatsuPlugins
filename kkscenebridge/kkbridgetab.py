@@ -585,7 +585,7 @@ class BridgeTab(QWidget):
             return
         # 預設的工單資料夾第一次用時還沒建：遊戲根目錄認得的話就自己建起來
         root = (self.main.get("game_root") or "").strip()
-        dirs = [Path(p) for p in split_dirs(self.settings["watch_dir"])]
+        dirs = self._wanted_dirs()
         for wd in dirs:
             if not wd.is_dir():
                 self._make_job_dir(wd, root)
@@ -710,11 +710,13 @@ class BridgeTab(QWidget):
         self.w_dir = PathPicker(T("選監看資料夾"), is_dir=True, reveal=True)
         self.w_dir.set(self.settings["watch_dir"])
         lay.addWidget(_row(QLabel(T("監看資料夾")), self.w_dir))
-        hint = QLabel(T("可以同時監看好幾個資料夾，用 ; 隔開（例如 Koikatsu 和 Koikatsu Sunshine 各一個："
-                        "遊戲資料夾\\UserData\\chara\\female\\Temp）"))
-        hint.setWordWrap(True)
-        hint.setStyleSheet("color: gray;")
-        lay.addWidget(hint)
+        # 第二款遊戲（Koikatsu Sunshine）的工單資料夾不用填在這裡：
+        # 「設定」分頁填了 Sunshine 根目錄，就會自動一起監看。
+        self.lbl_kks = QLabel("")
+        self.lbl_kks.setWordWrap(True)
+        self.lbl_kks.setStyleSheet("color: gray;")
+        lay.addWidget(self.lbl_kks)
+        self._refresh_kks_hint()
         self.btn_watch = QPushButton(T("開始監看"))
         self.btn_watch.setCheckable(True)
         self.btn_watch.setMinimumHeight(34)
@@ -783,6 +785,45 @@ class BridgeTab(QWidget):
         # 工單是不定時進來的，每一行帶時間才看得出是哪一次
         for line in str(text).splitlines():
             self.log_line.emit(f"{datetime.now():%H:%M:%S}  {line}")
+
+    # ---- Koikatsu Sunshine：設定分頁填了根目錄，就多監看那邊的工單資料夾 ----
+    def _kks_dir(self):
+        root = (self.main.get("game_root_kks") or "").strip().strip('"').strip()
+        return Path(root) / OUTPUT_SUB if root else None
+
+    def _wanted_dirs(self) -> list:
+        """要監看的資料夾：欄位裡填的（可以用 ; 隔開好幾個）＋ Sunshine 的工單資料夾。"""
+        out, seen = [], set()
+        dirs = [Path(p) for p in split_dirs(self.w_dir.text())]
+        k = self._kks_dir()
+        if k is not None:
+            dirs.append(k)
+        for d in dirs:
+            key = str(d).replace("\\", "/").rstrip("/").lower()
+            if key not in seen:
+                seen.add(key)
+                out.append(d)
+        return out
+
+    def _refresh_kks_hint(self):
+        k = self._kks_dir()
+        if k is None:
+            self.lbl_kks.setText(T("要同時監看 Koikatsu Sunshine 的工單，到最右邊的「設定」分頁填"
+                                   "「Koikatsu Sunshine 根目錄」"))
+        else:
+            self.lbl_kks.setText(T("同時監看 Koikatsu Sunshine：{0}").format(k))
+
+    def set_kks_root(self, root: str):
+        """主視窗的 Koikatsu Sunshine 根目錄改了。正在監看的話，資料夾清單真的有變才重新套用
+        （打字打到一半的路徑不存在，不會每按一個鍵就重來一次）。"""
+        self.main["game_root_kks"] = (root or "").strip()
+        self._refresh_kks_hint()
+        if not self.watcher.running:
+            return
+        now = [d for d in self._wanted_dirs()
+               if d.is_dir() or self._make_job_dir(d, (self.main.get("game_root") or "").strip())]
+        if now and [str(d) for d in now] != [str(d) for d in self.watcher.dirs]:
+            self._start_watch(log_missing=False)
 
     def set_game_root(self, root: str):
         """主視窗的遊戲根目錄改了：還是預設位置（或空的）的資料夾跟著換，自己填過的不動。"""
@@ -873,38 +914,45 @@ class BridgeTab(QWidget):
 
     def toggle_watch(self, on: bool):
         if on:
-            wanted = [Path(p) for p in split_dirs(self.w_dir.text())]
-            root = (self.main.get("game_root") or "").strip()
-            dirs = []
-            for d in wanted:
-                if d.is_dir() or self._make_job_dir(d, root):
-                    dirs.append(d)
-                else:
-                    self.append_log(T("監看資料夾不存在，略過：{0}").format(d))
-            if not dirs:
+            if not self._start_watch(log_missing=True):
                 self.append_log(T("監看資料夾不存在，先選一個"))
                 self.btn_watch.setChecked(False)
                 return
-            seen = set()
-            for d in dirs:
-                seen |= {
-                    str(p) for p in d.glob("*" + JOB_SUFFIX)
-                    if p.with_name(p.name[:-len(JOB_SUFFIX)] + DONE_SUFFIX).exists()}
-            self.watcher.seen = seen
-            self.watcher.dirs = dirs
-            self.watcher.running = True
-            shown = " ; ".join(str(d) for d in dirs)
-            self.btn_watch.setText(T("停止監看"))
-            self.lbl_state.setText(T("監看中：{0}").format(shown))
-            self.append_log(T("開始監看 {0}").format(shown))
-            # 存的是欄位裡填的全部（暫時不存在的那個也留著，下次開遊戲資料夾在了就會看到）
-            self.settings["watch_dir"] = ";".join(str(d) for d in wanted)
+            # 存的是欄位裡自己填的（暫時不存在的也留著，下次資料夾在了就會看到）。
+            # Sunshine 那一個是從「設定」分頁的根目錄算出來的，不存在這裡。
+            self.settings["watch_dir"] = ";".join(split_dirs(self.w_dir.text()))
             self._save()
         else:
             self.watcher.running = False
             self.btn_watch.setText(T("開始監看"))
             self.lbl_state.setText(T("未監看"))
             self.append_log(T("停止監看"))
+
+    def _start_watch(self, log_missing: bool) -> bool:
+        """照目前的設定（重新）開始監看。一個可用的資料夾都沒有就回 False、什麼都不動。"""
+        root = (self.main.get("game_root") or "").strip()
+        dirs = []
+        for d in self._wanted_dirs():
+            if d.is_dir() or self._make_job_dir(d, root):
+                dirs.append(d)
+            elif log_missing:
+                self.append_log(T("監看資料夾不存在，略過：{0}").format(d))
+        if not dirs:
+            return False
+        # 已經做完的工單（旁邊有 .done.json）不要再做一次；正在排隊 / 做到一半的照舊留著
+        seen = set(self.watcher.seen) if self.watcher.running else set()
+        for d in dirs:
+            seen |= {
+                str(p) for p in d.glob("*" + JOB_SUFFIX)
+                if p.with_name(p.name[:-len(JOB_SUFFIX)] + DONE_SUFFIX).exists()}
+        self.watcher.seen = seen
+        self.watcher.dirs = dirs
+        self.watcher.running = True
+        shown = " ; ".join(str(d) for d in dirs)
+        self.btn_watch.setText(T("停止監看"))
+        self.lbl_state.setText(T("監看中：{0}").format(shown))
+        self.append_log(T("開始監看 {0}").format(shown))
+        return True
 
     def on_job_found(self, name, job, done_path):
         self.append_log(T("收到工單 {0}").format(name))

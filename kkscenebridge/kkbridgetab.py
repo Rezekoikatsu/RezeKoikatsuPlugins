@@ -54,6 +54,16 @@ OUTPUT_SUB = "UserData/chara/female/Temp"    # 產出與工單都在這裡
 OLD_SETTINGS = "kkbridge_settings.json"      # 獨立版 kkbridge 的設定檔
 
 
+def split_dirs(text: str) -> list:
+    """監看資料夾可以填好幾個，用 ; 隔開（例如 Koikatsu 和 Koikatsu Sunshine 各一個）。"""
+    out = []
+    for p in (text or "").split(";"):
+        p = p.strip().strip('"').strip()
+        if p and p not in out:
+            out.append(p)
+    return out
+
+
 def derive_dirs(s: dict, root: str) -> dict:
     """根目錄 -> 各預設資料夾。使用者自己填過的優先，不覆蓋。"""
     out = dict(s)
@@ -246,26 +256,31 @@ class Watcher(QObject):
 
     def __init__(self):
         super().__init__()
-        self.dir = None
+        self.dirs = []          # 可以同時看好幾個資料夾（兩款遊戲各一個）
         self.running = False
         self.seen = set()
 
     def loop(self):
         while True:
             time.sleep(POLL_SECONDS)
-            if not self.running or self.dir is None:
+            if not self.running or not self.dirs:
                 continue
-            try:
-                files = sorted(Path(self.dir).glob("*" + JOB_SUFFIX))
-            except Exception:  # noqa: BLE001
-                continue
+            files = []
+            for d in list(self.dirs):
+                try:
+                    files += sorted(Path(d).glob("*" + JOB_SUFFIX))
+                except Exception:  # noqa: BLE001
+                    continue
             for f in files:
                 if str(f) in self.seen:
                     continue
-                size = f.stat().st_size
-                time.sleep(0.2)
-                if f.stat().st_size != size:
-                    continue                      # 還在寫，下一輪再撿
+                try:
+                    size = f.stat().st_size
+                    time.sleep(0.2)
+                    if f.stat().st_size != size:
+                        continue                  # 還在寫，下一輪再撿
+                except OSError:
+                    continue                      # 剛好被刪掉 / 資料夾不見了，下一輪再說
                 self.seen.add(str(f))
                 try:
                     job = json.loads(f.read_text("utf-8"))
@@ -470,6 +485,8 @@ class PathPicker(QWidget):
         d = self.text()
         if not d:
             return
+        if self.is_dir and ";" in d:              # 填了好幾個資料夾：開第一個
+            d = (split_dirs(d) or [d])[0]
         p = Path(d)
         if not p.is_dir():
             p = p.parent
@@ -567,20 +584,34 @@ class BridgeTab(QWidget):
         if not (self.settings.get("autostart") and self.settings.get("watch_dir")):
             return
         # 預設的工單資料夾第一次用時還沒建：遊戲根目錄認得的話就自己建起來
-        wd = Path(self.settings["watch_dir"])
         root = (self.main.get("game_root") or "").strip()
-        if (not wd.is_dir() and root and (Path(root) / "UserData").is_dir()
-                and wd == Path(root) / OUTPUT_SUB):
-            try:
-                wd.mkdir(parents=True, exist_ok=True)
-            except OSError:
-                pass
-        if Path(self.settings["watch_dir"]).is_dir():
+        dirs = [Path(p) for p in split_dirs(self.settings["watch_dir"])]
+        for wd in dirs:
+            if not wd.is_dir():
+                self._make_job_dir(wd, root)
+        if any(wd.is_dir() for wd in dirs):
             self.btn_watch.setChecked(True)
         else:
             self.append_log(T("預設監看資料夾不存在：{0}"
                               "　→ 到「設定」填遊戲根目錄")
                             .format(self.settings["watch_dir"]))
+
+    @staticmethod
+    def _make_job_dir(wd: Path, root: str = "") -> bool:
+        """工單資料夾還不存在的話建起來 —— 只在「看得出是遊戲的 UserData 底下」時才建，不亂建資料夾。"""
+        try:
+            parts = [x.lower() for x in wd.parts]
+            ok = False
+            if root and (Path(root) / "UserData").is_dir() and wd == Path(root) / OUTPUT_SUB:
+                ok = True
+            elif "userdata" in parts:
+                ud = Path(*wd.parts[:parts.index("userdata") + 1])
+                ok = ud.is_dir()
+            if ok:
+                wd.mkdir(parents=True, exist_ok=True)
+            return wd.is_dir()
+        except OSError:
+            return False
 
     # ---- 介面 ----
     def _build_ui(self):
@@ -679,6 +710,11 @@ class BridgeTab(QWidget):
         self.w_dir = PathPicker(T("選監看資料夾"), is_dir=True, reveal=True)
         self.w_dir.set(self.settings["watch_dir"])
         lay.addWidget(_row(QLabel(T("監看資料夾")), self.w_dir))
+        hint = QLabel(T("可以同時監看好幾個資料夾，用 ; 隔開（例如 Koikatsu 和 Koikatsu Sunshine 各一個："
+                        "遊戲資料夾\\UserData\\chara\\female\\Temp）"))
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: gray;")
+        lay.addWidget(hint)
         self.btn_watch = QPushButton(T("開始監看"))
         self.btn_watch.setCheckable(True)
         self.btn_watch.setMinimumHeight(34)
@@ -756,6 +792,8 @@ class BridgeTab(QWidget):
         for picker, sub in ((self.s_chara, CHARA_SUB), (self.s_coord, COORD_SUB),
                             (self.s_out, OUTPUT_SUB), (self.w_dir, OUTPUT_SUB)):
             cur = picker.text().replace("\\", "/").rstrip("/")
+            if ";" in cur:
+                continue                          # 自己填了好幾個資料夾，不動
             if not cur or cur.endswith(sub):
                 picker.set(str(Path(root) / sub))
 
@@ -835,20 +873,32 @@ class BridgeTab(QWidget):
 
     def toggle_watch(self, on: bool):
         if on:
-            d = Path(self.w_dir.text())
-            if not d.is_dir():
+            wanted = [Path(p) for p in split_dirs(self.w_dir.text())]
+            root = (self.main.get("game_root") or "").strip()
+            dirs = []
+            for d in wanted:
+                if d.is_dir() or self._make_job_dir(d, root):
+                    dirs.append(d)
+                else:
+                    self.append_log(T("監看資料夾不存在，略過：{0}").format(d))
+            if not dirs:
                 self.append_log(T("監看資料夾不存在，先選一個"))
                 self.btn_watch.setChecked(False)
                 return
-            self.watcher.dir = d
-            self.watcher.seen = {
-                str(p) for p in d.glob("*" + JOB_SUFFIX)
-                if p.with_name(p.name[:-len(JOB_SUFFIX)] + DONE_SUFFIX).exists()}
+            seen = set()
+            for d in dirs:
+                seen |= {
+                    str(p) for p in d.glob("*" + JOB_SUFFIX)
+                    if p.with_name(p.name[:-len(JOB_SUFFIX)] + DONE_SUFFIX).exists()}
+            self.watcher.seen = seen
+            self.watcher.dirs = dirs
             self.watcher.running = True
+            shown = " ; ".join(str(d) for d in dirs)
             self.btn_watch.setText(T("停止監看"))
-            self.lbl_state.setText(T("監看中：{0}").format(d))
-            self.append_log(T("開始監看 {0}").format(d))
-            self.settings["watch_dir"] = str(d)
+            self.lbl_state.setText(T("監看中：{0}").format(shown))
+            self.append_log(T("開始監看 {0}").format(shown))
+            # 存的是欄位裡填的全部（暫時不存在的那個也留著，下次開遊戲資料夾在了就會看到）
+            self.settings["watch_dir"] = ";".join(str(d) for d in wanted)
             self._save()
         else:
             self.watcher.running = False

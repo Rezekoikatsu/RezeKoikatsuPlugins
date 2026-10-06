@@ -264,6 +264,15 @@ A("輸出的服裝槽有重複，後面那筆會蓋掉前面的——先改掉�
   "the earlier one — fix that before running",
   "出力先のコーデスロットが重複しています。後のものが前のものを上書き"
   "します。実行前に修正してください")
+A("監看資料夾不存在，略過：{0}",
+  "Watch folder does not exist, skipped: {0}",
+  "監視フォルダーが存在しないためスキップ：{0}")
+A("可以同時監看好幾個資料夾，用 ; 隔開（例如 Koikatsu 和 Koikatsu Sunshine 各一個："
+  "遊戲資料夾\\UserData\\chara\\female\\Temp）",
+  "You can watch several folders at once, separated by ; (for example one each for Koikatsu and "
+  "Koikatsu Sunshine: <game folder>\\UserData\\chara\\female\\Temp)",
+  "複数のフォルダーを ; で区切って同時に監視できます（例：Koikatsu と Koikatsu Sunshine でそれぞれ "
+  "<ゲームフォルダー>\\UserData\\chara\\female\\Temp）")
 A("監看資料夾不存在，先選一個",
   "The watch folder does not exist — choose one first",
   "監視フォルダーが存在しません。先に選択してください")

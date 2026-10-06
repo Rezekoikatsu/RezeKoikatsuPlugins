@@ -147,6 +147,7 @@ The formerly separate `kkbridge.exe` has been folded in as a whole; its features
 - **Transplant a whole outfit**: moves whole outfits from a source character card to a target card; the right-hand column picks the target slot. An outfit card's accessories can be added first
 - **Repair card**: removes leftover extended data pointing at empty accessory slots (cards where one outfit's materials break until you switch outfits back and forth)
 - **Watch jobs**: F6 drops `*.job.json` into this folder (default `UserData\chara\female\Temp`); a `*.done.json` appears next to it when finished
+  - (1.1.5) Several folders can be watched at once, separated by `;`. To use F6's card merging in both Koikatsu and Koikatsu Sunshine, enter both games' `UserData\chara\female\Temp`, e.g. `D:\Koikatu\UserData\chara\female\Temp;D:\KoikatsuSunshine\UserData\chara\female\Temp`
 - **Merge settings**: default folders for opening cards, output folder, whether Pushup and the skin overlay (KSOX) follow the outfit, automatic cleanup, auto-watch. The game folder and the language come from the Settings tab on the far right
 - Settings live under `bridge` in `kkscenebridge_settings.json`. On first start, an old `kkbridge_settings.json` (next to the exe or in the game root) is imported if found
 - Outfit cards without plugin data (saved from vanilla clothes) can now be read; they used to fail with a "read out of range" error

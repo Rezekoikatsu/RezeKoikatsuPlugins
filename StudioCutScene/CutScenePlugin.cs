@@ -196,11 +196,12 @@ namespace StudioCutScene
     }
 
     [BepInPlugin(GUID, NAME, VERSION)]
+    [BepInProcess("CharaStudio")]
     public class CutScenePlugin : BaseUnityPlugin
     {
         public const string GUID = "reze.studio.cutscene";
         public const string NAME = "Studio CutScene";
-        public const string VERSION = "1.14.0";
+        public const string VERSION = "1.15.0";
 
         // 對應折線只擋「倒退」，不擋「陡」。
         // 斜率 = 該處的 1/timeScale：卡片把時間流速調到 0.03（近乎定格）時

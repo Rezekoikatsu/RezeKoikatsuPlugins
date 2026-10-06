@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioCutScene", "StudioCut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioVrTools", "StudioVrTools\StudioVrTools.csproj", "{3E8B71C4-9D26-4A5F-B013-7C64E9A2D188}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioCharTools.KKS", "StudioCharTools\StudioCharTools.KKS.csproj", "{5B0D3F62-7A14-4E89-B2C6-91E4A7D05C18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioCutScene.KKS", "StudioCutScene\StudioCutScene.KKS.csproj", "{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{3E8B71C4-9D26-4A5F-B013-7C64E9A2D188}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E8B71C4-9D26-4A5F-B013-7C64E9A2D188}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E8B71C4-9D26-4A5F-B013-7C64E9A2D188}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B0D3F62-7A14-4E89-B2C6-91E4A7D05C18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B0D3F62-7A14-4E89-B2C6-91E4A7D05C18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B0D3F62-7A14-4E89-B2C6-91E4A7D05C18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B0D3F62-7A14-4E89-B2C6-91E4A7D05C18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

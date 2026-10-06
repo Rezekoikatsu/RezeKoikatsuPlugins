@@ -1844,6 +1844,9 @@ namespace StudioCutScene
             A("畫面效果：記號資料夾或上層沒打勾（用卡片本身存的）",
               "Effects: marker folder or a parent is unchecked (using the card's own)",
               "画面効果：マーカーフォルダか親がオフ（カード自体の設定を使用）");
+            A("地圖：本機沒有 #{0} 這張地圖（不切換）",
+              "Map: map #{0} is not installed here (not switching)",
+              "マップ：#{0} はこの環境にありません（切り替えません）");
             A("地圖：這一段沒有地圖（已隱藏）",
               "Map: this segment has no map (hidden)",
               "マップ：このシーンにはマップなし（非表示）");

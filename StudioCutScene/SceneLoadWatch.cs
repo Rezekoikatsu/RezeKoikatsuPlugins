@@ -45,35 +45,48 @@ namespace StudioCutScene
         // ---------------------------------------------------------- 正在載入嗎
 
         static bool loadProbed;
+        static bool flagsStatic;
         static PropertyInfo instProp;
         static FieldInfo instField;
         static PropertyInfo nowLoading, nowLoadingFade;
 
+        static void Probe()
+        {
+            if (loadProbed) return;
+            loadProbed = true;
+            try
+            {
+                Type t = AccessTools.TypeByName("Manager.Scene");
+                if (t == null) return;
+
+                // 兩款遊戲的寫法不一樣：
+                //   Koikatsu           Manager.Scene 繼承 Singleton<Scene>，旗標是「實例」屬性
+                //   Koikatsu Sunshine  繼承 SingletonInitializer<Scene>，旗標是「靜態」屬性
+                // 所以先不分靜態 / 實例把屬性找出來，再看它的 getter 是哪一種。
+                const BindingFlags any = BindingFlags.Public | BindingFlags.NonPublic
+                                         | BindingFlags.Static | BindingFlags.Instance
+                                         | BindingFlags.FlattenHierarchy;
+                nowLoading = t.GetProperty("IsNowLoading", any);
+                nowLoadingFade = t.GetProperty("IsNowLoadingFade", any);
+
+                MethodInfo g = nowLoading == null ? null : nowLoading.GetGetMethod(true);
+                flagsStatic = g != null && g.IsStatic;
+
+                if (!flagsStatic)
+                {
+                    // Instance 在基底類別上，所以一定要帶 FlattenHierarchy，不然找不到。
+                    const BindingFlags st = BindingFlags.Public | BindingFlags.NonPublic
+                                            | BindingFlags.Static | BindingFlags.FlattenHierarchy;
+                    instProp = t.GetProperty("Instance", st);
+                    if (instProp == null) instField = t.GetField("Instance", st);
+                }
+            }
+            catch { }
+        }
+
         static object SceneInstance()
         {
-            if (!loadProbed)
-            {
-                loadProbed = true;
-                try
-                {
-                    // KK 的 Manager.Scene 繼承 Singleton<Scene>，Instance 在基底類別上，
-                    // 所以一定要帶 FlattenHierarchy，不然找不到。
-                    Type t = AccessTools.TypeByName("Manager.Scene");
-                    if (t != null)
-                    {
-                        const BindingFlags st = BindingFlags.Public | BindingFlags.NonPublic
-                                                | BindingFlags.Static | BindingFlags.FlattenHierarchy;
-                        instProp = t.GetProperty("Instance", st);
-                        if (instProp == null) instField = t.GetField("Instance", st);
-
-                        const BindingFlags inst = BindingFlags.Public | BindingFlags.NonPublic
-                                                  | BindingFlags.Instance;
-                        nowLoading = t.GetProperty("IsNowLoading", inst);
-                        nowLoadingFade = t.GetProperty("IsNowLoadingFade", inst);
-                    }
-                }
-                catch { }
-            }
+            Probe();
             try
             {
                 if (instProp != null) return instProp.GetValue(null, null);
@@ -83,10 +96,17 @@ namespace StudioCutScene
             return null;
         }
 
+        static bool Flag(PropertyInfo p, object target)
+        {
+            if (p == null) return false;
+            object v = p.GetValue(target, null);
+            return v is bool && (bool)v;
+        }
+
         /// <summary>
         /// 遊戲現在是不是正在載入場景。
         ///
-        /// 這是 KK 自己的旗標（`Manager.Scene.IsNowLoading` / `IsNowLoadingFade`），
+        /// 這是遊戲自己的旗標（`Manager.Scene.IsNowLoading` / `IsNowLoadingFade`），
         /// 不是我們猜的。KK_VR_CameraSync 判斷「可以對齊相機了沒」用的也是這兩個 ——
         /// 它的 `IsSceneLoading()` 就是 `scene.IsNowLoading || scene.IsNowLoadingFade`。
         ///
@@ -102,15 +122,15 @@ namespace StudioCutScene
             {
                 try
                 {
-                    object s = SceneInstance();
-                    if (s == null || nowLoading == null) return false;
-                    object a = nowLoading.GetValue(s, null);
-                    if (a is bool && (bool)a) return true;
-                    if (nowLoadingFade != null)
+                    Probe();
+                    if (nowLoading == null) return false;
+                    object target = null;
+                    if (!flagsStatic)
                     {
-                        object b = nowLoadingFade.GetValue(s, null);
-                        if (b is bool && (bool)b) return true;
+                        target = SceneInstance();
+                        if (target == null) return false;
                     }
+                    return Flag(nowLoading, target) || Flag(nowLoadingFade, target);
                 }
                 catch { }
                 return false;
@@ -120,7 +140,7 @@ namespace StudioCutScene
         /// <summary>這台機器上問不問得到載入旗標。問不到就退回原本的做法。</summary>
         public static bool LoadFlagAvailable
         {
-            get { SceneInstance(); return nowLoading != null; }
+            get { Probe(); return nowLoading != null; }
         }
 
         public static void Apply()

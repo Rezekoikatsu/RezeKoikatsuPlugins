@@ -321,6 +321,25 @@ namespace StudioCutScene
                 Status = "地圖：#" + m.map;
                 return;
             }
+
+            // 這台機器的地圖清單裡沒有這個編號（最常見：Koikatsu 做的卡拿到 Sunshine 播，
+            // 原版地圖的編號兩邊不一樣）。遊戲碰到不認得的編號只會把現在的地圖卸掉，
+            // 接下來的 LoadRoutine 等不到它載完，要卡滿 30 秒，這期間其他段的地圖切換全部停擺。
+            // 先查清單，沒有就直接說沒有，不要去載。
+            try
+            {
+                var info = Singleton<Studio.Info>.Instance;
+                if (info != null && info.dicMapLoadInfo != null && !info.dicMapLoadInfo.ContainsKey(want))
+                {
+                    applied = m;
+                    m.lastPos = Pos(m); m.lastRot = Rot(m);
+                    Status = string.Format(Lang.T("地圖：本機沒有 #{0} 這張地圖（不切換）"), want);
+                    Debug.Log("[CutScene] " + Status);
+                    return;
+                }
+            }
+            catch { }
+
             host.StartCoroutine(LoadRoutine(m, want, st, map));
         }
 
@@ -446,8 +465,16 @@ namespace StudioCutScene
             {
                 try
                 {
-                    st.sceneInfo.sunLightType = m.sun;
-                    map.sunType = (SunLightInfo.Info.Type)m.sun;
+#if KKS
+                    // Sunshine 的地圖不一定每個時段都有。沒有的時段硬寫進去，畫面不會變，
+                    // 但場景資料會留下一個這張地圖沒有的時段（時段按鈕一顆都不亮）。
+                    // 遊戲載完地圖時已經自己挑了一個有的，這種情況就留著它挑的。
+                    if (!map.isSunLightInfo || map.IsTimeZone(m.sun))
+#endif
+                    {
+                        st.sceneInfo.sunLightType = m.sun;
+                        map.sunType = (SunLightInfo.Info.Type)m.sun;
+                    }
                 }
                 catch { }
             }
@@ -468,10 +495,39 @@ namespace StudioCutScene
             {
                 var map = Singleton<Studio.Map>.Instance;
                 if (map != null && map.mapRoot != null && map.mapRoot.activeSelf != on)
+                {
                     map.mapRoot.SetActive(on);
+#if KKS
+                    SyncSkyClear(map, on);
+#endif
+                }
             }
             catch { }
         }
+
+#if KKS
+        /// <summary>
+        /// Sunshine 才有：帶天空的地圖載入時，遊戲會把主相機改成「用天空清畫面」。
+        /// 我們把地圖藏起來只是關掉它的根物件，相機那個設定還留著，
+        /// 結果是地圖不見了、天空還掛在後面。所以藏的時候一起改回純色背景，
+        /// 顯示的時候照遊戲自己的規則設回去（地圖有天空，或場景自己開了天空 → 用天空）。
+        /// </summary>
+        static void SyncSkyClear(Studio.Map map, bool on)
+        {
+            try
+            {
+                var st = Singleton<Studio.Studio>.Instance;
+                if (st == null || st.cameraCtrl == null) return;
+                Camera cam = st.cameraCtrl.mainCmaera;      // 遊戲裡這個屬性就是拼成 mainCmaera
+                if (cam == null) return;
+                bool sceneSky = st.sceneInfo != null && st.sceneInfo.skyInfo != null
+                                && st.sceneInfo.skyInfo.Enable;
+                bool sky = on ? (map.isSkyInfo || sceneSky) : sceneSky;
+                cam.clearFlags = sky ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+            }
+            catch { }
+        }
+#endif
     }
     /// <summary>
     /// 問 Sideloader 的 UniversalAutoResolver：模組的「編號 + GUID」在本機是幾號。

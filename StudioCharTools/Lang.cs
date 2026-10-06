@@ -1604,6 +1604,9 @@ namespace StudioCharTools
             A("睡衣",
               "Pajamas",
               "パジャマ");
+            A("入浴",
+              "Bath",
+              "お風呂");
             A("套用上次值",
               "Use last values",
               "前回の値を適用");

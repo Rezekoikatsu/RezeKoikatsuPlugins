@@ -492,7 +492,7 @@ namespace StudioCutScene
             else if (ext == ".wav") { at = AudioType.WAV; stream = false; }
             else { Status = "音訊格式不支援（只吃 .ogg / .wav）: " + ext; yield break; }
 
-            var www = new WWW(ToUrl(path));
+            var www = new WWW(ToWwwUrl(path));
             while (!www.isDone) yield return null;
             if (!string.IsNullOrEmpty(www.error)) { Status = "音訊載入失敗: " + www.error; yield break; }
 
@@ -739,6 +739,40 @@ namespace StudioCutScene
         static string ToUrl(string path)
         {
             return "file:///" + path.Replace('\\', '/');
+        }
+
+        /// <summary>
+        /// 給 WWW（音檔）用的網址。影片的 VideoPlayer.url 不走這裡 —— 那是引擎原生層自己解析的。
+        ///
+        /// Koikatsu Sunshine 的 Unity 是 2019 版，WWW 底下換成 UnityWebRequest：網址會先丟給
+        /// System.Uri 拆開、再做一次百分比解碼。直接把路徑接在 file:/// 後面的話：
+        ///   路徑裡有 #       → # 後面被當成網址的片段，路徑在那裡斷掉
+        ///   路徑裡有 +       → 同一條路徑只要還有空白或中日文，+ 會被解成空白
+        ///   路徑裡有 %25 這種 → 被當成跳脫字元解掉
+        /// 結果都是「檔案明明在，卻說找不到」。先把每一段照網址的規則跳脫好，它解回來就是原本的路徑。
+        /// （用遊戲自己的 UnityEngine.UnityWebRequestModule 實際跑過這幾種路徑確認的。）
+        ///
+        /// 網路磁碟（\\主機\資料夾）不跳脫：那種路徑它不會解回來。
+        /// Koikatsu（Unity 5.6）的 WWW 是另一套實作，照原本的寫法，不動。
+        /// </summary>
+        internal static string ToWwwUrl(string path)
+        {
+#if KKS
+            string p = path.Replace('\\', '/');
+            if (p.StartsWith("//")) return "file:///" + p;
+
+            string[] seg = p.Split('/');
+            var sb = new System.Text.StringBuilder("file:///");
+            for (int i = 0; i < seg.Length; i++)
+            {
+                if (i > 0) sb.Append('/');
+                // 第一段是磁碟代號（D:），冒號不能跳脫
+                sb.Append(i == 0 && seg[i].EndsWith(":") ? seg[i] : Uri.EscapeDataString(seg[i]));
+            }
+            return sb.ToString();
+#else
+            return ToUrl(path);
+#endif
         }
     }
 }

@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.0.1";
+        public const string Version = "1.1.0";
 
         internal static CharToolsPlugin Instance;
 
@@ -1055,13 +1055,31 @@ namespace StudioCharTools
             GUILayout.Label(Lang.T("刪除、縮放、移動第 N 格時，選中的服裝槽第 N 格若是同一個飾品也會一起改"));
         }
 
-        /// <summary>KK 的前七套有固定名稱，之後的就用編號。</summary>
-        static readonly string[] CoordNames =
-            { "學生服（校內）", "學生服（放學）", "體操服", "泳裝", "社團", "私服", "睡衣" };
+        /// <summary>
+        /// 遊戲內建的那幾套有固定名稱，之後（MoreOutfits 加的）就用編號。
+        ///
+        /// 名稱照遊戲自己的 ChaFileDefine.CoordinateType 來對，不寫死順序 —— 兩款遊戲不一樣：
+        ///   Koikatsu           School01 / School02 / Gym / Swim / Club / Plain / Pajamas（七套）
+        ///   Koikatsu Sunshine  Plain / Swim / Pajamas / Bathing（四套）
+        /// 寫死的話，在 Sunshine 按「泳裝」實際動到的會是別套。
+        /// </summary>
+        static readonly string[] CoordEnumNames = Enum.GetNames(typeof(ChaFileDefine.CoordinateType));
+
+        static readonly Dictionary<string, string> CoordNameZh = new Dictionary<string, string>
+        {
+            { "School01", "學生服（校內）" }, { "School02", "學生服（放學）" }, { "Gym", "體操服" },
+            { "Swim", "泳裝" }, { "Club", "社團" }, { "Plain", "私服" }, { "Pajamas", "睡衣" },
+            { "Bathing", "入浴" },
+        };
 
         static string CoordLabel(int c)
         {
-            return c < CoordNames.Length ? Lang.T(CoordNames[c]) : string.Format(Lang.T("第 {0} 套"), c + 1);
+            if (c >= 0 && c < CoordEnumNames.Length)
+            {
+                string zh;
+                return CoordNameZh.TryGetValue(CoordEnumNames[c], out zh) ? Lang.T(zh) : CoordEnumNames[c];
+            }
+            return string.Format(Lang.T("第 {0} 套"), c + 1);
         }
 
         /// <summary>把同一格也從被選中的服裝槽清掉（只清同一個飾品），回傳要接在狀態列後面的字；不是同一個飾品的服裝槽放進 bad。</summary>
@@ -1394,7 +1412,7 @@ namespace StudioCharTools
         // =============================================================
         // 一鍵存出一個角色的全部換裝
         //
-        // KK 的 CoordinateType 固定七個槽（制服1/制服2/體操服/泳裝/社團/私服/睡衣），
+        // 角色有幾套換裝就存幾套（Koikatsu 內建七套、Sunshine 內建四套，MoreOutfits 加的也算），
         // 這裡輪流切到每一個、等模型重建完、拍一張縮圖、存成服裝卡，最後切回原本那套。
         //
         // 為什麼不直接讀 chaFile.coordinate[i] 存檔就好：
@@ -1602,7 +1620,10 @@ namespace StudioCharTools
             }
         }
 
-        /// <summary>換到第 slot 套換裝（0..6）。給腳本用的公開版本。</summary>
+        /// <summary>
+        /// 換到第 slot 套換裝（從 0 開始）。給腳本用的公開版本。
+        /// 有幾套、每個編號是哪一套，兩款遊戲不一樣，用 ApiCoordinateSlotCount 問，不要寫死。
+        /// </summary>
         public static bool ApiSetCoordinateSlot(Studio.OCIChar oci, int slot)
         {
             try
@@ -1617,12 +1638,27 @@ namespace StudioCharTools
             }
         }
 
+        /// <summary>這個角色有幾套換裝。給腳本用的公開版本。</summary>
+        public static int ApiCoordinateSlotCount(Studio.OCIChar oci)
+        {
+            return CoordSlotCountOf(oci);
+        }
+
         /// <summary>
-        /// KK 的換裝槽數。這個數字是從 Assembly-CSharp 的 ChaFileDefine.CoordinateType
-        /// 實際讀出來的：School01 / School02 / Gym / Swim / Club / Plain / Pajamas，固定七個。
-        /// 名稱顯示沿用插件既有的 CoordLabel()，不另外開一份對照表。
+        /// 這個角色有幾套換裝。直接數角色身上的，不寫死：
+        /// Koikatsu 內建七套、Sunshine 內建四套，MoreOutfits 還會再加。
+        /// 讀不到才退回遊戲列舉的個數。
         /// </summary>
-        const int CoordSlotCount = 7;
+        static int CoordSlotCountOf(Studio.OCIChar oci)
+        {
+            try
+            {
+                var c = oci.charInfo.chaFile.coordinate;
+                if (c != null && c.Length > 0) return c.Length;
+            }
+            catch { }
+            return Enum.GetValues(typeof(ChaFileDefine.CoordinateType)).Length;
+        }
 
         /// <summary>把 int 轉成對方要的參數型別（列舉或 int）。轉不了回 null。</summary>
         static object ToSlotArg(Type t, int slot)
@@ -1650,6 +1686,16 @@ namespace StudioCharTools
                                    | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
             try
             {
+                // 超出範圍的編號遊戲不會丟例外，只是默默不換 —— 不先擋的話會把身上那一套
+                // 當成「換好了」再存一次。
+                if (slot < 0 || slot >= CoordSlotCountOf(oci)) return false;
+
+#if KKS
+                // Sunshine：直接叫工作室自己的方法。它除了換裝，還會把裙子的 FK 節點
+                // 照新衣服重新整理一次（Sunshine 才有的步驟），繞過它裙子 FK 會停在上一套的狀態。
+                oci.SetCoordinateInfo((ChaFileDefine.CoordinateType)slot, true);
+                return oci.charInfo.fileStatus.coordinateType == slot;
+#else
                 foreach (MethodInfo m in oci.GetType().GetMethods(F))
                 {
                     if (m.Name != "SetCoordinateInfo") continue;
@@ -1685,6 +1731,7 @@ namespace StudioCharTools
                     }
                 }
                 Logger.LogWarning("[存全部換裝] 找不到可用的換裝方法");
+#endif
             }
             catch (Exception e)
             {
@@ -1710,10 +1757,11 @@ namespace StudioCharTools
 
             batchRunning = true;      // 中途不要每存一張就跳一次檔案總管
 
-            for (int slot = 0; slot < CoordSlotCount; slot++)
+            int slotCount = CoordSlotCountOf(oci);
+            for (int slot = 0; slot < slotCount; slot++)
             {
                 SetStatus(true, Lang.T("存全部換裝：") + CoordLabel(slot)
-                                + "（" + (slot + 1) + " / " + CoordSlotCount + "）");
+                                + "（" + (slot + 1) + " / " + slotCount + "）");
 
                 if (!SetCoordinateSlot(oci, slot)) { fail++; continue; }
 
@@ -1723,7 +1771,7 @@ namespace StudioCharTools
                 yield return new WaitForSeconds(Mathf.Max(0.3f, settleSeconds));
 
                 // 服裝卡的檔名前綴會帶入這個編號，所以傳槽號而不是角色編號，
-                // 七張才不會擠在同一個名字上（時間戳也會不同，這是雙保險）
+                // 每一套才不會擠在同一個名字上（時間戳也會不同，這是雙保險）
                 yield return StartCoroutine(CaptureThenSave(oci, slot + 1, female, false));
 
                 if (CardSaver.LastMessage != null && CardSaver.LastMessage.Contains("已存出"))
@@ -3039,7 +3087,10 @@ namespace StudioCharTools
                         for (int a = 1; a < ps.Length; a++)
                         {
                             Type pt = ps[a].ParameterType;
-                            if (pt == typeof(bool)) args[a] = true;      // deselect others
+                            // 只有緊接在節點後面的那個 bool（取消其他選取）填 true。
+                            // Sunshine 的 SelectSingle 多了第三個參數 _duplicate，那個要 false：
+                            // 填 true 是「複製物件」走的路，工作室的位置 / 旋轉輸入列不會更新。
+                            if (pt == typeof(bool)) args[a] = (a == 1);
                             else args[a] = pt.IsValueType ? Activator.CreateInstance(pt) : null;
                         }
 
@@ -3103,6 +3154,13 @@ namespace StudioCharTools
                 bool loadOk = !(loadResult is bool) || (bool)loadResult;
                 if (!loadOk) { statusMsg = "❌ 讀取服裝卡失敗，請確認檔案格式！"; return; }
 
+#if KKS
+                // Sunshine：卡片確認讀得進來之後，交給工作室自己的 LoadClothesFile 去套。
+                // 它做的事跟下面那一段一樣（指定到目前這一套 + 只重載服裝 + 胸部物理），
+                // 另外多了 Sunshine 才有的「照新衣服重新整理裙子 FK」。
+                oci.LoadClothesFile(path);
+                statusMsg = "✅ 服裝替換成功！";
+#else
                 // AssignCoordinate 需要「目前實際穿著的 CoordinateType」當
                 // 第一個參數，從 fileStatus.coordinateType 讀出來。
                 object fileStatus = GetMember(chaCtrl, "fileStatus");
@@ -3141,6 +3199,7 @@ namespace StudioCharTools
                 }
 
                 statusMsg = "✅ 服裝替換成功！";
+#endif
             }
             catch (Exception ex)
             {
@@ -4664,7 +4723,7 @@ namespace StudioCharTools
                 StartCoroutine(CaptureThenSave(oci, index + 1, IsFemale(oci), false));
             }
 
-            // 七個換裝槽輪流穿上、各拍一張、各存一張服裝卡，最後切回原本那套
+            // 每個換裝槽輪流穿上、各拍一張、各存一張服裝卡，最後切回原本那套
             if (GUILayout.Button(Lang.T("存全部換裝"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);

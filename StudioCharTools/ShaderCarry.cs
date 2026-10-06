@@ -150,6 +150,20 @@ namespace StudioCharTools
             return snap;
         }
 
+        /// <summary>MaterialEditor 認不認得這個著色器。問不到（版本不同）就當作認得，維持原本的行為。</summary>
+        static bool ShaderKnown(string name)
+        {
+            try
+            {
+                Type pb = HarmonyLib.AccessTools.TypeByName("MaterialEditorAPI.MaterialEditorPluginBase");
+                FieldInfo f = pb == null ? null : pb.GetField("LoadedShaders",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                var d = f == null ? null : f.GetValue(null) as System.Collections.IDictionary;
+                return d == null || d.Contains(name);
+            }
+            catch { return true; }
+        }
+
         // ------------------------------------------------------------ 換人後：套到新角色
         public static int Apply(ChaControl cha, Snapshot snap)
         {
@@ -179,7 +193,17 @@ namespace StudioCharTools
                         if (orig == e.Shader && mRemoveShader != null)
                             mRemoveShader.Invoke(ctrl, new object[] { 0, charType, mat, go, true });
                         else
+                        {
+                            // MaterialEditor 只換得了它自己表裡有的著色器。表裡沒有的它會默默失敗，
+                            // 但還是在角色身上記一筆無效的覆寫 —— 那一筆會跟著存進卡片。
+                            // 兩款遊戲內建的表不一樣，原角色用的著色器新角色這邊不一定有，先查再換。
+                            if (!ShaderKnown(e.Shader))
+                            {
+                                sb.AppendLine(string.Format("  {0} [{1}] 略過（MaterialEditor 沒有 {2}）", e.Part, MatName(mat), e.Shader));
+                                continue;
+                            }
                             mSetShader.Invoke(ctrl, new object[] { 0, charType, mat, e.Shader, go, true });
+                        }
                         mat = PartMaterial(cha, e.Part) ?? mat;
                         changed++;
                         sb.AppendLine(string.Format("  {0} [{1}] {2} → {3}", e.Part, MatName(mat), before, e.Shader));

@@ -65,7 +65,12 @@ namespace StudioCutScene
                 {
                     if (t == null || t.FullName == null) continue;
                     if (t.FullName.IndexOf("Timeline", StringComparison.OrdinalIgnoreCase) < 0) continue;
-                    if (FindMember(t, TIME_NAMES) == null) continue;
+                    // 一個一個包起來：Sunshine 多了 Unity 自己的 Unity.Timeline 組件，
+                    // 名字裡有 Timeline 的型別多很多。其中任何一個在查成員時丟例外，
+                    // 不能讓整次掃描跟著失敗（掃描是每秒重試的，那樣就永遠掃不到）。
+                    MemberInfo probe = null;
+                    try { probe = FindMember(t, TIME_NAMES); } catch { }
+                    if (probe == null) continue;
                     cands.Add(t);
                     sb.AppendLine("候選: " + t.FullName + "   [" + asm.GetName().Name + "]");
                 }
@@ -97,7 +102,8 @@ namespace StudioCutScene
             int bestScore = int.MinValue;
             foreach (var t in cands)
             {
-                int s = Score(t);
+                int s;
+                try { s = Score(t); } catch { s = int.MinValue + 1; }
                 sb.AppendLine("  分數 " + s + "　" + t.FullName);
                 if (s > bestScore) { bestScore = s; pick = t; }
             }

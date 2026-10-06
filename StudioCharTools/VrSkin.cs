@@ -146,7 +146,10 @@ public static class VrSkin
             // Unity 5.6 是 UnityEngine.VR.VRSettings，之後改名 XRSettings，兩個都試
             foreach (string n in new[] {
                          "UnityEngine.VR.VRSettings, UnityEngine",
-                         "UnityEngine.XR.XRSettings, UnityEngine" })
+                         "UnityEngine.XR.XRSettings, UnityEngine",
+                         // Unity 2019（Koikatsu Sunshine）：型別實際在 VRModule 裡，
+                         // UnityEngine.dll 只是轉發。轉發沒接上的話直接指名真正的組件。
+                         "UnityEngine.XR.XRSettings, UnityEngine.VRModule" })
             {
                 Type t = null;
                 try { t = Type.GetType(n, false); }

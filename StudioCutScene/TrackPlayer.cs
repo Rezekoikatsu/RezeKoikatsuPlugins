@@ -684,7 +684,7 @@ namespace StudioCutScene
                 yield break;
             }
 
-            var www = new WWW("file:///" + path.Replace('\\', '/'));
+            var www = new WWW(CutOverlay.ToWwwUrl(path));
             while (!www.isDone) yield return null;
             if (!string.IsNullOrEmpty(www.error))
             {

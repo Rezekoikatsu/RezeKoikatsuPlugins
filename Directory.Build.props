@@ -10,5 +10,13 @@
     <KoikatuManagedDir>$(KoikatuDir)CharaStudio_Data\Managed\</KoikatuManagedDir>
     <KoikatuBepInExDir>$(KoikatuDir)BepInEx\</KoikatuBepInExDir>
     <KoikatuPluginDir>$(KoikatuDir)BepInEx\plugins\</KoikatuPluginDir>
+
+    <!-- Koikatsu Sunshine：*.KKS.csproj 用這一組。沒有 Sunshine 的話，在 Visual Studio 把那兩個專案卸載即可。 -->
+    <!-- Koikatsu Sunshine: used by the *.KKS.csproj projects. Without Sunshine, just unload those two projects. -->
+    <!-- Koikatsu Sunshine：*.KKS.csproj が使います。Sunshine が無い場合は、その 2 つのプロジェクトをアンロードしてください。 -->
+    <KoikatsuSunshineDir Condition="'$(KoikatsuSunshineDir)' == ''">D:\KoikatsuSunshine\</KoikatsuSunshineDir>
+    <KksManagedDir>$(KoikatsuSunshineDir)CharaStudio_Data\Managed\</KksManagedDir>
+    <KksBepInExDir>$(KoikatsuSunshineDir)BepInEx\</KksBepInExDir>
+    <KksPluginDir>$(KoikatsuSunshineDir)BepInEx\plugins\</KksPluginDir>
   </PropertyGroup>
 </Project>

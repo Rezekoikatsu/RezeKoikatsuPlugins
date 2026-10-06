@@ -88,6 +88,40 @@ namespace StudioCharTools
                 }
             }
             catch { }
+
+            // 有些版本的 KKAPI（Sunshine 用的 KKSAPI 1.45 就是）AddLeftToolbarToggle 回傳的
+            // 那個包裝物件，Value 改了**不會**傳到工具列上真正的那顆按鈕：顏色不變，
+            // 下一次點按鈕送出來的還是舊狀態的反相，要點兩下才有反應。
+            // 所以上面寫完之後再看一眼真正的控制項，沒跟上就直接推它的 Toggled。
+            // 會傳過去的版本這裡一定已經一致，什麼都不會做。
+            try
+            {
+                object subj = GetSubject(FindControl(), "Toggled");
+                if (subj != null) PushBool(subj, on);
+            }
+            catch { }
+        }
+
+        /// <summary>拿控制項上某個 BehaviorSubject&lt;bool&gt; 屬性（Toggled / Visible）。</summary>
+        static object GetSubject(object ctrl, string name)
+        {
+            if (ctrl == null) return null;
+            PropertyInfo p = ctrl.GetType().GetProperty(name,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            return p == null ? null : p.GetValue(ctrl, null);
+        }
+
+        /// <summary>把值推進 BehaviorSubject&lt;bool&gt;。已經是那個值就不推。回傳 true = 真的推了。</summary>
+        static bool PushBool(object subj, bool v)
+        {
+            PropertyInfo vp = subj.GetType().GetProperty("Value");
+            object cur = vp == null ? null : vp.GetValue(subj, null);
+            if (cur is bool && (bool)cur == v) return false;
+            MethodInfo next = subj.GetType().GetMethod("OnNext",
+                BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(bool) }, null);
+            if (next == null) return false;
+            next.Invoke(subj, new object[] { v });
+            return true;
         }
 
         static Texture2D iconTex;
@@ -104,6 +138,7 @@ namespace StudioCharTools
         static object FindControl()
         {
             if (iconTex == null) return null;
+            if (foundCtrl != null) return foundCtrl;
             try
             {
                 if (tMgr == null) tMgr = FindType("KKAPI.Studio.UI.Toolbars.ToolbarManager");
@@ -123,12 +158,20 @@ namespace StudioCharTools
                     PropertyInfo p = c.GetType().GetProperty("IconTex",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     if (p == null) continue;
-                    if (ReferenceEquals(p.GetValue(c, null), iconTex)) return c;
+
+                    // 一顆一顆包起來：原版按鈕的 IconTex 會丟例外（它的圖示取得函式回傳 null），
+                    // 不包的話碰到一顆原版按鈕整個迴圈就結束，排在它後面的我們永遠找不到。
+                    object tex;
+                    try { tex = p.GetValue(c, null); } catch { continue; }
+                    if (ReferenceEquals(tex, iconTex)) { foundCtrl = c; return c; }
                 }
             }
             catch { }
             return null;
         }
+
+        // 找到之後就記住。按鈕建立後不會換物件，不用每次都把整個清單翻一遍。
+        static object foundCtrl;
 
         /// <summary>
         /// 顯示 / 隱藏這顆按鈕。
@@ -181,7 +224,27 @@ namespace StudioCharTools
             }
             catch { }
 
-            // --- 退路：舊版 KKAPI ---
+            // --- 沒有 IsHidden / ToggleHidden 的版本（KKSAPI 1.45 等）---
+            // 改工具列上真正那顆控制項自己的 Visible：排版只算 Visible 為 true 的按鈕，
+            // 所以後面的一樣會遞補上來。寫包裝物件的 Visible 做不到這件事（只是把按鈕關掉，
+            // 位置還在）。按鈕的 GameObject 還沒建立時沒有人在聽這個值，所以自己補叫一次重新排版。
+            try
+            {
+                object vis = GetSubject(FindControl(), "Visible");
+                if (vis != null)
+                {
+                    if (PushBool(vis, on) && tMgr != null)
+                    {
+                        MethodInfo relayout = tMgr.GetMethod("RequestToolbarRelayout",
+                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                        if (relayout != null) relayout.Invoke(null, null);
+                    }
+                    return;
+                }
+            }
+            catch { }
+
+            // --- 退路：更舊的 KKAPI ---
             try
             {
                 PropertyInfo vp = toggle.GetType().GetProperty("Visible");

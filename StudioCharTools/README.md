@@ -165,7 +165,7 @@ https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 
 ## 設定
 
-面板右下的「設置」開啟，最底下有 **Language** 和 **重置為預設**。
+面板右下的「設置」開啟，最底下有 **介面縮放**（60%～200%）、**Language** 和 **重置為預設**。
 也可以用 BepInEx 設定管理器，或直接改 `BepInEx\config\reze.studio.chartools.cfg`。
 
 ## 已知限制

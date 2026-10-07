@@ -98,7 +98,7 @@ KK_VR_CameraSync installed it can also ask that plugin to realign (on by default
 ## Settings
 
 Bottom right of the panel has **Controls** and **Settings**; both windows have
-**Language** and **Reset to defaults** at the bottom. You can also edit
+**Language** and **Reset to defaults** at the bottom; **Settings** also has **UI scale** (60%–200%). You can also edit
 `BepInEx\config\reze.studio.vrtools.cfg`.
 
 The last line in **Controls** shows live which buttons you are pressing — press one and you

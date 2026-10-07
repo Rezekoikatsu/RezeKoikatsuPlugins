@@ -141,5 +141,5 @@ kkscenebridge 會在 json 裡一併寫入 `pairs`（每一段的頭尾對應點�
 
 ## 設定
 
-面板最下方的 **Language** 和 **重置為預設**。
+面板最下方的 **介面縮放**（60%～200%）、**Language** 和 **重置為預設**。
 或改 `BepInEx\config\reze.studio.cutscene.cfg`。

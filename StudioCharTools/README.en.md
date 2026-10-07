@@ -181,8 +181,8 @@ companion external tool **kkscenebridge** (the formerly separate `kkbridge.exe` 
 
 ## Settings
 
-The **Settings** button at the bottom right of the panel. **Language** and
-**Reset to defaults** are at the very bottom of that window. You can also use
+The **Settings** button at the bottom right of the panel. **UI scale** (60%–200%),
+**Language** and **Reset to defaults** are at the very bottom of that window. You can also use
 BepInEx's ConfigurationManager or edit `BepInEx\config\reze.studio.chartools.cfg`.
 
 ## Known limitations

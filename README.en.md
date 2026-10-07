@@ -113,6 +113,7 @@ Settings live in `BepInEx\config\reze.studio.*.cfg`. To reset everything, run `�
 
 Everything supports **Traditional Chinese / English / Japanese**:
 - Plugins: the **Language** button at the bottom of each panel (all plugins switch together)
+- Text too small or too large: **UI scale** (60%–200%) is in the same place, set separately for each panel
 - kkscenebridge: bottom of the Settings tab (restart after changing)
 
 ## 📖 Documentation

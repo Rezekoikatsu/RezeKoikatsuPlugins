@@ -151,5 +151,5 @@ scenes it makes things worse. Left alone by default.
 
 ## Settings
 
-**Language** and **Reset to defaults** at the bottom of the panel, or edit
+**UI scale** (60%–200%), **Language** and **Reset to defaults** at the bottom of the panel, or edit
 `BepInEx\config\reze.studio.cutscene.cfg`.

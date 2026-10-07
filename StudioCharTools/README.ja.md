@@ -169,8 +169,8 @@ https://github.com/user-attachments/assets/9db290e8-de18-484d-80f8-24b0d04774e0
 
 ## 設定
 
-パネル右下の「設定」から。ウィンドウの最下部に **Language** と
-**初期設定に戻す** があります。BepInEx の ConfigurationManager や
+パネル右下の「設定」から。ウィンドウの最下部に **UI スケール**（60%〜200%）、
+**Language**、**初期設定に戻す** があります。BepInEx の ConfigurationManager や
 `BepInEx\config\reze.studio.chartools.cfg` の直接編集でも構いません。
 
 ## 既知の制限

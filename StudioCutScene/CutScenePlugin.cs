@@ -201,7 +201,7 @@ namespace StudioCutScene
     {
         public const string GUID = "reze.studio.cutscene";
         public const string NAME = "Studio CutScene";
-        public const string VERSION = "1.15.0";
+        public const string VERSION = "1.15.1";
 
         // 對應折線只擋「倒退」，不擋「陡」。
         // 斜率 = 該處的 1/timeScale：卡片把時間流速調到 0.03（近乎定格）時
@@ -2529,6 +2529,8 @@ namespace StudioCutScene
         // ------------------------------------------------------------------ 面板
 
 
+        int fitLang = -1;
+
         void OnGUI()
         {
             if (!show) return;
@@ -2538,6 +2540,14 @@ namespace StudioCutScene
 
             VrSkin.Follow();   // 設定統一由 F9 管，見 VrSkin.Follow 的註解
             GUISkin savedSkin = VrSkin.Begin();
+            // 語言換了：寬度重設成這個語言的底寬，高度歸零讓它照內容重排。
+            // 視窗會被內容撐大但不會自己縮回來，從英文切回中文時要手動收。
+            if (Fit.LanguageChanged(ref fitLang))
+            {
+                win.width = 660f * Fit.Wide;
+                win.height = 0f;
+                keysRect.width = 330f * Fit.Wide;
+            }
             win = GUILayout.Window(GUID.GetHashCode(), win, DrawWindow,
                 NAME + "  " + VERSION + "   (" + HOTKEY + Lang.T(" 開關)"));
             if (showKeys)
@@ -2564,18 +2574,18 @@ namespace StudioCutScene
             for (int i = 0; i < rows.Length; i++)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T(rows[i].Label), GUILayout.Width(100));
+                GUILayout.Label(Lang.T(rows[i].Label), Fit.WL(100, Lang.T(rows[i].Label)));
                 if (keyCapture == i)
                 {
                     GUILayout.Label(Lang.T("<color=#f1c40f>Press any key</color>"),
-                                    Rich(), GUILayout.Width(120));
-                    if (GUILayout.Button(Lang.T("取消"), GUILayout.Width(50)))
+                                    Rich(), Fit.W(120, Lang.T("<color=#f1c40f>Press any key</color>"), Rich()));
+                    if (GUILayout.Button(Lang.T("取消"), Fit.WB(50, Lang.T("取消"))))
                         keyCapture = -1;
                 }
                 else
                 {
                     GUILayout.Label(rows[i].Entry.Value.ToString(), GUILayout.Width(120));
-                    if (GUILayout.Button(Lang.T("設置.."), GUILayout.Width(50)))
+                    if (GUILayout.Button(Lang.T("設置.."), Fit.WB(50, Lang.T("設置.."))))
                         keyCapture = i;
                 }
                 GUILayout.EndHorizontal();
@@ -2695,7 +2705,7 @@ namespace StudioCutScene
             GUILayout.Label(Lang.T("<b>過場設定檔</b>"), Rich());
             GUILayout.BeginHorizontal();
             pathInput = GUILayout.TextField(pathInput ?? "");
-            if (GUILayout.Button(Lang.T("載入 / 重載"), GUILayout.Width(90)))
+            if (GUILayout.Button(Lang.T("載入 / 重載"), Fit.WB(90, Lang.T("載入 / 重載"))))
             {
                 // 文字框是空的就當成「幫我找」—— 以前會直接丟給 LoadConfig，
                 // 得到一句看不懂的「載入失敗: Empty path not allowed」。
@@ -2707,8 +2717,8 @@ namespace StudioCutScene
             GUILayout.BeginHorizontal();
             if (cfgAutoLoad != null)
                 cfgAutoLoad.Value = GUILayout.Toggle(cfgAutoLoad.Value,
-                    Lang.T(" 自動載入（比對時間軸總長度）"), GUILayout.Width(210));
-            if (GUILayout.Button(Lang.T("立刻重找"), GUILayout.Width(80)))
+                    Lang.T(" 自動載入（比對時間軸總長度）"), Fit.WT(210, Lang.T(" 自動載入（比對時間軸總長度）")));
+            if (GUILayout.Button(Lang.T("立刻重找"), Fit.WB(80, Lang.T("立刻重找"))))
                 RescanNow();
             GUILayout.Label(cfgSearchDirs == null ? "" : Lang.T("搜尋：") + Lang.T("卡片旁邊") + "；" + cfgSearchDirs.Value, Small());
             GUILayout.EndHorizontal();
@@ -2728,10 +2738,10 @@ namespace StudioCutScene
                 GUILayout.Label(Lang.T("共用來源片: ") + SafeName(cfg.videoFile), Small());
 
             GUILayout.BeginHorizontal();
-            cfg.enabled = GUILayout.Toggle(cfg.enabled, Lang.T(" 總開關"), GUILayout.Width(70));
-            cfg.useOpening = GUILayout.Toggle(cfg.useOpening, Lang.T(" 開場"), GUILayout.Width(60));
-            cfg.useTransitions = GUILayout.Toggle(cfg.useTransitions, Lang.T(" 過場"), GUILayout.Width(60));
-            cfg.useEnding = GUILayout.Toggle(cfg.useEnding, Lang.T(" 片尾"), GUILayout.Width(60));
+            cfg.enabled = GUILayout.Toggle(cfg.enabled, Lang.T(" 總開關"), Fit.WT(70, Lang.T(" 總開關")));
+            cfg.useOpening = GUILayout.Toggle(cfg.useOpening, Lang.T(" 開場"), Fit.WT(60, Lang.T(" 開場")));
+            cfg.useTransitions = GUILayout.Toggle(cfg.useTransitions, Lang.T(" 過場"), Fit.WT(60, Lang.T(" 過場")));
+            cfg.useEnding = GUILayout.Toggle(cfg.useEnding, Lang.T(" 片尾"), Fit.WT(60, Lang.T(" 片尾")));
             GUILayout.FlexibleSpace();
             cfg.freezeTimeScale = GUILayout.Toggle(cfg.freezeTimeScale, Lang.T(" 凍結 timeScale"));
             GUILayout.EndHorizontal();
@@ -2741,11 +2751,11 @@ namespace StudioCutScene
             // --- 音軌（取代 VNSound）---
             GUILayout.Label(Lang.T("<b>音軌（跟著時間軸走，可任意 seek）</b>"), Rich());
             GUILayout.BeginHorizontal();
-            cfg.tracksEnabled = GUILayout.Toggle(cfg.tracksEnabled, Lang.T(" 啟用"), GUILayout.Width(60));
-            GUILayout.Label(Lang.T("共 ") + (cfg.tracks == null ? 0 : cfg.tracks.Length) + Lang.T(" 段"), GUILayout.Width(60));
-            if (GUILayout.Button(Lang.T("重載音檔"), GUILayout.Width(80)) && TrackPlayer.Instance != null)
+            cfg.tracksEnabled = GUILayout.Toggle(cfg.tracksEnabled, Lang.T(" 啟用"), Fit.WT(60, Lang.T(" 啟用")));
+            GUILayout.Label(Lang.T("共 ") + (cfg.tracks == null ? 0 : cfg.tracks.Length) + Lang.T(" 段"), Fit.WL(60, Lang.T("共 ") + (cfg.tracks == null ? 0 : cfg.tracks.Length) + Lang.T(" 段")));
+            if (GUILayout.Button(Lang.T("重載音檔"), Fit.WB(80, Lang.T("重載音檔"))) && TrackPlayer.Instance != null)
                 TrackPlayer.Instance.Invalidate();
-            GUILayout.Label(Lang.T("音量"), GUILayout.Width(30));
+            GUILayout.Label(Lang.T("音量"), Fit.WL(30, Lang.T("音量")));
             cfg.trackVolume = GUILayout.HorizontalSlider(cfg.trackVolume, 0f, 1f, GUILayout.Width(90));
             GUILayout.Label(Mathf.RoundToInt(cfg.trackVolume * 100f) + "%", GUILayout.Width(40));
             GUILayout.EndHorizontal();
@@ -2763,7 +2773,7 @@ namespace StudioCutScene
             if (cfg.variantNames != null && cfg.variantNames.Length > 0)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("配音"), GUILayout.Width(34));
+                GUILayout.Label(Lang.T("配音"), Fit.WL(34, Lang.T("配音")));
                 bool anyMissing = false;
                 bool noMap = false;
                 for (int v = 0; v < cfg.variantNames.Length; v++)
@@ -2846,7 +2856,7 @@ namespace StudioCutScene
                         GUILayout.Label(c.t.ToString("F2") + "s", GUILayout.Width(62));
                         GUILayout.Label(string.IsNullOrEmpty(c.kind) ? "transition" : c.kind,
                                         GUILayout.Width(78));
-                        GUILayout.Label(c.done ? Lang.T("已播") : "", Small(), GUILayout.Width(34));
+                        GUILayout.Label(c.done ? Lang.T("已播") : "", Small(), Fit.W(34, c.done ? Lang.T("已播") : "", Small()));
                         GUILayout.FlexibleSpace();
                         if (GUILayout.Button("test", GUILayout.Width(46))) Restart(RunCut(c));
                         // skip 打開時用紅字，一眼看得出這段被關掉了
@@ -2865,7 +2875,7 @@ namespace StudioCutScene
                                              GUILayout.Height(24)))
                             Restart(StartFrom(tr.from, true, true));
                         GUILayout.Label(tr.from.ToString("F2") + "s", GUILayout.Width(62));
-                        GUILayout.Label(Lang.T("場景 ") + (ti + 1) + Lang.T(" 開始"), GUILayout.Width(78));
+                        GUILayout.Label(Lang.T("場景 ") + (ti + 1) + Lang.T(" 開始"), Fit.WL(78, Lang.T("場景 ") + (ti + 1) + Lang.T(" 開始")));
                         GUILayout.FlexibleSpace();
                         GUILayout.Label("→ " + tr.to.ToString("F2") + "s", Small(), GUILayout.Width(80));
                     }
@@ -2906,12 +2916,12 @@ namespace StudioCutScene
                 Restart(PlayFromStart());
 
             GUILayout.Space(8f);
-            cfg.autoReplay = GUILayout.Toggle(cfg.autoReplay, Lang.T(" 自動重播"), GUILayout.Width(84));
+            cfg.autoReplay = GUILayout.Toggle(cfg.autoReplay, Lang.T(" 自動重播"), Fit.WT(84, Lang.T(" 自動重播")));
             skipAllCuts = GUILayout.Toggle(skipAllCuts,
                 skipAllCuts ? Lang.T("<color=#e74c3c><b> 跳過所有動畫</b></color>") : Lang.T(" 跳過所有動畫"),
-                RichBtn(), GUILayout.Width(120));
+                RichBtn(), Fit.W(120, skipAllCuts ? Lang.T("<color=#e74c3c><b> 跳過所有動畫</b></color>") : Lang.T(" 跳過所有動畫"), RichBtn()));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("快捷鍵"), GUILayout.Width(60), GUILayout.Height(28)))
+            if (GUILayout.Button(Lang.T("快捷鍵"), Fit.WB(60, Lang.T("快捷鍵")), GUILayout.Height(28)))
                 showKeys = !showKeys;
 
             GUILayout.EndHorizontal();
@@ -2919,13 +2929,13 @@ namespace StudioCutScene
             // --- 快速試播 ---
             GUILayout.Label(Lang.T("<b>快速試播</b>"), Rich());
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("影片"), GUILayout.Width(34));
+            GUILayout.Label(Lang.T("影片"), Fit.WL(34, Lang.T("影片")));
             quickVideo = GUILayout.TextField(quickVideo ?? "");
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("音訊"), GUILayout.Width(34));
+            GUILayout.Label(Lang.T("音訊"), Fit.WL(34, Lang.T("音訊")));
             quickAudio = GUILayout.TextField(quickAudio ?? "");
-            GUILayout.Label(Lang.T("(留空=影片自帶)"), Small(), GUILayout.Width(110));
+            GUILayout.Label(Lang.T("(留空=影片自帶)"), Small(), Fit.W(110, Lang.T("(留空=影片自帶)"), Small()));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -2939,9 +2949,9 @@ namespace StudioCutScene
                 Restart(RunCut(quick));
             }
             GUI.enabled = true;
-            if (GUILayout.Button(Lang.T("停止"), GUILayout.Width(70)))
+            if (GUILayout.Button(Lang.T("停止"), Fit.WB(70, Lang.T("停止"))))
             { if (CutOverlay.Instance != null) CutOverlay.Instance.Stop(); }
-            if (GUILayout.Button(Lang.T("強制復原"), GUILayout.Width(100)))
+            if (GUILayout.Button(Lang.T("強制復原"), Fit.WB(100, Lang.T("強制復原"))))
             { manualAudioPause = false; ForceRestore(); }
             GUILayout.EndHorizontal();
 
@@ -2969,14 +2979,14 @@ namespace StudioCutScene
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(Lang.T("  重新定位 ") + tpi.SeekCount + Lang.T(" 次")
                                 + (tpi.SeekCount > 0 ? Lang.T("（對應關係若正確應為 0）") : ""),
-                                Small(), GUILayout.Width(230));
-                if (GUILayout.Button(Lang.T("歸零"), GUILayout.Width(50))) tpi.ResetDiag();
-                cfg.logSeeks = GUILayout.Toggle(cfg.logSeeks, Lang.T(" 寫主控台"), GUILayout.Width(80));
+                                Small(), Fit.W(230, Lang.T("  重新定位 ") + tpi.SeekCount + Lang.T(" 次") + (tpi.SeekCount > 0 ? Lang.T("（對應關係若正確應為 0）") : ""), Small()));
+                if (GUILayout.Button(Lang.T("歸零"), Fit.WB(50, Lang.T("歸零")))) tpi.ResetDiag();
+                cfg.logSeeks = GUILayout.Toggle(cfg.logSeeks, Lang.T(" 寫主控台"), Fit.WT(80, Lang.T(" 寫主控台")));
                 GUILayout.Label(tpi.LastSeek, Small());
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("  卡頓補償 maximumDeltaTime"), Small(), GUILayout.Width(180));
+                GUILayout.Label(Lang.T("  卡頓補償 maximumDeltaTime"), Small(), Fit.W(180, Lang.T("  卡頓補償 maximumDeltaTime"), Small()));
                 foreach (float v in MAXDT)
                 {
                     bool on = Mathf.Abs(cfg.maxDeltaTime - v) < 0.001f;
@@ -2999,7 +3009,7 @@ namespace StudioCutScene
                   + "（最久 " + (StallWorst * 1000f).ToString("F0") + " ms"
                   + (StallGap > 0f ? "，間隔 " + StallGap.ToString("F1") + " s" : "") + "）";
             GUILayout.Label(stall, Small(), GUILayout.Width(400));
-            if (GUILayout.Button(Lang.T("歸零"), GUILayout.Width(50))) ResetStallMeter();
+            if (GUILayout.Button(Lang.T("歸零"), Fit.WB(50, Lang.T("歸零")))) ResetStallMeter();
             GUILayout.EndHorizontal();
             if (StallLost > 0.1f)
                 GUILayout.Label(Lang.T("  → 音訊走真實時間、時間軸走 deltaTime，所以音訊此刻應領先約 ")
@@ -3015,7 +3025,7 @@ namespace StudioCutScene
             for (int m = 0; m < 4; m++)
             {
                 bool on = cfg.colorMode == m;
-                if (GUILayout.Toggle(on, " " + Lang.T(nms[m]), "Button", GUILayout.Width(84)) && !on)
+                if (GUILayout.Toggle(on, " " + Lang.T(nms[m]), "Button", Fit.W(84, " " + Lang.T(nms[m]), "Button")) && !on)
                 {
                     cfg.colorMode = m;
                     ApplyColorMode();
@@ -3037,7 +3047,7 @@ namespace StudioCutScene
                 for (int m = 0; m < 2; m++)
                 {
                     bool on = cfg.triggerMode == m;
-                    if (GUILayout.Toggle(on, " " + Lang.T(tm[m]), "Button", GUILayout.Width(150)) && !on)
+                    if (GUILayout.Toggle(on, " " + Lang.T(tm[m]), "Button", Fit.W(150, " " + Lang.T(tm[m]), "Button")) && !on)
                         cfg.triggerMode = m;
                 }
                 GUILayout.EndHorizontal();
@@ -3047,16 +3057,16 @@ namespace StudioCutScene
 
                 GUILayout.Label(Lang.T("<b>診斷</b>"), Rich());
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(Lang.T("重新掃描 Timeline"), GUILayout.Width(130))) TimelineBridge.Scan();
-                if (GUILayout.Button(Lang.T("倒出成員→剪貼簿"), GUILayout.Width(130)))
+                if (GUILayout.Button(Lang.T("重新掃描 Timeline"), Fit.WB(130, Lang.T("重新掃描 Timeline")))) TimelineBridge.Scan();
+                if (GUILayout.Button(Lang.T("倒出成員→剪貼簿"), Fit.WB(130, Lang.T("倒出成員→剪貼簿"))))
                     GUIUtility.systemCopyBuffer = TimelineBridge.DumpMembers();
-                if (GUILayout.Button(Lang.T("手動 Pause"), GUILayout.Width(90))) TimelineBridge.Pause();
-                if (GUILayout.Button(Lang.T("手動 Resume"), GUILayout.Width(90))) TimelineBridge.Resume();
-                if (GUILayout.Button(Lang.T("複製目前時間"), GUILayout.Width(100)))
+                if (GUILayout.Button(Lang.T("手動 Pause"), Fit.WB(90, Lang.T("手動 Pause")))) TimelineBridge.Pause();
+                if (GUILayout.Button(Lang.T("手動 Resume"), Fit.WB(90, Lang.T("手動 Resume")))) TimelineBridge.Resume();
+                if (GUILayout.Button(Lang.T("複製目前時間"), Fit.WB(100, Lang.T("複製目前時間"))))
                     GUIUtility.systemCopyBuffer = TimelineBridge.GetTime().ToString("F2");
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(Lang.T("重新偵測卡片路徑"), GUILayout.Width(130)))
+                if (GUILayout.Button(Lang.T("重新偵測卡片路徑"), Fit.WB(130, Lang.T("重新偵測卡片路徑"))))
                 { ScenePathProbe.Reset(); ScenePathProbe.Detect(); }
                 string cp = ScenePathProbe.Detect();
                 GUILayout.Label(string.IsNullOrEmpty(cp)
@@ -3084,22 +3094,22 @@ namespace StudioCutScene
             // 會讓人以為其他段落跑到哪去了。直接說整張卡。
             int sc = SceneCount();
             GUILayout.Label(Lang.T("VR 視角：") + (sc <= 1 ? Lang.T("整張卡") : Lang.T("場景 ") + (vs + 1) + "/" + sc)
-                            + (has ? Lang.T("（已存）") : Lang.T("（未存）")), GUILayout.Width(170));
-            if (GUILayout.Button(Lang.T("存目前視角"), GUILayout.Width(90))) SaveViewpointHere();
-            if (has && GUILayout.Button(Lang.T("刪除"), GUILayout.Width(50)))
+                            + (has ? Lang.T("（已存）") : Lang.T("（未存）")), Fit.WL(170, Lang.T("VR 視角：") + (sc <= 1 ? Lang.T("整張卡") : Lang.T("場景 ") + (vs + 1) + "/" + sc) + (has ? Lang.T("（已存）") : Lang.T("（未存）"))));
+            if (GUILayout.Button(Lang.T("存目前視角"), Fit.WB(90, Lang.T("存目前視角")))) SaveViewpointHere();
+            if (has && GUILayout.Button(Lang.T("刪除"), Fit.WB(50, Lang.T("刪除"))))
             {
                 ViewStore.Remove(vs);
                 viewApplied = -1;
                 message = ViewStore.LastReport;
             }
-            if (has && GUILayout.Button(Lang.T("套用"), GUILayout.Width(50)))
+            if (has && GUILayout.Button(Lang.T("套用"), Fit.WB(50, Lang.T("套用"))))
             {
                 VrLink.RequestGoto(vhave);
                 viewApplied = vs;
             }
             if (cfgAutoView != null)
                 cfgAutoView.Value = GUILayout.Toggle(cfgAutoView.Value, Lang.T(" 切場景自動套用"),
-                                                     GUILayout.Width(120));
+                                                     Fit.WT(120, Lang.T(" 切場景自動套用")));
             GUILayout.EndHorizontal();
             GUILayout.Label(ViewStore.LastReport, Small());
 
@@ -3107,7 +3117,7 @@ namespace StudioCutScene
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             cfgToolbarButton.Value = GUILayout.Toggle(cfgToolbarButton.Value,
-                                                      " " + Lang.T("顯示工具列圖示"), GUILayout.Width(130));
+                                                      " " + Lang.T("顯示工具列圖示"), Fit.WT(130, " " + Lang.T("顯示工具列圖示")));
             GUILayout.EndHorizontal();
 
             DrawLangAndReset();
@@ -3386,7 +3396,7 @@ namespace StudioCutScene
 
             bool armed = Time.realtimeSinceStartup < resetArmedUntil;
             if (GUILayout.Button(armed ? Lang.T("再按一次確認") : Lang.T("重置為預設"),
-                                 GUILayout.Width(armed ? 170f : 130f), GUILayout.Height(22)))
+                                 Fit.WB(armed ? 170f : 130f, armed ? Lang.T("再按一次確認") : Lang.T("重置為預設")), GUILayout.Height(22)))
             {
                 if (armed) { resetArmedUntil = 0f; ResetConfigToDefaults(); }
                 else resetArmedUntil = Time.realtimeSinceStartup + 3f;

@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="VrToolsPlugin.cs" />
     <Compile Include="Lang.cs" />
+    <Compile Include="UiFit.cs" />
     <Compile Include="VrScreen.cs" />
     <Compile Include="CameraSyncBridge.cs" />
     <Compile Include="CutSceneBridge.cs" />

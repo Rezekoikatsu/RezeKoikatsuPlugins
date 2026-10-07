@@ -29,7 +29,7 @@ namespace StudioVrTools
     {
         public const string GUID = "reze.studio.vrtools";
         public const string NAME = "Studio VR Tools";
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "1.0.1";
 
         ConfigEntry<KeyCode> cfgPanelKey;
         ConfigEntry<int> cfgVrMode;
@@ -448,7 +448,7 @@ namespace StudioVrTools
             if (GUILayout.Button(cfgBindUiNew.Value
                                  ? Lang.T("設定法：按一下直接按　▾")
                                  : Lang.T("設定法：舊的下拉式　▾"),
-                                 GUILayout.Width(190), GUILayout.Height(22)))
+                                 Fit.WB(190, cfgBindUiNew.Value ? Lang.T("設定法：按一下直接按　▾") : Lang.T("設定法：舊的下拉式　▾")), GUILayout.Height(22)))
             {
                 cfgBindUiNew.Value = !cfgBindUiNew.Value;
                 VrCapture.Cancel();
@@ -483,12 +483,12 @@ namespace StudioVrTools
 
             GUILayout.BeginHorizontal();
             cfgCtrlLeftHandMoves.Value = GUILayout.Toggle(cfgCtrlLeftHandMoves.Value,
-                                                          Lang.T(" 左搖桿可移動"), GUILayout.Width(110));
+                                                          Lang.T(" 左搖桿可移動"), Fit.WT(110, Lang.T(" 左搖桿可移動")));
             cfgCtrlRightHandMoves.Value = GUILayout.Toggle(cfgCtrlRightHandMoves.Value,
-                                                           Lang.T(" 右搖桿可移動"), GUILayout.Width(110));
-            cfgCtrlPitch.Value = GUILayout.Toggle(cfgCtrlPitch.Value, Lang.T(" 允許上下轉"), GUILayout.Width(104));
+                                                           Lang.T(" 右搖桿可移動"), Fit.WT(110, Lang.T(" 右搖桿可移動")));
+            cfgCtrlPitch.Value = GUILayout.Toggle(cfgCtrlPitch.Value, Lang.T(" 允許上下轉"), Fit.WT(104, Lang.T(" 允許上下轉")));
             cfgCtrlVertical.Value = GUILayout.Toggle(cfgCtrlVertical.Value,
-                                                     Lang.T(" 握把＋X/Y＝上下平移"), GUILayout.Width(166));
+                                                     Lang.T(" 握把＋X/Y＝上下平移"), Fit.WT(166, Lang.T(" 握把＋X/Y＝上下平移")));
             GUILayout.EndHorizontal();
 
             GUILayout.Space(6f);
@@ -500,7 +500,7 @@ namespace StudioVrTools
             GUILayout.Space(6f);
             GUILayout.BeginHorizontal();
             cfgSpotToJson.Value = GUILayout.Toggle(cfgSpotToJson.Value,
-                                                   Lang.T(" 記住視角時一併寫進 F7 的設定檔"), GUILayout.Width(360));
+                                                   Lang.T(" 記住視角時一併寫進 F7 的設定檔"), Fit.WT(360, Lang.T(" 記住視角時一併寫進 F7 的設定檔")));
             GUILayout.EndHorizontal();
 
             // 「左 Y 對應到哪個 OpenVR 按鍵」各家 runtime 不保證一樣，
@@ -514,7 +514,7 @@ namespace StudioVrTools
             GUILayout.BeginHorizontal();
             DrawResetButton();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("關閉"), GUILayout.Width(90), GUILayout.Height(22)))
+            if (GUILayout.Button(Lang.T("關閉"), Fit.WB(90, Lang.T("關閉")), GUILayout.Height(22)))
                 showCtrlSettings = false;
             GUILayout.EndHorizontal();
 
@@ -550,7 +550,7 @@ namespace StudioVrTools
                                    ? Lang.T("<color=#95a5a6>（還沒讀到輸入）</color>")
                                    : VrCapture.Preview), rich);
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button(Lang.T("取消"), GUILayout.Width(70), GUILayout.Height(22)))
+                if (GUILayout.Button(Lang.T("取消"), Fit.WB(70, Lang.T("取消")), GUILayout.Height(22)))
                 { VrCapture.Cancel(); capturing = null; }
                 GUILayout.EndHorizontal();
             }
@@ -560,21 +560,21 @@ namespace StudioVrTools
         {
             bool mine = VrCapture.Active && capturing == r;
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T(r.Label), GUILayout.Width(150));
+            GUILayout.Label(Lang.T(r.Label), Fit.WL(150, Lang.T(r.Label)));
             GUILayout.Label(mine ? Lang.T("<color=#f1c40f>等你按…</color>")
-                                 : r.Bind.Display(), rich, GUILayout.Width(220));
+                                 : r.Bind.Display(), rich, Fit.W(220, mine ? Lang.T("<color=#f1c40f>等你按…</color>") : r.Bind.Display(), rich));
             if (GUILayout.Button(mine ? Lang.T("取消") : Lang.T("設定"),
-                                 GUILayout.Width(60), GUILayout.Height(20)))
+                                 Fit.WB(60, mine ? Lang.T("取消") : Lang.T("設定")), GUILayout.Height(20)))
             {
                 if (mine) { VrCapture.Cancel(); capturing = null; }
                 else { capturing = r; VrCapture.Begin(r.Label); }
             }
-            if (GUILayout.Button(Lang.T("清除"), GUILayout.Width(54), GUILayout.Height(20)))
+            if (GUILayout.Button(Lang.T("清除"), Fit.WB(54, Lang.T("清除")), GUILayout.Height(20)))
             {
                 r.Bind = new VrBind();
                 r.Commit();
             }
-            if (GUILayout.Button(Lang.T("預設"), GUILayout.Width(54), GUILayout.Height(20)))
+            if (GUILayout.Button(Lang.T("預設"), Fit.WB(54, Lang.T("預設")), GUILayout.Height(20)))
             {
                 r.Entry.Value = (string)r.Entry.DefaultValue;
                 r.Bind = VrBind.Parse(r.Entry.Value);
@@ -607,32 +607,32 @@ namespace StudioVrTools
                 bool dirty = false;
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T(r.Label), GUILayout.Width(150));
+                GUILayout.Label(Lang.T(r.Label), Fit.WL(150, Lang.T(r.Label)));
 
                 for (int h = 0; h < 2; h++)
                 {
                     bool on = b.Left == (h == 0);
-                    if (GUILayout.Toggle(on, " " + Lang.T(hands[h]), "Button", GUILayout.Width(50))
+                    if (GUILayout.Toggle(on, " " + Lang.T(hands[h]), "Button", Fit.W(50, " " + Lang.T(hands[h]), "Button"))
                         && !on) { b.Left = h == 0; dirty = true; }
                 }
                 GUILayout.Space(4f);
 
-                bool g = GUILayout.Toggle(b.Grip, Lang.T(" 握把"), "Button", GUILayout.Width(52));
+                bool g = GUILayout.Toggle(b.Grip, Lang.T(" 握把"), "Button", Fit.W(52, Lang.T(" 握把"), "Button"));
                 if (g != b.Grip) { b.Grip = g; dirty = true; }
-                bool t = GUILayout.Toggle(b.Trigger, Lang.T(" 扳機"), "Button", GUILayout.Width(52));
+                bool t = GUILayout.Toggle(b.Trigger, Lang.T(" 扳機"), "Button", Fit.W(52, Lang.T(" 扳機"), "Button"));
                 if (t != b.Trigger) { b.Trigger = t; dirty = true; }
                 GUILayout.Label("＋", GUILayout.Width(18));
 
                 for (int k = 0; k < btnIds.Length; k++)
                 {
                     bool on = !b.IsDir && b.Button == btnIds[k];
-                    if (GUILayout.Toggle(on, " " + Lang.T(btnNames[k]), "Button", GUILayout.Width(48))
+                    if (GUILayout.Toggle(on, " " + Lang.T(btnNames[k]), "Button", Fit.W(48, " " + Lang.T(btnNames[k]), "Button"))
                         && !on) { b.Button = btnIds[k]; b.Dir = VrBind.DirNone; dirty = true; }
                 }
                 for (int k = 0; k < dirIds.Length; k++)
                 {
                     bool on = b.Dir == dirIds[k];
-                    if (GUILayout.Toggle(on, " " + Lang.T(dirNames[k]), "Button", GUILayout.Width(48))
+                    if (GUILayout.Toggle(on, " " + Lang.T(dirNames[k]), "Button", Fit.W(48, " " + Lang.T(dirNames[k]), "Button"))
                         && !on) { b.Dir = dirIds[k]; b.Button = -1; dirty = true; }
                 }
 
@@ -686,15 +686,15 @@ namespace StudioVrTools
         void OrbitRow(string label, ConfigEntry<int> axis, ConfigEntry<bool> atHead, string[] axes)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T(label), GUILayout.Width(120));
+            GUILayout.Label(Lang.T(label), Fit.WL(120, Lang.T(label)));
             for (int i = 0; i < 3; i++)
             {
                 bool on = axis.Value == i;
-                if (GUILayout.Toggle(on, " " + Lang.T(axes[i]), "Button", GUILayout.Width(136)) && !on)
+                if (GUILayout.Toggle(on, " " + Lang.T(axes[i]), "Button", Fit.W(136, " " + Lang.T(axes[i]), "Button")) && !on)
                     axis.Value = i;
             }
             GUILayout.Space(6f);
-            atHead.Value = GUILayout.Toggle(atHead.Value, Lang.T(" 支點在眼睛"), GUILayout.Width(104));
+            atHead.Value = GUILayout.Toggle(atHead.Value, Lang.T(" 支點在眼睛"), Fit.WT(104, Lang.T(" 支點在眼睛")));
             GUILayout.EndHorizontal();
         }
 
@@ -703,7 +703,7 @@ namespace StudioVrTools
                     float step, string fmt, string unit)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T(label), GUILayout.Width(200));
+            GUILayout.Label(Lang.T(label), Fit.WL(200, Lang.T(label)));
             GUILayout.Label(cfg.Value.ToString(fmt) + unit, GUILayout.Width(72));
             float v = GUILayout.HorizontalSlider(cfg.Value, min, max, GUILayout.Width(240));
             cfg.Value = Mathf.Round(v / step) * step;
@@ -721,21 +721,21 @@ namespace StudioVrTools
             for (int m = 0; m < 3; m++)
             {
                 bool on = cfgVrMode.Value == m;
-                if (GUILayout.Toggle(on, " " + Lang.T(modes[m]), "Button", GUILayout.Width(84)) && !on)
+                if (GUILayout.Toggle(on, " " + Lang.T(modes[m]), "Button", Fit.W(84, " " + Lang.T(modes[m]), "Button")) && !on)
                     cfgVrMode.Value = m;
             }
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            cfgKeepDesktop.Value = GUILayout.Toggle(cfgKeepDesktop.Value, Lang.T(" 桌面照樣畫"), GUILayout.Width(100));
-            cfgFollow.Value = GUILayout.Toggle(cfgFollow.Value, Lang.T(" 跟著頭轉"), GUILayout.Width(92));
-            cfgFlipY.Value = GUILayout.Toggle(cfgFlipY.Value, Lang.T(" 上下翻轉"), GUILayout.Width(92));
-            cfgSolo.Value = GUILayout.Toggle(cfgSolo.Value, Lang.T(" 播放時只畫影片"), GUILayout.Width(130));
+            cfgKeepDesktop.Value = GUILayout.Toggle(cfgKeepDesktop.Value, Lang.T(" 桌面照樣畫"), Fit.WT(100, Lang.T(" 桌面照樣畫")));
+            cfgFollow.Value = GUILayout.Toggle(cfgFollow.Value, Lang.T(" 跟著頭轉"), Fit.WT(92, Lang.T(" 跟著頭轉")));
+            cfgFlipY.Value = GUILayout.Toggle(cfgFlipY.Value, Lang.T(" 上下翻轉"), Fit.WT(92, Lang.T(" 上下翻轉")));
+            cfgSolo.Value = GUILayout.Toggle(cfgSolo.Value, Lang.T(" 播放時只畫影片"), Fit.WT(130, Lang.T(" 播放時只畫影片")));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             cfgKillPostFx.Value = GUILayout.Toggle(cfgKillPostFx.Value,
-                                                   Lang.T(" 播放時關掉後製特效"), GUILayout.Width(160));
+                                                   Lang.T(" 播放時關掉後製特效"), Fit.WT(160, Lang.T(" 播放時關掉後製特效")));
             GUILayout.Label(Lang.T("泛光／色彩校正是在 cullingMask 之後才跑的，偏紅泛光就是它"), small);
             GUILayout.EndHorizontal();
 
@@ -752,9 +752,9 @@ namespace StudioVrTools
             GUILayout.Label(Lang.T("<b>回到相機視角</b>"), rich);
 
             GUILayout.BeginHorizontal();
-            cfgRealignHold.Value = GUILayout.Toggle(cfgRealignHold.Value, Lang.T(" 按著＝鎖定"), GUILayout.Width(110));
+            cfgRealignHold.Value = GUILayout.Toggle(cfgRealignHold.Value, Lang.T(" 按著＝鎖定"), Fit.WT(110, Lang.T(" 按著＝鎖定")));
             cfgAlsoRealign.Value = GUILayout.Toggle(cfgAlsoRealign.Value,
-                                                    Lang.T(" 同時叫 CameraSync"), GUILayout.Width(150));
+                                                    Lang.T(" 同時叫 CameraSync"), Fit.WT(150, Lang.T(" 同時叫 CameraSync")));
             GUILayout.Label(Lang.T("熱鍵 ") + cfgRealignKey.Value, small);
             GUILayout.EndHorizontal();
             Status(Lang.T(CameraSyncBridge.Available() ? "CameraSync 已連上" : "沒有 CameraSync"));
@@ -766,7 +766,7 @@ namespace StudioVrTools
             GUILayout.BeginHorizontal();
             DrawResetButton();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("關閉"), GUILayout.Width(90), GUILayout.Height(22)))
+            if (GUILayout.Button(Lang.T("關閉"), Fit.WB(90, Lang.T("關閉")), GUILayout.Height(22)))
                 showSettings = false;
             GUILayout.EndHorizontal();
 
@@ -1409,7 +1409,7 @@ namespace StudioVrTools
         {
             bool armed = Time.realtimeSinceStartup < resetArmedUntil;
             if (GUILayout.Button(armed ? Lang.T("再按一次確認") : Lang.T("重置為預設"),
-                                 GUILayout.Width(armed ? 170f : 130f), GUILayout.Height(22)))
+                                 Fit.WB(armed ? 170f : 130f, armed ? Lang.T("再按一次確認") : Lang.T("重置為預設")), GUILayout.Height(22)))
             {
                 if (armed) { resetArmedUntil = 0f; ResetConfigToDefaults(); }
                 else resetArmedUntil = Time.realtimeSinceStartup + 3f;
@@ -1462,12 +1462,21 @@ namespace StudioVrTools
             rich.wordWrap = true;
         }
 
+        int fitLang = -1;
+
         void OnGUI()
         {
             if (!show) return;
             VrSkin.Publish(cfgVrSkin.Value, cfgVrSkinOnlyVr.Value);
             GUISkin savedSkin = VrSkin.Begin();
             EnsureStyles();
+            // 語言換了：寬度重設成這個語言的底寬（視窗會被內容撐大但不會自己縮回來）。
+            if (Fit.LanguageChanged(ref fitLang))
+            {
+                win.width = 560f * Fit.Wide;
+                settingsWin.width = 470f * Fit.Wide;
+                ctrlWin.width = 760f * Fit.Wide;
+            }
             win = GUILayout.Window(0x56520001, win, DrawWindow,
                                    NAME + " " + VERSION + Lang.T("　(") + cfgPanelKey.Value + ")");
             if (showSettings)
@@ -1490,15 +1499,15 @@ namespace StudioVrTools
             GUILayout.Label(Lang.T("<b>VR 自動關物件</b>"), rich);
 
             GUILayout.BeginHorizontal();
-            cfgFxMute.Value = GUILayout.Toggle(cfgFxMute.Value, Lang.T(" 啟用"), GUILayout.Width(70));
-            cfgFxMuteOnlyVr.Value = GUILayout.Toggle(cfgFxMuteOnlyVr.Value, Lang.T(" 只在 VR"), GUILayout.Width(84));
-            if (GUILayout.Button(Lang.T("現在就套用一次"), GUILayout.Width(118))) VrFxMute.ForceNow();
-            if (GUILayout.Button(Lang.T("還原成預設清單"), GUILayout.Width(118)))
+            cfgFxMute.Value = GUILayout.Toggle(cfgFxMute.Value, Lang.T(" 啟用"), Fit.WT(70, Lang.T(" 啟用")));
+            cfgFxMuteOnlyVr.Value = GUILayout.Toggle(cfgFxMuteOnlyVr.Value, Lang.T(" 只在 VR"), Fit.WT(84, Lang.T(" 只在 VR")));
+            if (GUILayout.Button(Lang.T("現在就套用一次"), Fit.WB(118, Lang.T("現在就套用一次")))) VrFxMute.ForceNow();
+            if (GUILayout.Button(Lang.T("還原成預設清單"), Fit.WB(118, Lang.T("還原成預設清單"))))
             {
                 cfgFxMuteList.Value = VrFxMute.DefaultList;
                 VrFxMute.ForceNow();
             }
-            if (GUILayout.Button(Lang.T("把選取的加入清單"), GUILayout.Width(140)))
+            if (GUILayout.Button(Lang.T("把選取的加入清單"), Fit.WB(140, Lang.T("把選取的加入清單"))))
             {
                 string rep;
                 cfgFxMuteList.Value = VrFxMute.AddSelectedToList(cfgFxMuteList.Value, out rep);
@@ -1506,7 +1515,7 @@ namespace StudioVrTools
                 VrFxMute.ForceNow();
             }
             GUI.enabled = VrFxMute.CanRemoveLast;
-            if (GUILayout.Button(Lang.T("移除最後加入的"), GUILayout.Width(126)))
+            if (GUILayout.Button(Lang.T("移除最後加入的"), Fit.WB(126, Lang.T("移除最後加入的"))))
             {
                 string rep;
                 cfgFxMuteList.Value = VrFxMute.RemoveLastAdded(cfgFxMuteList.Value, out rep);
@@ -1518,13 +1527,13 @@ namespace StudioVrTools
 
             GUILayout.BeginHorizontal();
             cfgFxFolder.Value = GUILayout.Toggle(cfgFxFolder.Value, Lang.T(" (FX) 資料夾顯示"),
-                                                 GUILayout.Width(140));
+                                                 Fit.WT(140, Lang.T(" (FX) 資料夾顯示")));
             cfgFxFolderVrOff.Value = GUILayout.Toggle(cfgFxFolderVrOff.Value,
-                                                      Lang.T(" VR 時關閉 (FX)"), GUILayout.Width(140));
+                                                      Lang.T(" VR 時關閉 (FX)"), Fit.WT(140, Lang.T(" VR 時關閉 (FX)")));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("清單"), GUILayout.Width(36));
+            GUILayout.Label(Lang.T("清單"), Fit.WL(36, Lang.T("清單")));
             string edited = GUILayout.TextField(cfgFxMuteList.Value);
             if (edited != cfgFxMuteList.Value) { cfgFxMuteList.Value = edited; VrFxMute.ForceNow(); }
             GUILayout.EndHorizontal();
@@ -1539,45 +1548,45 @@ namespace StudioVrTools
             GUILayout.Label(Lang.T("<b>介面清晰度（VR）</b>"), rich);
 
             GUILayout.BeginHorizontal();
-            cfgUiBacking.Value = GUILayout.Toggle(cfgUiBacking.Value, Lang.T(" 介面加黑底"), GUILayout.Width(110));
-            GUILayout.Label(Lang.T("不透明 ") + cfgUiOpacity.Value.ToString("F2"), GUILayout.Width(88));
+            cfgUiBacking.Value = GUILayout.Toggle(cfgUiBacking.Value, Lang.T(" 介面加黑底"), Fit.WT(110, Lang.T(" 介面加黑底")));
+            GUILayout.Label(Lang.T("不透明 ") + cfgUiOpacity.Value.ToString("F2"), Fit.WL(88, Lang.T("不透明 ") + cfgUiOpacity.Value.ToString("F2")));
             cfgUiOpacity.Value = Mathf.Round(
                 GUILayout.HorizontalSlider(cfgUiOpacity.Value, 0f, 1f, GUILayout.Width(90)) * 20f) / 20f;
             GUILayout.Space(10f);
-            cfgVrSkin.Value = GUILayout.Toggle(cfgVrSkin.Value, Lang.T(" 不透明視窗外觀"), GUILayout.Width(130));
-            cfgVrSkinOnlyVr.Value = GUILayout.Toggle(cfgVrSkinOnlyVr.Value, Lang.T(" 只在 VR"), GUILayout.Width(80));
+            cfgVrSkin.Value = GUILayout.Toggle(cfgVrSkin.Value, Lang.T(" 不透明視窗外觀"), Fit.WT(130, Lang.T(" 不透明視窗外觀")));
+            cfgVrSkinOnlyVr.Value = GUILayout.Toggle(cfgVrSkinOnlyVr.Value, Lang.T(" 只在 VR"), Fit.WT(80, Lang.T(" 只在 VR")));
             GUILayout.Label(Lang.T("（F6 / F7 / F9 共用）"), small);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            cfgMountUi.Value = GUILayout.Toggle(cfgMountUi.Value, Lang.T(" 主介面黏在手上"), GUILayout.Width(126));
+            cfgMountUi.Value = GUILayout.Toggle(cfgMountUi.Value, Lang.T(" 主介面黏在手上"), Fit.WT(126, Lang.T(" 主介面黏在手上")));
             string[] mh = { "左手", "右手" };
             for (int i = 0; i < 2; i++)
             {
                 bool on = cfgMountLeft.Value == (i == 0);
-                if (GUILayout.Toggle(on, " " + Lang.T(mh[i]), "Button", GUILayout.Width(54)) && !on)
+                if (GUILayout.Toggle(on, " " + Lang.T(mh[i]), "Button", Fit.W(54, " " + Lang.T(mh[i]), "Button")) && !on)
                     cfgMountLeft.Value = i == 0;
             }
             GUILayout.Space(6f);
-            GUILayout.Label(Lang.T("沿手柄 ") + cfgMountDist.Value.ToString("F2"), GUILayout.Width(84));
+            GUILayout.Label(Lang.T("沿手柄 ") + cfgMountDist.Value.ToString("F2"), Fit.WL(84, Lang.T("沿手柄 ") + cfgMountDist.Value.ToString("F2")));
             cfgMountDist.Value = Mathf.Round(
                 GUILayout.HorizontalSlider(cfgMountDist.Value, 0f, 0.6f, GUILayout.Width(80)) * 100f) / 100f;
-            GUILayout.Label(Lang.T("縮放 ") + cfgMountScale.Value.ToString("F2"), GUILayout.Width(74));
+            GUILayout.Label(Lang.T("縮放 ") + cfgMountScale.Value.ToString("F2"), Fit.WL(74, Lang.T("縮放 ") + cfgMountScale.Value.ToString("F2")));
             cfgMountScale.Value = Mathf.Round(
                 GUILayout.HorizontalSlider(cfgMountScale.Value, 0.05f, 1.5f, GUILayout.Width(80)) * 100f) / 100f;
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("角度 ") + cfgMountTilt.Value.ToString("F0") + "°", GUILayout.Width(70));
+            GUILayout.Label(Lang.T("角度 ") + cfgMountTilt.Value.ToString("F0") + "°", Fit.WL(70, Lang.T("角度 ") + cfgMountTilt.Value.ToString("F0") + "°"));
             cfgMountTilt.Value = Mathf.Round(
                 GUILayout.HorizontalSlider(cfgMountTilt.Value, -90f, 90f, GUILayout.Width(100)) / 5f) * 5f;
-            GUILayout.Label(Lang.T("抬離 ") + cfgMountLift.Value.ToString("F2"), GUILayout.Width(74));
+            GUILayout.Label(Lang.T("抬離 ") + cfgMountLift.Value.ToString("F2"), Fit.WL(74, Lang.T("抬離 ") + cfgMountLift.Value.ToString("F2")));
             cfgMountLift.Value = Mathf.Round(
                 GUILayout.HorizontalSlider(cfgMountLift.Value, -0.1f, 0.2f, GUILayout.Width(80)) * 100f) / 100f;
             GUILayout.Space(8f);
-            cfgMountFlip.Value = GUILayout.Toggle(cfgMountFlip.Value, Lang.T(" 板子正反翻轉"), GUILayout.Width(114));
-            cfgHideUi.Value = GUILayout.Toggle(cfgHideUi.Value, Lang.T(" 隱藏主介面"), GUILayout.Width(106));
-            cfgVrLog.Value = GUILayout.Toggle(cfgVrLog.Value, Lang.T(" 狀態寫進 log"), GUILayout.Width(106));
+            cfgMountFlip.Value = GUILayout.Toggle(cfgMountFlip.Value, Lang.T(" 板子正反翻轉"), Fit.WT(114, Lang.T(" 板子正反翻轉")));
+            cfgHideUi.Value = GUILayout.Toggle(cfgHideUi.Value, Lang.T(" 隱藏主介面"), Fit.WT(106, Lang.T(" 隱藏主介面")));
+            cfgVrLog.Value = GUILayout.Toggle(cfgVrLog.Value, Lang.T(" 狀態寫進 log"), Fit.WT(106, Lang.T(" 狀態寫進 log")));
             GUILayout.EndHorizontal();
 
             Status(VrUiBacking.LastReport);
@@ -1589,23 +1598,23 @@ namespace StudioVrTools
             // 所有的按鍵綁定和速度都搬到「手柄設置」子視窗了 ——
             // 那些設一次就不會再碰，卻占掉面板一大半，在頭顯裡還得一路捲下去。
             GUILayout.BeginHorizontal();
-            cfgCtrlEnable.Value = GUILayout.Toggle(cfgCtrlEnable.Value, Lang.T(" 啟用"), GUILayout.Width(66));
-            if (GUILayout.Button(Lang.T("立刻回歸"), GUILayout.Width(80), GUILayout.Height(20)))
+            cfgCtrlEnable.Value = GUILayout.Toggle(cfgCtrlEnable.Value, Lang.T(" 啟用"), Fit.WT(66, Lang.T(" 啟用")));
+            if (GUILayout.Button(Lang.T("立刻回歸"), Fit.WB(80, Lang.T("立刻回歸")), GUILayout.Height(20)))
                 DoReset("面板按鈕", true);
             GUILayout.Label(Lang.T("偏離 ") + VrLocomotion.OffsetDistance.ToString("F2") + " m",
-                            small, GUILayout.Width(86));
+                            small, Fit.W(86, Lang.T("偏離 ") + VrLocomotion.OffsetDistance.ToString("F2") + " m", small));
             GUILayout.Space(8f);
             GUILayout.Label(cfgHideUi.Value ? Lang.T("主介面：隱藏")
                             : cfgMountUi.Value ? Lang.T("主介面：在手上") : Lang.T("主介面：在原處"),
-                            small, GUILayout.Width(110));
+                            small, Fit.W(110, cfgHideUi.Value ? Lang.T("主介面：隱藏") : cfgMountUi.Value ? Lang.T("主介面：在手上") : Lang.T("主介面：在原處"), small));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("記住現在的視角"), GUILayout.Width(126), GUILayout.Height(20)))
+            if (GUILayout.Button(Lang.T("記住現在的視角"), Fit.WB(126, Lang.T("記住現在的視角")), GUILayout.Height(20)))
             { VrLocomotion.SaveSpot(); if (cfgSpotToJson.Value) VrLink.RequestSave(); }
-            if (GUILayout.Button(Lang.T("回到記住的視角"), GUILayout.Width(126), GUILayout.Height(20)))
+            if (GUILayout.Button(Lang.T("回到記住的視角"), Fit.WB(126, Lang.T("回到記住的視角")), GUILayout.Height(20)))
             { VrLocomotion.GoToSpot(); }
-            if (GUILayout.Button(Lang.T("清掉"), GUILayout.Width(60), GUILayout.Height(20)))
+            if (GUILayout.Button(Lang.T("清掉"), Fit.WB(60, Lang.T("清掉")), GUILayout.Height(20)))
             { VrLocomotion.ClearSpot(); }
             GUILayout.Label(VrLocomotion.HasSpot ? Lang.T("　已記住一個視角") : Lang.T("　還沒記住"), small);
             GUILayout.EndHorizontal();
@@ -1629,13 +1638,13 @@ namespace StudioVrTools
             // 工具列圖示的開關擺在「設置」左邊，不再放進設置子視窗裡 ——
             // 開關圖示是常做的事，不該還要先開一層。
             cfgToolbarButton.Value = GUILayout.Toggle(cfgToolbarButton.Value,
-                                                      Lang.T(" 顯示工具列圖示"), GUILayout.Width(130));
+                                                      Lang.T(" 顯示工具列圖示"), Fit.WT(130, Lang.T(" 顯示工具列圖示")));
             showCtrlSettings = GUILayout.Toggle(showCtrlSettings,
                                                 showCtrlSettings ? Lang.T("  手柄設置（開啟中）  ") : Lang.T("  手柄設置  "),
-                                                "Button", GUILayout.Width(140), GUILayout.Height(22));
+                                                "Button", Fit.W(140, showCtrlSettings ? Lang.T("  手柄設置（開啟中）  ") : Lang.T("  手柄設置  "), "Button"), GUILayout.Height(22));
             showSettings = GUILayout.Toggle(showSettings,
                                             showSettings ? Lang.T("  設置（開啟中）  ") : Lang.T("  設置  "),
-                                            "Button", GUILayout.Width(120), GUILayout.Height(22));
+                                            "Button", Fit.W(120, showSettings ? Lang.T("  設置（開啟中）  ") : Lang.T("  設置  "), "Button"), GUILayout.Height(22));
             GUILayout.EndHorizontal();
 
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 20f));

@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="CutScenePlugin.cs" />
     <Compile Include="Lang.cs" />
+    <Compile Include="UiFit.cs" />
     <Compile Include="VrSkin.cs" />
     <Compile Include="VrLink.cs" />
     <Compile Include="ViewStore.cs" />

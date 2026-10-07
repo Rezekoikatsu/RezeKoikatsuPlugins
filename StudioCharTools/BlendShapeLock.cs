@@ -1157,7 +1157,7 @@ namespace StudioCharTools
         static void DrawBulkScale(ChaControl cha)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("這頁 ") + _viewAll.Count + Lang.T(" 個：倍率"), GUILayout.Width(110));
+            GUILayout.Label(Lang.T("這頁 ") + _viewAll.Count + Lang.T(" 個：倍率"), Fit.WL(110, Lang.T("這頁 ") + _viewAll.Count + Lang.T(" 個：倍率")));
             _bulkScale = GUILayout.HorizontalSlider(_bulkScale, 0f, 2f);
             GUILayout.Label("×" + _bulkScale.ToString("F2"), W50);
             if (GUILayout.Button("-", W24)) _bulkScale = Mathf.Max(0f, _bulkScale - 0.05f);
@@ -1344,7 +1344,7 @@ namespace StudioCharTools
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(Lang.T("全部解鎖"))) BlendShapeLock.ClearAll(cha);
             BlendShapeLock.Exclusive = GUILayout.Toggle(
-                BlendShapeLock.Exclusive, Lang.T("只鎖一個"), GUI.skin.button, GUILayout.Width(80));
+                BlendShapeLock.Exclusive, Lang.T("只鎖一個"), GUI.skin.button, Fit.W(80, Lang.T("只鎖一個"), GUI.skin.button));
             GUILayout.FlexibleSpace();
             GUILayout.Label(Lang.T("目前鎖定 ") + BlendShapeLock.LockCount(cha) + Lang.T(" 筆"));
             GUILayout.EndHorizontal();

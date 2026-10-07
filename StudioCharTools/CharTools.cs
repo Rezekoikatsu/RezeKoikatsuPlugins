@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.1.0";
+        public const string Version = "1.1.1";
 
         internal static CharToolsPlugin Instance;
 
@@ -595,8 +595,14 @@ namespace StudioCharTools
             finally { VrSkin.End(savedSkin); }
         }
 
+        int fitLang = -1;
+
         void DrawAllWindows()
         {
+            // 語言換了：把主視窗的寬度重設成這個語言的底寬。
+            // 視窗會被內容撐大但不會自己縮回來，所以從英文切回中文時要手動收。
+            if (Fit.LanguageChanged(ref fitLang))
+                charPickerRect.width = 660f * Fit.Wide;
 
             if (showCarryPrompt)
                 carryPromptRect = GUILayout.Window(8898, carryPromptRect, CarryPromptWindow, Lang.T("套用著色器？"));
@@ -607,31 +613,31 @@ namespace StudioCharTools
             if (showGenericCardPicker)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
-                    genericCardPickerRect.width, Mathf.Max(charPickerRect.height, 520f));
+                    genericCardPickerRect.width * Fit.Wide, Mathf.Max(charPickerRect.height, 520f));
                 GUILayout.Window(8890, sideRect, DrawGenericCardPicker, genericCardPickerTitle);
             }
             else if (showAccPanel)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
-                    520f, Mathf.Max(charPickerRect.height, 620f));
+                    520f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
                 GUILayout.Window(8893, sideRect, AccessoryWindow, Lang.T("飾品欄管理"));
             }
             else if (showBlendLock)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
-                    560f, Mathf.Max(charPickerRect.height, 620f));
+                    560f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
                 GUILayout.Window(8891, sideRect, BlendLockWindow, Lang.T("型態鍵鎖定"));
             }
             else if (showDbFix)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
-                    620f, Mathf.Max(charPickerRect.height, 620f));
+                    620f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
                 GUILayout.Window(8895, sideRect, DbColliderWindow, Lang.T("碰撞器綁定修復"));
             }
             else if (showSettings)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
-                    560f, Mathf.Max(charPickerRect.height, 560f));
+                    560f * Fit.Wide, Mathf.Max(charPickerRect.height, 560f));
                 GUILayout.Window(8894, sideRect, SettingsWindow, Lang.T("設置"));
             }
 
@@ -692,7 +698,7 @@ namespace StudioCharTools
             GUILayout.BeginHorizontal();
             GUILayout.Label(cha != null ? Lang.T("對象: ") + GetCharDisplayName(accTarget) : Lang.T("對象已失效"));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("關閉"), GUILayout.Width(60))) CloseSidePanel();
+            if (GUILayout.Button(Lang.T("關閉"), Fit.WB(60, Lang.T("關閉")))) CloseSidePanel();
             GUILayout.EndHorizontal();
 
             if (cha == null) return;
@@ -707,7 +713,7 @@ namespace StudioCharTools
 
             accCatScroll = GUILayout.BeginScrollView(accCatScroll, GUILayout.Height(72));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(accCategory.Length == 0, Lang.T("全部"), GUI.skin.button, GUILayout.Width(56)))
+            if (GUILayout.Toggle(accCategory.Length == 0, Lang.T("全部"), GUI.skin.button, Fit.W(56, Lang.T("全部"), GUI.skin.button)))
                 accCategory = "";
             for (int i = 0; i < cats.Count; i++)
             {
@@ -719,13 +725,13 @@ namespace StudioCharTools
             GUILayout.EndScrollView();
 
             GUILayout.BeginHorizontal();
-            accIncludeEmpty = GUILayout.Toggle(accIncludeEmpty, Lang.T("顯示空格"), GUI.skin.button, GUILayout.Width(80));
-            if (GUILayout.Button(Lang.T("本類全部顯示"), GUILayout.Width(100)))
+            accIncludeEmpty = GUILayout.Toggle(accIncludeEmpty, Lang.T("顯示空格"), GUI.skin.button, Fit.W(80, Lang.T("顯示空格"), GUI.skin.button));
+            if (GUILayout.Button(Lang.T("本類全部顯示"), Fit.WB(100, Lang.T("本類全部顯示"))))
                 foreach (var a in list) if (InCat(a)) AccessoryTools.SetVisible(cha, a.slot, true);
-            if (GUILayout.Button(Lang.T("本類全部隱藏"), GUILayout.Width(100)))
+            if (GUILayout.Button(Lang.T("本類全部隱藏"), Fit.WB(100, Lang.T("本類全部隱藏"))))
                 foreach (var a in list) if (InCat(a)) AccessoryTools.SetVisible(cha, a.slot, false);
-            if (GUILayout.Button(Lang.T("診斷"), GUILayout.Width(50))) AccessoryTools.Dump(cha);
-            accScaleOpen = GUILayout.Toggle(accScaleOpen, Lang.T("整組縮放"), GUI.skin.button, GUILayout.Width(80));
+            if (GUILayout.Button(Lang.T("診斷"), Fit.WB(50, Lang.T("診斷")))) AccessoryTools.Dump(cha);
+            accScaleOpen = GUILayout.Toggle(accScaleOpen, Lang.T("整組縮放"), GUI.skin.button, Fit.W(80, Lang.T("整組縮放"), GUI.skin.button));
             GUILayout.EndHorizontal();
 
             if (accScaleOpen) DrawAccScalePanel(cha, list);
@@ -761,11 +767,11 @@ namespace StudioCharTools
                 if (!a.IsEmpty)
                 {
                     bool v = GUILayout.Toggle(a.visible, a.visible ? Lang.T("顯示") : Lang.T("隱藏"),
-                                              GUI.skin.button, GUILayout.Width(50));
+                                              GUI.skin.button, Fit.W(50, a.visible ? Lang.T("顯示") : Lang.T("隱藏"), GUI.skin.button));
                     if (v != a.visible) AccessoryTools.SetVisible(cha, a.slot, v);
 
                     GUI.color = new Color(1f, 0.6f, 0.6f);
-                    if (GUILayout.Button(Lang.T("移除"), GUILayout.Width(50)))
+                    if (GUILayout.Button(Lang.T("移除"), Fit.WB(50, Lang.T("移除"))))
                     {
                         var sid = AccessoryTools.GetSlotId(cha, a.slot);
                         var bad = new HashSet<int>();
@@ -831,25 +837,25 @@ namespace StudioCharTools
 
             GUILayout.BeginVertical(GUI.skin.box);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("勾選本類"), GUILayout.Width(80)))
+            if (GUILayout.Button(Lang.T("勾選本類"), Fit.WB(80, Lang.T("勾選本類"))))
                 foreach (var a in list) if (!a.IsEmpty && InCat(a)) accScaleSel.Add(a.slot);
-            if (GUILayout.Button(Lang.T("勾選頭部類"), GUILayout.Width(90)))
+            if (GUILayout.Button(Lang.T("勾選頭部類"), Fit.WB(90, Lang.T("勾選頭部類"))))
                 foreach (var a in list)
                     if (!a.IsEmpty && (a.parentKey.Contains("head") || a.parentKey.Contains("hair"))) accScaleSel.Add(a.slot);
-            if (GUILayout.Button(Lang.T("全不勾"), GUILayout.Width(60))) accScaleSel.Clear();
+            if (GUILayout.Button(Lang.T("全不勾"), Fit.WB(60, Lang.T("全不勾")))) accScaleSel.Clear();
             GUILayout.Label(string.Format(Lang.T("已勾 {0} 個"), accScaleSel.Count));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("中心"), GUILayout.Width(32));
-            if (GUILayout.Toggle(!accScaleHead, Lang.T("各自掛點"), GUI.skin.button, GUILayout.Width(80))) accScaleHead = false;
-            if (GUILayout.Toggle(accScaleHead, Lang.T("頭部骨頭"), GUI.skin.button, GUILayout.Width(80))) accScaleHead = true;
+            GUILayout.Label(Lang.T("中心"), Fit.WL(32, Lang.T("中心")));
+            if (GUILayout.Toggle(!accScaleHead, Lang.T("各自掛點"), GUI.skin.button, Fit.W(80, Lang.T("各自掛點"), GUI.skin.button))) accScaleHead = false;
+            if (GUILayout.Toggle(accScaleHead, Lang.T("頭部骨頭"), GUI.skin.button, Fit.W(80, Lang.T("頭部骨頭"), GUI.skin.button))) accScaleHead = true;
             GUI.enabled = accScaleHead;
             accScaleRef = GUILayout.TextField(accScaleRef, GUILayout.Width(110));
             GUI.enabled = true;
             GUILayout.FlexibleSpace();
             GUI.enabled = accScaleSel.Count > 0 && accHasLast;
-            bool useLast = GUILayout.Button(Lang.T("套用上次值"), GUILayout.Width(100));
+            bool useLast = GUILayout.Button(Lang.T("套用上次值"), Fit.WB(100, Lang.T("套用上次值")));
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
@@ -863,10 +869,10 @@ namespace StudioCharTools
             }
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("縮放"), GUILayout.Width(40));
-            accScaleUniform = GUILayout.Toggle(accScaleUniform, Lang.T("等比"), GUI.skin.button, GUILayout.Width(50));
+            GUILayout.Label(Lang.T("縮放"), Fit.WL(40, Lang.T("縮放")));
+            accScaleUniform = GUILayout.Toggle(accScaleUniform, Lang.T("等比"), GUI.skin.button, Fit.W(50, Lang.T("等比"), GUI.skin.button));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("縮放歸位"), GUILayout.Width(80))) scl = Vector3.one;
+            if (GUILayout.Button(Lang.T("縮放歸位"), Fit.WB(80, Lang.T("縮放歸位")))) scl = Vector3.one;
             GUILayout.EndHorizontal();
             for (int k = 0; k < 3; k++)
             {
@@ -880,7 +886,7 @@ namespace StudioCharTools
             GUILayout.BeginHorizontal();
             GUILayout.Label(accScaleHead ? Lang.T("位置（X 左右 / Y 上下 / Z 前後）") : Lang.T("位置（各自掛點的軸向）"));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("位置歸位"), GUILayout.Width(80))) off = Vector3.zero;
+            if (GUILayout.Button(Lang.T("位置歸位"), Fit.WB(80, Lang.T("位置歸位")))) off = Vector3.zero;
             GUILayout.EndHorizontal();
             for (int k = 0; k < 3; k++)
                 off[k] = AccSlider("XYZ".Substring(k, 1), off[k], -AccOffRange, AccOffRange, 0.1f, false);
@@ -901,7 +907,7 @@ namespace StudioCharTools
             GUILayout.BeginHorizontal();
             GUI.enabled = accSession != null;
             GUI.color = new Color(0.6f, 1f, 0.7f);
-            if (GUILayout.Button(Lang.T("確定"), GUILayout.Width(80)))
+            if (GUILayout.Button(Lang.T("確定"), Fit.WB(80, Lang.T("確定"))))
             {
                 accLastScl = accScl; accLastOff = accOff; accHasLast = true;
                 accLastCommitted = accSession; accSession = null; ResetAccSliders();
@@ -910,7 +916,7 @@ namespace StudioCharTools
                                 + (accLastCommitted.OnlyScreen > 0 ? string.Format(Lang.T("；{0} 格可能只改到畫面"), accLastCommitted.OnlyScreen) : ""));
             }
             GUI.color = Color.white;
-            if (GUILayout.Button(Lang.T("取消"), GUILayout.Width(80)))
+            if (GUILayout.Button(Lang.T("取消"), Fit.WB(80, Lang.T("取消"))))
             {
                 try { accSession.Revert(); } catch { }
                 accSession = null; ResetAccSliders();
@@ -968,15 +974,15 @@ namespace StudioCharTools
                 string label = g == 0 ? Lang.T("全部") : g == 1 ? Lang.T("主要") : Lang.T("次要");
                 GUILayout.Label(label + " " + slots.Count, GUILayout.Width(62));
                 GUI.enabled = slots.Count > 0;
-                if (GUILayout.Button(Lang.T("顯示"), GUILayout.Width(40)))
+                if (GUILayout.Button(Lang.T("顯示"), Fit.WB(40, Lang.T("顯示"))))
                     foreach (int s in slots) AccessoryTools.SetVisible(cha, s, true);
-                if (GUILayout.Button(Lang.T("隱藏"), GUILayout.Width(40)))
+                if (GUILayout.Button(Lang.T("隱藏"), Fit.WB(40, Lang.T("隱藏"))))
                     foreach (int s in slots) AccessoryTools.SetVisible(cha, s, false);
 
                 string key = "g" + g;
                 bool armed = accGroupArm == key;
                 GUI.color = armed ? new Color(1f, 0.3f, 0.3f) : new Color(1f, 0.6f, 0.6f);
-                if (GUILayout.Button(armed ? Lang.T("確定？") : Lang.T("移除"), GUILayout.Width(48)))
+                if (GUILayout.Button(armed ? Lang.T("確定？") : Lang.T("移除"), Fit.WB(48, armed ? Lang.T("確定？") : Lang.T("移除"))))
                 {
                     if (!armed) { accGroupArm = key; accGroupArmTime = Time.realtimeSinceStartup; }
                     else
@@ -1028,7 +1034,7 @@ namespace StudioCharTools
                 if (c == now)
                 {
                     GUI.color = new Color(0.6f, 0.85f, 1f);
-                    GUILayout.Button(CoordLabel(c) + Lang.T("（目前）"), GUILayout.Width(150));
+                    GUILayout.Button(CoordLabel(c) + Lang.T("（目前）"), Fit.WB(150, CoordLabel(c) + Lang.T("（目前）")));
                     GUI.color = Color.white;
                     continue;
                 }
@@ -1044,9 +1050,9 @@ namespace StudioCharTools
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("全選"), GUILayout.Width(60)))
+            if (GUILayout.Button(Lang.T("全選"), Fit.WB(60, Lang.T("全選"))))
                 for (int c = 0; c < count; c++) if (c != now) accSyncCoords.Add(c);
-            if (GUILayout.Button(Lang.T("全不選"), GUILayout.Width(70))) accSyncCoords.Clear();
+            if (GUILayout.Button(Lang.T("全不選"), Fit.WB(70, Lang.T("全不選")))) accSyncCoords.Clear();
             GUILayout.Label(accSyncCoords.Count == 0
                 ? Lang.T("目前只操作這一套")
                 : string.Format(Lang.T("操作時同步 {0} 套"), accSyncCoords.Count));
@@ -1194,7 +1200,7 @@ namespace StudioCharTools
             GUILayout.Label(dbFixTarget != null
                 ? Lang.T("對象: ") + GetCharDisplayName(dbFixTarget) : Lang.T("對象已失效"));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("關閉"), GUILayout.Width(60))) CloseSidePanel();
+            if (GUILayout.Button(Lang.T("關閉"), Fit.WB(60, Lang.T("關閉")))) CloseSidePanel();
             GUILayout.EndHorizontal();
             GUILayout.Space(4);
 
@@ -1256,7 +1262,7 @@ namespace StudioCharTools
                 SetStatus(true, DBColliderFix.LastReport);
                 dbFixText = DBColliderFix.Describe(dbFixTarget);
             }
-            if (GUILayout.Button(Lang.T("清除所有記錄"), GUILayout.Width(120), GUILayout.Height(24)))
+            if (GUILayout.Button(Lang.T("清除所有記錄"), Fit.WB(120, Lang.T("清除所有記錄")), GUILayout.Height(24)))
             {
                 DBColliderFix.ForgetAll();
                 SetStatus(true, "已清除所有碰撞器綁定記錄");
@@ -2217,9 +2223,9 @@ namespace StudioCharTools
                             Wrap(), GUILayout.Width(contentW));
             jobFolder = GUILayout.TextField(jobFolder ?? "", GUILayout.Width(contentW));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("用預設"), GUILayout.Width(80)))
+            if (GUILayout.Button(Lang.T("用預設"), Fit.WB(80, Lang.T("用預設"))))
                 jobFolder = KKMerge.DefaultJobFolder();
-            if (GUILayout.Button(Lang.T("開啟資料夾"), GUILayout.Width(100)))
+            if (GUILayout.Button(Lang.T("開啟資料夾"), Fit.WB(100, Lang.T("開啟資料夾"))))
             {
                 try
                 {
@@ -2247,10 +2253,10 @@ namespace StudioCharTools
             autoFixDbCollider = OptRow("換角色還原碰撞器綁定", autoFixDbCollider, "是", "否");
             autoApplyBlendPreset = OptRow("換角色自動帶入同名形態鍵", autoApplyBlendPreset, "是", "否");
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("換角色套用場景原角色的著色器"), GUILayout.Width(OptLabelW));
-            if (GUILayout.Toggle(carryShaderMode == 0, " " + Lang.T("關"), GUILayout.Width(OptRadioW))) carryShaderMode = 0;
-            if (GUILayout.Toggle(carryShaderMode == 1, " " + Lang.T("詢問"), GUILayout.Width(OptRadioW))) carryShaderMode = 1;
-            if (GUILayout.Toggle(carryShaderMode == 2, " " + Lang.T("自動"), GUILayout.Width(OptRadioW))) carryShaderMode = 2;
+            GUILayout.Label(Lang.T("換角色套用場景原角色的著色器"), Fit.WL(OptLabelW, Lang.T("換角色套用場景原角色的著色器")));
+            if (GUILayout.Toggle(carryShaderMode == 0, " " + Lang.T("關"), Fit.WT(OptRadioW, " " + Lang.T("關")))) carryShaderMode = 0;
+            if (GUILayout.Toggle(carryShaderMode == 1, " " + Lang.T("詢問"), Fit.WT(OptRadioW, " " + Lang.T("詢問")))) carryShaderMode = 1;
+            if (GUILayout.Toggle(carryShaderMode == 2, " " + Lang.T("自動"), Fit.WT(OptRadioW, " " + Lang.T("自動")))) carryShaderMode = 2;
             GUILayout.EndHorizontal();
 
             keepOldHeadSize = OptRow("維持新卡身材：頭大小沿用舊卡", keepOldHeadSize, "是", "否");
@@ -2261,9 +2267,9 @@ namespace StudioCharTools
             // 這一個是主嫌：規則字串上百個字，不給寬度的話它的最小寬度就是那串字的寬度。
             abmxKeepBones = GUILayout.TextField(abmxKeepBones ?? "", GUILayout.Width(contentW));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("預設"), GUILayout.Width(60)))
+            if (GUILayout.Button(Lang.T("預設"), Fit.WB(60, Lang.T("預設"))))
                 abmxKeepBones = AbmxFilter.DefaultKeepRules;
-            if (GUILayout.Button(Lang.T("清空"), GUILayout.Width(60)))
+            if (GUILayout.Button(Lang.T("清空"), Fit.WB(60, Lang.T("清空"))))
                 abmxKeepBones = "";
             GUILayout.EndHorizontal();
             // 用會換行的樣式 + 明確寬度。預設的 label 不換行，
@@ -2307,11 +2313,11 @@ namespace StudioCharTools
             thumbMaxHeight = step * 352;
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("擷圖時只顯示該角色"), GUILayout.Width(OptLabelW));
+            GUILayout.Label(Lang.T("擷圖時只顯示該角色"), Fit.WL(OptLabelW, Lang.T("擷圖時只顯示該角色")));
             soloCharForThumb = Radio(soloCharForThumb, "是", "否");
             GUILayout.Space(8);
             hideMalesForThumb = GUILayout.Toggle(hideMalesForThumb, Lang.T(" 同時隱藏男角色"),
-                                                 GUILayout.Width(120));
+                                                 Fit.WT(120, Lang.T(" 同時隱藏男角色")));
             GUILayout.EndHorizontal();
 
             GUILayout.Label(Lang.T("拍照前等待 ") + settleSeconds.ToString("F1") + Lang.T(" 秒（待物理靜止）"),
@@ -2327,9 +2333,9 @@ namespace StudioCharTools
             // 那是個常按的開關，不該藏在還要先開一層的面板裡。
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("存到 Temp 資料夾"), GUILayout.Width(OptLabelW));
-            CardSaver.CharaToTemp = GUILayout.Toggle(CardSaver.CharaToTemp, Lang.T(" 人物卡"), GUILayout.Width(70));
-            CardSaver.CoordToTemp = GUILayout.Toggle(CardSaver.CoordToTemp, Lang.T(" 服裝卡"), GUILayout.Width(70));
+            GUILayout.Label(Lang.T("存到 Temp 資料夾"), Fit.WL(OptLabelW, Lang.T("存到 Temp 資料夾")));
+            CardSaver.CharaToTemp = GUILayout.Toggle(CardSaver.CharaToTemp, Lang.T(" 人物卡"), Fit.WT(70, Lang.T(" 人物卡")));
+            CardSaver.CoordToTemp = GUILayout.Toggle(CardSaver.CoordToTemp, Lang.T(" 服裝卡"), Fit.WT(70, Lang.T(" 服裝卡")));
             GUILayout.EndHorizontal();
 
             GUILayout.EndScrollView();
@@ -2374,7 +2380,7 @@ namespace StudioCharTools
 
             bool armed = Time.realtimeSinceStartup < resetArmedUntil;
             if (GUILayout.Button(armed ? Lang.T("再按一次確認") : Lang.T("重置為預設"),
-                                 GUILayout.Width(armed ? 170f : 130f), GUILayout.Height(22)))
+                                 Fit.WB(armed ? 170f : 130f, armed ? Lang.T("再按一次確認") : Lang.T("重置為預設")), GUILayout.Height(22)))
             {
                 if (armed) { resetArmedUntil = 0f; ResetConfigToDefaults(); }
                 else resetArmedUntil = Time.realtimeSinceStartup + 3f;
@@ -2461,15 +2467,15 @@ namespace StudioCharTools
 
         static bool Radio(bool value, string onText, string offText)
         {
-            if (GUILayout.Toggle(value, " " + Lang.T(onText), GUILayout.Width(OptRadioW))) value = true;
-            if (GUILayout.Toggle(!value, " " + Lang.T(offText), GUILayout.Width(OptRadioW))) value = false;
+            if (GUILayout.Toggle(value, " " + Lang.T(onText), Fit.WT(OptRadioW, " " + Lang.T(onText)))) value = true;
+            if (GUILayout.Toggle(!value, " " + Lang.T(offText), Fit.WT(OptRadioW, " " + Lang.T(offText)))) value = false;
             return value;
         }
 
         static bool OptRow(string label, bool value, string onText, string offText)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T(label), GUILayout.Width(OptLabelW));
+            GUILayout.Label(Lang.T(label), Fit.WL(OptLabelW, Lang.T(label)));
             value = Radio(value, onText, offText);
             GUILayout.EndHorizontal();
             return value;
@@ -2498,7 +2504,7 @@ namespace StudioCharTools
             GUILayout.BeginHorizontal();
             GUILayout.Label(cha != null ? Lang.T("對象: ") + GetCharDisplayName(blendTarget) : Lang.T("對象已失效"));
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(Lang.T("關閉"), GUILayout.Width(60))) CloseSidePanel();
+            if (GUILayout.Button(Lang.T("關閉"), Fit.WB(60, Lang.T("關閉")))) CloseSidePanel();
             GUILayout.EndHorizontal();
             GUILayout.Space(4);
 
@@ -2791,7 +2797,7 @@ namespace StudioCharTools
             LazyLoadGenericCards(6);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(Lang.T("← 上一層"), GUILayout.Width(80)))
+            if (GUILayout.Button(Lang.T("← 上一層"), Fit.WB(80, Lang.T("← 上一層"))))
             {
                 if (genericCardCurrentDir.Length > 0)
                 {
@@ -2804,7 +2810,7 @@ namespace StudioCharTools
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Lang.T("搜尋:"), GUILayout.Width(45));
+            GUILayout.Label(Lang.T("搜尋:"), Fit.WL(45, Lang.T("搜尋:")));
             genericCardSearch = GUILayout.TextField(genericCardSearch ?? "", GUILayout.MinWidth(180));
             GUILayout.EndHorizontal();
 
@@ -4330,13 +4336,13 @@ namespace StudioCharTools
             else
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("👩 女角色 (") + females.Count + ")", GUILayout.Width(110));
+                GUILayout.Label(Lang.T("👩 女角色 (") + females.Count + ")", Fit.WL(110, Lang.T("👩 女角色 (") + females.Count + ")"));
                 DrawBatchSwapButtons(females);
                 GUILayout.EndHorizontal();
                 DrawBatchModeMenu(females);
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("一鍵（女角色）"), GUILayout.Width(110));
+                GUILayout.Label(Lang.T("一鍵（女角色）"), Fit.WL(110, Lang.T("一鍵（女角色）")));
                 if (GUILayout.Button(Lang.T("存人物卡"), GUILayout.Height(22)))
                     StartCoroutine(BatchSaveRoutine(females, 0));
                 if (GUILayout.Button(Lang.T("存服裝卡"), GUILayout.Height(22)))
@@ -4357,13 +4363,13 @@ namespace StudioCharTools
 
                 GUILayout.Space(8);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("👨 男角色 (") + males.Count + ")", GUILayout.Width(110));
+                GUILayout.Label(Lang.T("👨 男角色 (") + males.Count + ")", Fit.WL(110, Lang.T("👨 男角色 (") + males.Count + ")"));
                 DrawBatchSwapButtons(males);
                 GUILayout.EndHorizontal();
                 DrawBatchModeMenu(males);
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(Lang.T("一鍵（男角色）"), GUILayout.Width(110));
+                GUILayout.Label(Lang.T("一鍵（男角色）"), Fit.WL(110, Lang.T("一鍵（男角色）")));
                 if (GUILayout.Button(Lang.T("存人物卡"), GUILayout.Height(22)))
                     StartCoroutine(BatchSaveRoutine(males, 0));
                 if (GUILayout.Button(Lang.T("存服裝卡"), GUILayout.Height(22)))
@@ -4596,18 +4602,21 @@ namespace StudioCharTools
             int hit = -1;
             bool cancel = false;
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(16);
-            GUILayout.Label(Lang.T(title), GUILayout.Width(96));
+            // 英文 / 日文的模式名稱很長，一列排不下就自動換列（中文一列排得下，跟以前一樣）。
+            Fit.FlowBegin(RowAvail, 16f);
+            Fit.FlowItem(Lang.T(title), GUI.skin.label, 96f);
+            GUILayout.Label(Lang.T(title), Fit.WL(96, Lang.T(title)));
             for (int i = 0; i < AllModes.Length; i++)
             {
                 GUI.color = ModeColors[i];
+                Fit.FlowItem(SwapModeName(AllModes[i]), GUI.skin.button, 0f);
                 if (GUILayout.Button(SwapModeName(AllModes[i]), GUILayout.Height(24))) hit = i;
             }
             GUI.color = new Color(0.8f, 0.8f, 0.8f);
-            if (GUILayout.Button(Lang.T("取消"), GUILayout.Width(50), GUILayout.Height(24))) cancel = true;
+            Fit.FlowItem(Lang.T("取消"), GUI.skin.button, 50f);
+            if (GUILayout.Button(Lang.T("取消"), Fit.WB(50, Lang.T("取消")), GUILayout.Height(24))) cancel = true;
             GUI.color = Color.white;
-            GUILayout.EndHorizontal();
+            Fit.FlowEnd();
 
             if (cancel) { CloseModeMenu(); return; }
             if (hit >= 0)
@@ -4617,6 +4626,26 @@ namespace StudioCharTools
                 onPick(m);
             }
         }
+
+        /// <summary>
+        /// 主視窗角色清單裡一列能用的寬度：視窗寬扣掉視窗內距、捲軸、外框和縮排。
+        /// 自動換列（Fit.Flow*）靠這個數字決定什麼時候換。
+        ///
+        /// 只在 Layout 那一遍更新。視窗被內容撐大的那一幀，Layout 和 Repaint 兩遍拿到的
+        /// charPickerRect.width 不一樣；如果兩遍換列的位置因此不同，控制項數量就對不上，
+        /// IMGUI 會丟「Getting control N's position…」。記住 Layout 用的值，Repaint 沿用。
+        /// </summary>
+        float RowAvail
+        {
+            get
+            {
+                Event e = Event.current;
+                if (rowAvail <= 0f || e == null || e.type == EventType.Layout)
+                    rowAvail = Mathf.Max(300f, charPickerRect.width - 70f);
+                return rowAvail;
+            }
+        }
+        float rowAvail;
 
         void CloseModeMenu()
         {
@@ -4687,12 +4716,12 @@ namespace StudioCharTools
                 ToggleModeMenu(oci, 1, index + 1);
             }
 
-            if (GUILayout.Button(Lang.T("選取"), GUILayout.Width(48), GUILayout.Height(28)))
+            if (GUILayout.Button(Lang.T("選取"), Fit.WB(48, Lang.T("選取")), GUILayout.Height(28)))
             {
                 SelectCharacterInWorkspace(oci);
             }
 
-            if (GUILayout.Button(Lang.T("換衣服"), GUILayout.Width(58), GUILayout.Height(28)))
+            if (GUILayout.Button(Lang.T("換衣服"), Fit.WB(58, Lang.T("換衣服")), GUILayout.Height(28)))
             {
                 Studio.OCIChar target = oci;
                 int no = index + 1;
@@ -4702,7 +4731,7 @@ namespace StudioCharTools
             }
 
             GUI.color = new Color(0.6f, 1f, 0.9f);
-            if (GUILayout.Button(Lang.T("碰撞器"), GUILayout.Width(58), GUILayout.Height(28)))
+            if (GUILayout.Button(Lang.T("碰撞器"), Fit.WB(58, Lang.T("碰撞器")), GUILayout.Height(28)))
             {
                 SelectCharacterInWorkspace(oci);
                 if (ToggleSidePanel(oci, 6))
@@ -4719,7 +4748,7 @@ namespace StudioCharTools
             // （AbmxFilter.CaptureNames 本身還在用，換人流程要靠它比對舊卡。）
 
             GUI.color = new Color(1f, 0.75f, 0.3f);
-            if (GUILayout.Button(Lang.T("型態鍵"), GUILayout.Width(58), GUILayout.Height(28)))
+            if (GUILayout.Button(Lang.T("型態鍵"), Fit.WB(58, Lang.T("型態鍵")), GUILayout.Height(28)))
             {
                 SelectCharacterInWorkspace(oci);
                 if (ToggleSidePanel(oci, 3))
@@ -4733,32 +4762,38 @@ namespace StudioCharTools
             GUILayout.EndHorizontal();
 
             // ---- 第二行：保持服裝換人 / 存卡片 ----
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(10);
+            // 這一列有八顆按鈕。中文一列排得下；英文 / 日文排不下，所以改成自動換列，
+            // 不然整列會超出視窗、清單底下冒出水平捲軸。
+            Fit.FlowBegin(RowAvail, 10f);
 
             GUI.color = new Color(0.5f, 1f, 0.5f);
-            if (GUILayout.Button(Lang.T("保持服裝換人"), GUILayout.Width(110), GUILayout.Height(24)))
+            Fit.FlowItem(Lang.T("保持服裝換人"), GUI.skin.button, 110f);
+            if (GUILayout.Button(Lang.T("保持服裝換人"), Fit.WB(110, Lang.T("保持服裝換人")), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
                 ToggleModeMenu(oci, 2, index + 1);
             }
             GUI.color = new Color(1f, 0.8f, 0.4f);
+            Fit.FlowItem(Lang.T("添加飾品"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("添加飾品"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
                 StartMergeJob(oci, index + 1);
             }
             GUI.color = new Color(0.85f, 0.75f, 1f);
+            Fit.FlowItem(Lang.T("重置姿勢"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("重置姿勢"), GUILayout.Height(24)))
                 ReapplyAnime(oci);
             GUI.color = Color.white;
 
+            Fit.FlowItem(Lang.T("存人物卡"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("存人物卡"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
                 StartCoroutine(CaptureThenSave(oci, index + 1, IsFemale(oci), true));
             }
 
+            Fit.FlowItem(Lang.T("存服裝卡"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("存服裝卡"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
@@ -4766,12 +4801,14 @@ namespace StudioCharTools
             }
 
             // 每個換裝槽輪流穿上、各拍一張、各存一張服裝卡，最後切回原本那套
+            Fit.FlowItem(Lang.T("存全部換裝"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("存全部換裝"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
                 StartCoroutine(SaveAllCoordinatesRoutine(oci, index));
             }
 
+            Fit.FlowItem(Lang.T("存姿勢"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("存姿勢"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
@@ -4785,6 +4822,7 @@ namespace StudioCharTools
             }
 
             GUI.color = new Color(0.85f, 0.7f, 1f);
+            Fit.FlowItem(Lang.T("飾品"), GUI.skin.button, 0f);
             if (GUILayout.Button(Lang.T("飾品"), GUILayout.Height(24)))
             {
                 SelectCharacterInWorkspace(oci);
@@ -4797,7 +4835,7 @@ namespace StudioCharTools
             }
             GUI.color = Color.white;
 
-            GUILayout.EndHorizontal();
+            Fit.FlowEnd();
 
             // ---- 第三行：四種模式的選單（只有這個角色被點開時才畫）----
             if (modeMenuChar == oci)

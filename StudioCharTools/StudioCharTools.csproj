@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="CharTools.cs" />
     <Compile Include="Lang.cs" />
+    <Compile Include="UiFit.cs" />
     <Compile Include="VrSkin.cs" />
     <Compile Include="ToolbarButton.cs" />
     <Compile Include="BlendShapeLock.cs" />

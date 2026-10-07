@@ -67,7 +67,7 @@ namespace StudioCutScene
             }
             catch (Exception e)
             {
-                Status = "建立失敗：" + e.GetType().Name;
+                Status = Lang.T("建立失敗：") + e.GetType().Name;
             }
         }
 

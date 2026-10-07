@@ -408,10 +408,10 @@ namespace StudioCutScene
                 if (needSeek)
                 {
                     SeekCount++;
-                    LastSeek = "timeline " + t.ToString("F2") + "s："
-                             + (jumped ? "時間軸跳轉" : trackChanged ? "換段" : "漂移過大")
-                             + "  音訊 " + src.time.ToString("F2") + " → " + want.ToString("F2")
-                             + "  (差 " + (drift * 1000f).ToString("F0") + " ms)";
+                    LastSeek = "timeline " + t.ToString("F2") + Lang.T("s：")
+                             + (jumped ? Lang.T("時間軸跳轉") : trackChanged ? Lang.T("換段") : Lang.T("漂移過大"))
+                             + Lang.T("  音訊 ") + src.time.ToString("F2") + " → " + want.ToString("F2")
+                             + Lang.T("  (差 ") + (drift * 1000f).ToString("F0") + " ms)";
                     if (cfg.logSeeks)
                         Debug.LogWarning("[CutScene] seek #" + SeekCount + "  " + LastSeek);
                     SeekTo(want);

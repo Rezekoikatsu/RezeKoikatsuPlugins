@@ -170,7 +170,7 @@ namespace StudioCutScene
             catch (Exception e)
             {
                 Active = false;
-                LastReport = "掛載失敗：" + e.Message + "，改用舊的輪詢";
+                LastReport = Lang.T("掛載失敗：") + e.Message + Lang.T("，改用舊的輪詢");
             }
         }
 

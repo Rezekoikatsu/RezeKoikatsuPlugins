@@ -296,10 +296,10 @@ namespace StudioCutScene
               " 頭に追従");
             A(" 跳過所有動畫",
               " Skip all cutscenes",
-              " 過場をすべてスキップ");
+              " ムービーをすべてスキップ");
             A(" 過場",
               " Transition",
-              " 過場");
+              " 幕間");
             A(" 開場",
               " Opening",
               " オープニング");
@@ -365,16 +365,16 @@ namespace StudioCutScene
               "<b>診断</b>");
             A("<b>過場的觸發方式</b>",
               "<b>How transitions trigger</b>",
-              "<b>過場のトリガー方式</b>");
+              "<b>ムービーのトリガー方式</b>");
             A("<b>過場設定檔</b>",
               "<b>CutScene config file</b>",
-              "<b>過場設定ファイル</b>");
+              "<b>ムービー設定ファイル</b>");
             A("<b>音軌（跟著時間軸走，可任意 seek）</b>",
               "<b>Audio tracks (follow the timeline, seek anywhere)</b>",
               "<b>音声トラック（タイムラインに追従、自由にシーク可）</b>");
             A("<b>頭顯裡的過場畫面</b>",
               "<b>Cutscene screen in the headset</b>",
-              "<b>ヘッドセット内の過場画面</b>");
+              "<b>ヘッドセット内のムービー画面</b>");
             A("<color=#c0392b>時間軸未就緒（每秒自動重試）</color>",
               "<color=#c0392b>Timeline not ready (retrying every second)</color>",
               "<color=#c0392b>タイムライン未準備（毎秒再試行）</color>");
@@ -383,7 +383,7 @@ namespace StudioCutScene
               "<color=#e05b5b>パネル描画エラー：");
             A("<color=#e74c3c><b> 跳過所有動畫</b></color>",
               "<color=#e74c3c><b> Skip all cutscenes</b></color>",
-              "<color=#e74c3c><b> 過場をすべてスキップ</b></color>");
+              "<color=#e74c3c><b> ムービーをすべてスキップ</b></color>");
             A("<color=#e74c3c>紅色 ✕ ＝ 這個檔案不在了",
               "<color=#e74c3c>Red ✕ = this file is gone",
               "<color=#e74c3c>赤い ✕ ＝ このファイルがありません");
@@ -452,7 +452,7 @@ namespace StudioCutScene
               "　（タイムラインがシークできません）");
             A("「只在跟播時」＝按了上面的「從頭播放」或「跟播中」才會播過場。",
               "\"Only while following\" = transitions play only after you press Play from start, or while following.",
-              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけ過場を再生します。");
+              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけムービーを再生します。");
             A("「維持新卡身材」要從舊卡留下的 ABMX 骨頭",
               "ABMX bones kept from the old card by \"keep body\"",
               "「体型を維持」で旧カードから残す ABMX ボーン");
@@ -1147,8 +1147,8 @@ namespace StudioCutScene
               "(on by default), small colliders like J694 start grabbing hair and the lower body.",
               "（既定でオン）、J694 のような小さなコライダーが髪や下半身を吸着し始めます。");
             A("）",
-              "）",
-              " ）");
+              ")",
+              "）");
             A("，請用工具重新產生 json，或直接改 json 裡的路徑。</color>",
               ", regenerate the json with your tool, or fix the path inside the json.</color>",
               "。ツールで json を再生成するか、json 内のパスを直接修正してください。</color>");
@@ -2293,6 +2293,190 @@ namespace StudioCutScene
             A("清除比例",
               "Clear scale",
               "倍率を解除");
+            // ---- 補：狀態訊息、報告、其餘畫面文字 ----
+            A("尚未載入設定檔。",
+              "No config loaded yet.",
+              "設定ファイルはまだ読み込まれていません。");
+            A("：",
+              ": ",
+              "：");
+            A("；",
+              "; ",
+              "；");
+            A("載入事件沒掛上 → ",
+              "load-event hook not attached → ",
+              "読み込みイベントのフック未接続 → ");
+            A("載入事件掛上了，但一次路徑都沒收到",
+              "load-event hook attached, but no path received yet",
+              "読み込みイベントはフック済みだが、パスをまだ一度も受け取っていない");
+            A("載入事件收到的是 ",
+              "load event reported ",
+              "読み込みイベントで受け取ったのは ");
+            A("  卡頓 0 次 —— 主執行緒沒停頓過",
+              "  Stalls: 0 — the main thread never stalled",
+              "  カクつき 0 回 —— メインスレッドは一度も止まっていません");
+            A("  卡頓 ",
+              "  Stalls: ",
+              "  カクつき ");
+            A(" 次，時間軸累計少掉 ",
+              ", timeline lost a total of ",
+              " 回、タイムラインの遅れ合計 ");
+            A("（最久 ",
+              " (longest ",
+              "（最長 ");
+            A("，間隔 ",
+              ", last gap ",
+              "、間隔 ");
+            A("載入事件",
+              "load event",
+              "読み込みイベント");
+            A("（檔案裡沒有有效路徑）",
+              "(no valid path in the file)",
+              "（ファイルに有効なパスがありません）");
+            A("（找不到 BepInEx/config）",
+              "(BepInEx/config not found)",
+              "（BepInEx/config が見つかりません）");
+            A("（BepInEx/config 讀不了）",
+              "(cannot read BepInEx/config)",
+              "（BepInEx/config を読めません）");
+            A("（沒有外掛在記錄目前的場景）",
+              "(no plugin records the current scene)",
+              "（現在のシーンを記録しているプラグインがありません）");
+            A("Pause() 方法",
+              "Pause() call",
+              "Pause() メソッド");
+            A("寫 isPlaying = false",
+              "writes isPlaying = false",
+              "isPlaying = false を書き込む");
+            A("凍結模式（每幀寫回時間）",
+              "freeze mode (writes the time back every frame)",
+              "フリーズモード（毎フレーム時刻を書き戻す）");
+            A("（還沒載入）",
+              "(not loaded yet)",
+              "（未読み込み）");
+            A("（沒有卡片）",
+              "(no card)",
+              "（カードなし）");
+            A("組不出檔名：",
+              "Can't build the file name: ",
+              "ファイル名を作れません：");
+            A("（還沒掛上）",
+              "(not attached yet)",
+              "（未接続）");
+            A("找不到可掛的載入方法（遊戲版本不同？），改用舊的輪詢",
+              "no load method to hook (different game version?), falling back to polling",
+              "フックできる読み込みメソッドが見つかりません（ゲームのバージョン違い？）。従来のポーリングに切り替えます");
+            A("掛載失敗：",
+              "hook failed: ",
+              "フック失敗：");
+            A("，改用舊的輪詢",
+              ", falling back to polling",
+              "、従来のポーリングに切り替えます");
+            A("建立失敗：",
+              "Creation failed: ",
+              "作成失敗：");
+            A("s：",
+              "s: ",
+              "s：");
+            A("時間軸跳轉",
+              "timeline jump",
+              "タイムラインのジャンプ");
+            A("換段",
+              "segment change",
+              "区間の切り替え");
+            A("漂移過大",
+              "drift too large",
+              "ずれが大きすぎ");
+            A("  音訊 ",
+              "  audio ",
+              "  音声 ");
+            A("  (差 ",
+              "  (off by ",
+              "  (差 ");
+            A("sRGBWrite(不支援)",
+              "sRGBWrite (unsupported)",
+              "sRGBWrite(非対応)");
+            A("找不到影片: ",
+              "Video not found: ",
+              "動画が見つかりません: ");
+            A("定位到 ",
+              "Seeking to ",
+              "シーク先 ");
+            A("已預載 ",
+              "Preloaded ",
+              "プリロード済み ");
+            A("  色彩:",
+              "  colour: ",
+              "  色: ");
+            A("  共用來源片",
+              "  shared source video",
+              "  共通ソース動画");
+            A("找不到音訊: ",
+              "Audio not found: ",
+              "音声が見つかりません: ");
+            A("音訊格式不支援（只吃 .ogg / .wav）: ",
+              "Unsupported audio format (.ogg / .wav only): ",
+              "未対応の音声形式（.ogg / .wav のみ）: ");
+            A("音訊載入失敗: ",
+              "Audio load failed: ",
+              "音声の読み込み失敗: ");
+            A("播放中 ",
+              "Playing ",
+              "再生中 ");
+            A("內容是空的",
+              "The content is empty",
+              "内容が空です");
+            A("結尾有多餘內容",
+              "Extra content after the end",
+              "末尾に余分な内容があります");
+            A("第 ",
+              "Line ",
+              "第 ");
+            A(" 行第 ",
+              ", col ",
+              " 行 ");
+            A(" 字: ",
+              ": ",
+              " 文字目: ");
+            A("預期一個值，但檔案結束了",
+              "Expected a value, but the file ended",
+              "値が必要ですが、ファイルが終わっています");
+            A("預期屬性名稱（要用雙引號）",
+              "Expected a property name (in double quotes)",
+              "プロパティ名が必要です（ダブルクォートで囲む）");
+            A("屬性 \"",
+              "Property \"",
+              "プロパティ \"");
+            A("\" 後面少了冒號",
+              "\" has no colon after it",
+              "\" の後ろにコロンがありません");
+            A("物件沒有收尾的 }",
+              "Object has no closing }",
+              "オブジェクトを閉じる } がありません");
+            A("預期 , 或 }",
+              "Expected , or }",
+              ", または } が必要です");
+            A("陣列沒有收尾的 ]",
+              "Array has no closing ]",
+              "配列を閉じる ] がありません");
+            A("預期 , 或 ]",
+              "Expected , or ]",
+              ", または ] が必要です");
+            A("預期 ",
+              "Expected ",
+              "次が必要です: ");
+            A("看不懂的數值 \"",
+              "Unreadable number \"",
+              "解釈できない数値 \"");
+            A("字串沒有收尾的雙引號",
+              "String has no closing double quote",
+              "文字列を閉じるダブルクォートがありません");
+            A("字串結尾是孤立的反斜線",
+              "String ends with a lone backslash",
+              "文字列の末尾がバックスラッシュ単独です");
+            A("\\u 後面不足四位",
+              "\\u needs four hex digits",
+              "\\u の後ろが 4 桁ありません");
         }
     }
 }

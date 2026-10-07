@@ -93,13 +93,13 @@ namespace StudioCutScene
     {
         public static JNode Parse(string text)
         {
-            if (text == null) throw new FormatException("內容是空的");
+            if (text == null) throw new FormatException(Lang.T("內容是空的"));
             if (text.Length > 0 && text[0] == '﻿') text = text.Substring(1);
             var p = new P(text);
             p.SkipWs();
             JNode n = p.Value();
             p.SkipWs();
-            if (!p.End) throw p.Err("結尾有多餘內容");
+            if (!p.End) throw p.Err(Lang.T("結尾有多餘內容"));
             return n;
         }
 
@@ -119,7 +119,7 @@ namespace StudioCutScene
                     if (s[k] == '\n') { line++; col = 1; }
                     else col++;
                 }
-                return new FormatException("第 " + line + " 行第 " + col + " 字: " + msg);
+                return new FormatException(Lang.T("第 ") + line + Lang.T(" 行第 ") + col + Lang.T(" 字: ") + msg);
             }
 
             public void SkipWs()
@@ -150,7 +150,7 @@ namespace StudioCutScene
             public JNode Value()
             {
                 SkipWs();
-                if (End) throw Err("預期一個值，但檔案結束了");
+                if (End) throw Err(Lang.T("預期一個值，但檔案結束了"));
                 char c = s[i];
                 if (c == '{') return ObjectNode();
                 if (c == '[') return ArrayNode();
@@ -170,17 +170,17 @@ namespace StudioCutScene
                 {
                     SkipWs();
                     if (!End && s[i] == '}') { i++; break; }      // 容忍結尾逗號
-                    if (End || s[i] != '"') throw Err("預期屬性名稱（要用雙引號）");
+                    if (End || s[i] != '"') throw Err(Lang.T("預期屬性名稱（要用雙引號）"));
                     string key = StringLit();
                     SkipWs();
-                    if (End || s[i] != ':') throw Err("屬性 \"" + key + "\" 後面少了冒號");
+                    if (End || s[i] != ':') throw Err(Lang.T("屬性 \"") + key + Lang.T("\" 後面少了冒號"));
                     i++;
                     n.Obj[key] = Value();
                     SkipWs();
-                    if (End) throw Err("物件沒有收尾的 }");
+                    if (End) throw Err(Lang.T("物件沒有收尾的 }"));
                     if (s[i] == ',') { i++; continue; }
                     if (s[i] == '}') { i++; break; }
-                    throw Err("預期 , 或 }");
+                    throw Err(Lang.T("預期 , 或 }"));
                 }
                 return n;
             }
@@ -197,10 +197,10 @@ namespace StudioCutScene
                     if (!End && s[i] == ']') { i++; break; }      // 容忍結尾逗號
                     n.Arr.Add(Value());
                     SkipWs();
-                    if (End) throw Err("陣列沒有收尾的 ]");
+                    if (End) throw Err(Lang.T("陣列沒有收尾的 ]"));
                     if (s[i] == ',') { i++; continue; }
                     if (s[i] == ']') { i++; break; }
-                    throw Err("預期 , 或 ]");
+                    throw Err(Lang.T("預期 , 或 ]"));
                 }
                 return n;
             }
@@ -215,7 +215,7 @@ namespace StudioCutScene
             void Expect(string lit)
             {
                 if (i + lit.Length > s.Length || s.Substring(i, lit.Length) != lit)
-                    throw Err("預期 " + lit);
+                    throw Err(Lang.T("預期 ") + lit);
                 i += lit.Length;
             }
 
@@ -231,7 +231,7 @@ namespace StudioCutScene
                 if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out d))
                 {
                     i = st;
-                    throw Err("看不懂的數值 \"" + raw + "\"");
+                    throw Err(Lang.T("看不懂的數值 \"") + raw + "\"");
                 }
                 return new JNode { Kind = JNode.NUM, Num = d };
             }
@@ -242,11 +242,11 @@ namespace StudioCutScene
                 i++; // "
                 while (true)
                 {
-                    if (End) throw Err("字串沒有收尾的雙引號");
+                    if (End) throw Err(Lang.T("字串沒有收尾的雙引號"));
                     char c = s[i++];
                     if (c == '"') break;
                     if (c != '\\') { sb.Append(c); continue; }
-                    if (End) throw Err("字串結尾是孤立的反斜線");
+                    if (End) throw Err(Lang.T("字串結尾是孤立的反斜線"));
                     char e = s[i++];
                     switch (e)
                     {
@@ -259,7 +259,7 @@ namespace StudioCutScene
                         case 'r': sb.Append('\r'); break;
                         case 't': sb.Append('\t'); break;
                         case 'u':
-                            if (i + 4 > s.Length) throw Err("\\u 後面不足四位");
+                            if (i + 4 > s.Length) throw Err(Lang.T("\\u 後面不足四位"));
                             sb.Append((char)Convert.ToInt32(s.Substring(i, 4), 16));
                             i += 4;
                             break;

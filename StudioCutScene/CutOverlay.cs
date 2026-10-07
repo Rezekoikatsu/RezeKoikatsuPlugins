@@ -321,8 +321,8 @@ namespace StudioCutScene
         {
             if (colorMode == 1) return "Linear";
             if (colorMode == 2) return "sRGB";
-            if (colorMode == 3) return srgbWriteProp != null ? "sRGBWrite" : "sRGBWrite(不支援)";
-            return "原樣";
+            if (colorMode == 3) return srgbWriteProp != null ? "sRGBWrite" : Lang.T("sRGBWrite(不支援)");
+            return Lang.T("原樣");
         }
 
         public bool SrgbWriteAvailable { get { return srgbWriteProp != null; } }
@@ -383,7 +383,7 @@ namespace StudioCutScene
 
             if (string.IsNullOrEmpty(file) || !File.Exists(file))
             {
-                Status = "找不到影片: " + file;
+                Status = Lang.T("找不到影片: ") + file;
                 yield break;
             }
 
@@ -438,7 +438,7 @@ namespace StudioCutScene
             }
             else if (sharedMode)
             {
-                Status = "定位到 " + e.videoStart.ToString("F2") + "s…";
+                Status = Lang.T("定位到 ") + e.videoStart.ToString("F2") + "s…";
                 seekDone = false;
                 bool hooked = false;
                 if (seekEvent != null && seekHandler != null)
@@ -475,26 +475,26 @@ namespace StudioCutScene
             preparedFor = e;
             loadingFor = null;
             Texture pt = DisplayTexture();
-            Status = "已預載 " + (pt != null ? pt.width + "x" + pt.height : "(尚無影格)")
-                     + "  色彩:" + ColorModeName()
-                     + (sharedMode ? "  共用來源片" : "");
+            Status = Lang.T("已預載 ") + (pt != null ? pt.width + "x" + pt.height : Lang.T("(尚無影格)"))
+                     + Lang.T("  色彩:") + ColorModeName()
+                     + (sharedMode ? Lang.T("  共用來源片") : "");
         }
 
         IEnumerator LoadClip(string path)
         {
             if (clip != null) { UnityEngine.Object.Destroy(clip); clip = null; }
-            if (!File.Exists(path)) { Status = "找不到音訊: " + path; yield break; }
+            if (!File.Exists(path)) { Status = Lang.T("找不到音訊: ") + path; yield break; }
 
             string ext = Path.GetExtension(path).ToLower();
             AudioType at;
             bool stream;
             if (ext == ".ogg") { at = AudioType.OGGVORBIS; stream = true; }
             else if (ext == ".wav") { at = AudioType.WAV; stream = false; }
-            else { Status = "音訊格式不支援（只吃 .ogg / .wav）: " + ext; yield break; }
+            else { Status = Lang.T("音訊格式不支援（只吃 .ogg / .wav）: ") + ext; yield break; }
 
             var www = new WWW(ToWwwUrl(path));
             while (!www.isDone) yield return null;
-            if (!string.IsNullOrEmpty(www.error)) { Status = "音訊載入失敗: " + www.error; yield break; }
+            if (!string.IsNullOrEmpty(www.error)) { Status = Lang.T("音訊載入失敗: ") + www.error; yield break; }
 
             clip = www.GetAudioClip(false, stream, at);
             float t0 = Time.realtimeSinceStartup;
@@ -646,7 +646,7 @@ namespace StudioCutScene
                                 + "；Play 到第一格 " + (now - tPlay).ToString("F2") + "）");
                     }
 
-                    Status = "播放中 " + ((float)vp.time).ToString("F1") + " s"
+                    Status = Lang.T("播放中 ") + ((float)vp.time).ToString("F1") + " s"
                              + (vp.isPlaying ? "" : "  [stall]");
                     yield return null;
                 }

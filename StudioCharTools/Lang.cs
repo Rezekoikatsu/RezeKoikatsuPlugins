@@ -296,10 +296,10 @@ namespace StudioCharTools
               " 頭に追従");
             A(" 跳過所有動畫",
               " Skip all cutscenes",
-              " 過場をすべてスキップ");
+              " ムービーをすべてスキップ");
             A(" 過場",
               " Transition",
-              " 過場");
+              " 幕間");
             A(" 開場",
               " Opening",
               " オープニング");
@@ -365,16 +365,16 @@ namespace StudioCharTools
               "<b>診断</b>");
             A("<b>過場的觸發方式</b>",
               "<b>How transitions trigger</b>",
-              "<b>過場のトリガー方式</b>");
+              "<b>ムービーのトリガー方式</b>");
             A("<b>過場設定檔</b>",
               "<b>CutScene config file</b>",
-              "<b>過場設定ファイル</b>");
+              "<b>CutScene 設定ファイル</b>");
             A("<b>音軌（跟著時間軸走，可任意 seek）</b>",
               "<b>Audio tracks (follow the timeline, seek anywhere)</b>",
               "<b>音声トラック（タイムラインに追従、自由にシーク可）</b>");
             A("<b>頭顯裡的過場畫面</b>",
               "<b>Cutscene screen in the headset</b>",
-              "<b>ヘッドセット内の過場画面</b>");
+              "<b>ヘッドセット内のムービー画面</b>");
             A("<color=#c0392b>時間軸未就緒（每秒自動重試）</color>",
               "<color=#c0392b>Timeline not ready (retrying every second)</color>",
               "<color=#c0392b>タイムライン未準備（毎秒再試行）</color>");
@@ -383,7 +383,7 @@ namespace StudioCharTools
               "<color=#e05b5b>パネル描画エラー：");
             A("<color=#e74c3c><b> 跳過所有動畫</b></color>",
               "<color=#e74c3c><b> Skip all cutscenes</b></color>",
-              "<color=#e74c3c><b> 過場をすべてスキップ</b></color>");
+              "<color=#e74c3c><b> ムービーをすべてスキップ</b></color>");
             A("<color=#e74c3c>紅色 ✕ ＝ 這個檔案不在了",
               "<color=#e74c3c>Red ✕ = this file is gone",
               "<color=#e74c3c>赤い ✕ ＝ このファイルがありません");
@@ -452,7 +452,7 @@ namespace StudioCharTools
               "　（タイムラインがシークできません）");
             A("「只在跟播時」＝按了上面的「從頭播放」或「跟播中」才會播過場。",
               "\"Only while following\" = transitions play only after you press Play from start, or while following.",
-              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけ過場を再生します。");
+              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけムービーを再生します。");
             A("「維持新卡身材」要從舊卡留下的 ABMX 骨頭",
               "ABMX bones kept from the old card by \"keep body\"",
               "「体型を維持」で旧カードから残す ABMX ボーン");
@@ -2320,6 +2320,179 @@ namespace StudioCharTools
             A("清除比例",
               "Clear scale",
               "倍率を解除");
+
+            // ---- 補：狀態訊息、報告、其餘畫面文字 ----
+            A("(未命名角色)",
+              "(unnamed character)",
+              "(名前なしキャラ)");
+            A("服裝卡",
+              "coordinate card",
+              "コーデカード");
+            A("姿勢",
+              "pose",
+              "ポーズ");
+            A("（{0} / {1}）",
+              " ({0} / {1})",
+              "（{0} / {1}）");
+            A("人物卡已存出: ",
+              "Chara card saved: ",
+              "キャラカードを保存しました: ");
+            A("人物卡存檔失敗: ",
+              "Chara card save failed: ",
+              "キャラカードの保存に失敗: ");
+            A("服裝卡已存出: ",
+              "Coordinate card saved: ",
+              "コーデカードを保存しました: ");
+            A("服裝卡存檔失敗: ",
+              "Coordinate card save failed: ",
+              "コーデカードの保存に失敗: ");
+            A("已存出: ",
+              "Saved: ",
+              "保存しました: ");
+            A("往返失敗: ",
+              "Round trip failed: ",
+              "往復に失敗: ");
+            A("已重新套用 {0} 項",
+              "Reapplied {0} items",
+              "{0} 項目を再適用しました");
+            A("已重設 {0} 根，若人物走樣請按復原",
+              "Reset {0} bones; press Undo if the character looks wrong",
+              "{0} 本をリセットしました。キャラが崩れたら「元に戻す」を押してください");
+            A("已把 {0} 根骨骼歸一",
+              "Set {0} bones back to scale 1",
+              "{0} 本のボーンを 1 に戻しました");
+            A("已復原 {0} 根骨骼",
+              "Restored {0} bones",
+              "{0} 本のボーンを元に戻しました");
+            A("診斷完成（{0} 根真正異常）",
+              "Diagnosis done ({0} truly abnormal)",
+              "診断完了（本当に異常なもの {0} 本）");
+            A("工具回報成功，但找不到產出的檔案：",
+              "The tool reported success, but the output file is missing: ",
+              "ツールは成功を返しましたが、出力ファイルが見つかりません：");
+            A("工具回報失敗",
+              "The tool reported a failure",
+              "ツールが失敗を返しました");
+            A("寫不出工單：",
+              "Can't write the job file: ",
+              "ジョブファイルを書き込めません：");
+            A("偵測到 ",
+              "Detected ",
+              "検出 ");
+            A(" 個欄位，其中 ",
+              " slots, ",
+              " 枠、うち ");
+            A(" 個列出",
+              " listed",
+              " 枠を表示");
+            A("已移除第 {0} 格",
+              "Removed slot {0}",
+              "{0} 番の枠を削除しました");
+            A("第 {0} 格清除失敗，存檔用的陣列仍是 ",
+              "Slot {0} could not be cleared; the array used for saving still holds ",
+              "{0} 番の枠を消去できませんでした。保存用の配列は次のまま: ");
+            A("移除失敗: ",
+              "Remove failed: ",
+              "削除に失敗: ");
+            A("第 {0} 格診斷已輸出到主控台",
+              "Slot {0} diagnostics written to the console",
+              "{0} 番の枠の診断をコンソールに出力しました");
+            A("找不到 KKPE（HSPE）的型別，確認 KKPE 有載入（Sunshine 是 KKSPE.dll）",
+              "KKPE (HSPE) types not found; make sure KKPE is loaded (it is KKSPE.dll on Sunshine)",
+              "KKPE（HSPE）の型が見つかりません。KKPE が読み込まれているか確認してください（Sunshine では KKSPE.dll）");
+            A("KKPE 內部結構與預期不符（版本不同？）缺少：",
+              "KKPE's internals are not what was expected (different version?). Missing: ",
+              "KKPE の内部構造が想定と違います（バージョン違い？）不足：");
+            A("初始化失敗: ",
+              "Initialisation failed: ",
+              "初期化に失敗: ");
+            A("找不到這個角色的 HSPE PoseController",
+              "HSPE PoseController not found for this character",
+              "このキャラの HSPE PoseController が見つかりません");
+            A("找不到這個角色的 HSPE PoseController（該角色可能還沒被 KKPE 碰過）",
+              "HSPE PoseController not found for this character (KKPE may not have touched this character yet)",
+              "このキャラの HSPE PoseController が見つかりません（まだ KKPE で触っていないキャラかもしれません）");
+            A("已記錄 ",
+              "Recorded ",
+              "記録: ");
+            A(" 顆碰撞器，",
+              " colliders, ",
+              " 個のコライダー、");
+            A(" 根骨頭是啟用的",
+              " bones enabled",
+              " 本のボーンが有効");
+            A("範本取自 ",
+              "Template taken from ",
+              "手本の取得元: ");
+            A(" 個其他角色/物件，共 ",
+              " other characters/objects, ",
+              " 個の他キャラ/オブジェクト、有効にするボーンパス ");
+            A(" 條要啟用的骨頭路徑",
+              " bone paths to enable",
+              " 本");
+            A("沒有可以套用的綁定記錄",
+              "No binding record to apply",
+              "適用できる結合の記録がありません");
+            A("（{0}）{1} 顆碰撞器 / 處理 {2} 根骨頭，啟用 {3} 根，變更 {4} 根",
+              "({0}) {1} colliders / {2} bones processed, {3} enabled, {4} changed",
+              "（{0}）コライダー {1} 個 / ボーン {2} 本を処理、有効 {3} 本、変更 {4} 本");
+            A("已關閉 {0} 個碰撞器物件的「自動加入新動骨」（存檔後生效）",
+              "Turned off \"auto-add new dynamic bones\" on {0} collider objects (takes effect after saving)",
+              "コライダーオブジェクト {0} 個の「新規ダイナミックボーンを自動追加」をオフにしました（保存後に有効）");
+            A("換人前記錄",
+              "pre-swap record",
+              "差し替え前の記録");
+            A("其他角色範本",
+              "template from other characters",
+              "他キャラの手本");
+            A("全部關閉",
+              "all off",
+              "すべてオフ");
+            A("角色",
+              "Character",
+              "キャラ");
+            A("對象：",
+              "Target: ",
+              "対象：");
+            A("綁定記錄：無（這個場景還沒在這裡換過人）\n",
+              "Binding record: none (no swap has been done here in this scene yet)\n",
+              "結合の記録：なし（このシーンではまだここで差し替えていません）\n");
+            A("綁定記錄：有，",
+              "Binding record: yes, ",
+              "結合の記録：あり、");
+            A(" 根啟用（",
+              " enabled (",
+              " 本が有効（");
+            A("）\n",
+              ")\n",
+              "）\n");
+            A("自動加入新動骨仍開著的碰撞器：",
+              "Colliders that still have \"auto-add new dynamic bones\" on: ",
+              "「新規ダイナミックボーンを自動追加」がオンのままのコライダー：");
+            A(" 個\n",
+              "\n",
+              " 個\n");
+            A("掃到 PoseController ",
+              "PoseControllers found: ",
+              "検出: PoseController ");
+            A(" 個 / CollidersEditor ",
+              " / CollidersEditors: ",
+              " 個 / CollidersEditor ");
+            A(" 個\n\n",
+              "\n\n",
+              " 個\n\n");
+            A("  啟用 ",
+              "  enabled ",
+              "  有効 ");
+            A(" …（另外 ",
+              " … (",
+              " …（他 ");
+            A(" 根）",
+              " more)",
+              " 本）");
+            A("場上沒有被編輯過的 Dynamic Bone Collider。\n",
+              "No edited Dynamic Bone Colliders in the scene.\n",
+              "シーンに編集済みの Dynamic Bone Collider がありません。\n");
         }
     }
 }

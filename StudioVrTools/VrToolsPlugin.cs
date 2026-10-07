@@ -849,7 +849,7 @@ namespace StudioVrTools
             catch (Exception e)
             {
                 // VR 這條路壞掉不能拖垮過場本身
-                vr.Status = "VR 畫面失敗：" + e.GetType().Name + " " + e.Message;
+                vr.Status = Lang.T("VR 畫面失敗：") + e.GetType().Name + " " + e.Message;
                 vr.Active = false;
                 CutSceneBridge.SetSuppressDesktop(false);
             }
@@ -1563,7 +1563,7 @@ namespace StudioVrTools
             Status(VrFxMute.FxReport);
             Status(string.Format(Lang.T("規則 {0} 條"), VrFxMute.RuleCount)
                    + (VrFxMute.BadCount > 0 ? string.Format(Lang.T("，看不懂 {0} 條"), VrFxMute.BadCount) : "")
-                   + "　｜ " + VrFxMute.LastReport);
+                   + "　｜ " + Lang.T(VrFxMute.LastReport));
 
             GUILayout.Space(8f);
             GUILayout.Label(Lang.T("<b>介面清晰度（VR）</b>"), rich);

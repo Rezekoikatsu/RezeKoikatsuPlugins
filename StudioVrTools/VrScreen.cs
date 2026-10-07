@@ -510,13 +510,13 @@ namespace StudioVrTools
                     string n = s.name;
                     if (n.IndexOf("Unlit", StringComparison.OrdinalIgnoreCase) < 0
                         && n.IndexOf("Sprite", StringComparison.OrdinalIgnoreCase) < 0) continue;
-                    used = n + "（從場上找到的）";
+                    used = n + Lang.T("（從場上找到的）");
                     return s;
                 }
             }
             catch { }
 
-            used = "（找不到可用的著色器）";
+            used = Lang.T("（找不到可用的著色器）");
             return null;
         }
 
@@ -704,12 +704,12 @@ namespace StudioVrTools
             bool vis = false;
             try { vis = videoR != null && videoR.isVisible; } catch { }
             Vector3 p = root.transform.position;
-            Status = "VR 畫面：" + cam.name + "　層 " + layer + "　" + ShaderName
-                     + (follow ? "　跟頭" : "　固定")
-                     + "　可見=" + vis
-                     + "　貼圖 " + tex.width + "×" + tex.height
-                     + "　位置 " + p.x.ToString("F1") + "," + p.y.ToString("F1") + "," + p.z.ToString("F1")
-                     + "　大小 " + w.ToString("F1") + "×" + h.ToString("F1");
+            Status = Lang.T("VR 畫面：") + cam.name + Lang.T("　層 ") + layer + "　" + ShaderName
+                     + (follow ? Lang.T("　跟頭") : Lang.T("　固定"))
+                     + Lang.T("　可見=") + vis
+                     + Lang.T("　貼圖 ") + tex.width + "×" + tex.height
+                     + Lang.T("　位置 ") + p.x.ToString("F1") + "," + p.y.ToString("F1") + "," + p.z.ToString("F1")
+                     + Lang.T("　大小 ") + w.ToString("F1") + "×" + h.ToString("F1");
 
             // 戴著頭顯的時候看不到面板，出了問題只能事後看 log。
             // 之前那一輪就是因為 log 裡**一行 VrScreen 都沒有**，

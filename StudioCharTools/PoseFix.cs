@@ -80,7 +80,7 @@ namespace StudioCharTools
 
             if (path != null)
             {
-                LastMessage = "已存出: " + Path.GetFileName(path);
+                LastMessage = Lang.T("已存出: ") + Path.GetFileName(path);
                 LastReport = "位置: " + Path.GetDirectoryName(path)
                            + (string.IsNullOrEmpty(scenePath)
                               ? "\n（沒有偵測到場景檔，用預設名稱與根目錄）"
@@ -476,7 +476,7 @@ namespace StudioCharTools
             catch (Exception e)
             {
                 var baseEx = e.GetBaseException();
-                LastMessage = "往返失敗: " + baseEx.Message;
+                LastMessage = Lang.T("往返失敗: ") + baseEx.Message;
                 LastReport = sb + "\n" + baseEx;
                 return false;
             }
@@ -546,7 +546,7 @@ namespace StudioCharTools
             done += InvokeKinematicMode(oci, sb);
 
             LastReport = sb.Length == 0 ? "沒有找到可呼叫的方法" : sb.ToString();
-            LastMessage = done > 0 ? "已重新套用 " + done + " 項" : "重新套用失敗，見報告";
+            LastMessage = done > 0 ? string.Format(Lang.T("已重新套用 {0} 項"), done) : "重新套用失敗，見報告";
             return done > 0;
         }
 
@@ -644,7 +644,7 @@ namespace StudioCharTools
             LastReport = n == 0
                 ? "沒有異常縮放。\n提醒：cf_j_bust01_L、cf_s_arm01_L 這類不等於 1 是正常的體型資料，不該重設。"
                 : sb + (n > 40 ? "\n...（共 " + n + " 根，只列出前 40）" : "");
-            LastMessage = n == 0 ? "沒有異常骨骼（正常）" : "已重設 " + n + " 根，若人物走樣請按復原";
+            LastMessage = n == 0 ? "沒有異常骨骼（正常）" : string.Format(Lang.T("已重設 {0} 根，若人物走樣請按復原"), n);
             return n;
         }
 
@@ -669,7 +669,7 @@ namespace StudioCharTools
             }
             if (n > 0) _undo[oci.charInfo] = snaps;
 
-            LastMessage = "已把 " + n + " 根骨骼歸一";
+            LastMessage = string.Format(Lang.T("已把 {0} 根骨骼歸一"), n);
             LastReport = "⚠️ 這會一併清掉人物卡的體型資料（胸型、手臂粗細等）。\n"
                        + "人物走樣是預期的，請按「復原上一次修正」。";
             return n;
@@ -694,7 +694,7 @@ namespace StudioCharTools
                 n++;
             }
             _undo.Remove(oci.charInfo);
-            LastMessage = "已復原 " + n + " 根骨骼";
+            LastMessage = string.Format(Lang.T("已復原 {0} 根骨骼"), n);
             return true;
         }
 
@@ -750,7 +750,7 @@ namespace StudioCharTools
 
             Debug.Log(sb.ToString());
             LastReport = "已輸出到 BepInEx 主控台";
-            LastMessage = "診斷完成（" + bad + " 根真正異常）";
+            LastMessage = string.Format(Lang.T("診斷完成（{0} 根真正異常）"), bad);
         }
 
         // ===============================================================

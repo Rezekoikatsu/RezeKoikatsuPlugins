@@ -63,7 +63,7 @@ namespace StudioVrTools
                     piHead = tVrCamera.GetProperty("Head", any);
                 }
             }
-            catch (Exception e) { LastReport = "接 VRGIN 相機失敗：" + e.Message; }
+            catch (Exception e) { LastReport = Lang.T("接 VRGIN 相機失敗：") + e.Message; }
         }
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace StudioVrTools
             if (Bad(nextUser) || Bad(o2))
             {
                 user = Pose.Identity;
-                LastReport = "位移計算出現無效值，已把偏移歸零重來";
+                LastReport = Lang.T("位移計算出現無效值，已把偏移歸零重來");
                 UnityEngine.Debug.LogWarning("[VrLocomotion] " + LastReport);
                 return;
             }
@@ -299,15 +299,15 @@ namespace StudioVrTools
         public static bool ResetToCamera()
         {
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點"; return false; }
-            if (!HasOffset) { LastReport = "本來就在相機視角上，沒有東西要退"; return true; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
+            if (!HasOffset) { LastReport = Lang.T("本來就在相機視角上，沒有東西要退"); return true; }
 
             float was = user.p.magnitude;
             Pose b = Compose(OriginPose(origin), Inverse(user));
             origin.rotation = b.r;
             origin.position = b.p;
             user = Pose.Identity;
-            LastReport = "已退回相機視角（原本偏離 " + was.ToString("F2") + " m）";
+            LastReport = Lang.T("已退回相機視角（原本偏離 ") + was.ToString("F2") + Lang.T(" m）");
             return true;
         }
 
@@ -320,7 +320,7 @@ namespace StudioVrTools
         {
             Transform origin = Origin();
             Transform head = Head();
-            if (origin == null || head == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null || head == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Vector3 fwd = head.forward;
             Vector3 right = head.right;
@@ -364,7 +364,7 @@ namespace StudioVrTools
         public static bool MoveVertical(float amount, float metersPerSecond, float dt)
         {
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Vector3 delta = Vector3.up * (amount * metersPerSecond * dt);
             if (delta.sqrMagnitude <= 0f) return false;
@@ -380,7 +380,7 @@ namespace StudioVrTools
         {
             Transform origin = Origin();
             Transform head = AxisHead();
-            if (origin == null || head == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null || head == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Vector3 pivot = head.position;
             bool did = false;
@@ -434,7 +434,7 @@ namespace StudioVrTools
         {
             if (Mathf.Abs(deg) <= 0f) return false;
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Transform head = AxisHead();
             Vector3 axis = Vector3.up;
@@ -491,29 +491,29 @@ namespace StudioVrTools
         public static bool SaveSpot()
         {
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點，沒有存"; return false; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點，沒有存"); return false; }
 
             Pose o = OriginPose(origin);
-            if (Bad(o)) { LastReport = "目前的姿勢是無效值，沒有存"; return false; }
+            if (Bad(o)) { LastReport = Lang.T("目前的姿勢是無效值，沒有存"); return false; }
 
             spotWorld = o;
             hasSpot = true;
-            LastReport = "已記住這個視角（" + o.p.x.ToString("F1") + ","
-                         + o.p.y.ToString("F1") + "," + o.p.z.ToString("F1") + "）";
+            LastReport = string.Format(Lang.T("已記住這個視角（{0},{1},{2}）"), o.p.x.ToString("F1"),
+                                       o.p.y.ToString("F1"), o.p.z.ToString("F1"));
             return true;
         }
 
         /// <summary>回到記住的視角。沒存過就什麼都不做。</summary>
         public static bool GoToSpot()
         {
-            if (!hasSpot) { LastReport = "還沒記住任何視角"; return false; }
+            if (!hasSpot) { LastReport = Lang.T("還沒記住任何視角"); return false; }
 
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Pose now = OriginPose(origin);
             Pose target = spotWorld;
-            if (Bad(target)) { LastReport = "記起來的視角是無效值，沒有移動"; return false; }
+            if (Bad(target)) { LastReport = Lang.T("記起來的視角是無效值，沒有移動"); return false; }
 
             // user 也要跟著換算，不然「偏離相機」那個數字和重置鍵會跟實際脫節：
             // origin = B ∘ user ⇒ B = now ∘ user⁻¹，換成 target 之後 user' = B⁻¹ ∘ target。
@@ -524,8 +524,8 @@ namespace StudioVrTools
             origin.rotation = target.r;
             origin.position = target.p;
 
-            LastReport = "已回到記住的視角（這一下移動了 "
-                         + (target.p - now.p).magnitude.ToString("F2") + " m）";
+            LastReport = Lang.T("已回到記住的視角（這一下移動了 ")
+                         + (target.p - now.p).magnitude.ToString("F2") + Lang.T(" m）");
             return true;
         }
 
@@ -554,20 +554,20 @@ namespace StudioVrTools
         /// </summary>
         public static bool ApplyPoseArray(float[] a)
         {
-            if (a == null || a.Length != 7) { LastReport = "視角資料不完整，沒有套用"; return false; }
+            if (a == null || a.Length != 7) { LastReport = Lang.T("視角資料不完整，沒有套用"); return false; }
 
             Transform origin = Origin();
-            if (origin == null) { LastReport = "找不到 VR 原點"; return false; }
+            if (origin == null) { LastReport = Lang.T("找不到 VR 原點"); return false; }
 
             Pose target = new Pose
             {
                 p = new Vector3(a[0], a[1], a[2]),
                 r = new Quaternion(a[3], a[4], a[5], a[6])
             };
-            if (Bad(target)) { LastReport = "視角資料是無效值，沒有套用"; return false; }
+            if (Bad(target)) { LastReport = Lang.T("視角資料是無效值，沒有套用"); return false; }
 
             Pose now = OriginPose(origin);
-            if (Bad(now)) { LastReport = "目前的姿勢是無效值，沒有套用"; return false; }
+            if (Bad(now)) { LastReport = Lang.T("目前的姿勢是無效值，沒有套用"); return false; }
 
             Pose b = Compose(now, Inverse(user));
             Pose nextUser = Compose(Inverse(b), target);
@@ -581,8 +581,8 @@ namespace StudioVrTools
             spotWorld = target;
             hasSpot = true;
 
-            LastReport = "已套用設定檔裡的視角（移動了 "
-                         + (target.p - now.p).magnitude.ToString("F2") + " m）";
+            LastReport = Lang.T("已套用設定檔裡的視角（移動了 ")
+                         + (target.p - now.p).magnitude.ToString("F2") + Lang.T(" m）");
             return true;
         }
 
@@ -590,7 +590,7 @@ namespace StudioVrTools
         public static void ClearSpot()
         {
             hasSpot = false;
-            LastReport = "已清掉記住的視角";
+            LastReport = Lang.T("已清掉記住的視角");
         }
 
         /// <summary>「繞著世界空間某一點轉」表示成一個剛體變換。</summary>

@@ -296,10 +296,10 @@ namespace StudioVrTools
               " 頭に追従");
             A(" 跳過所有動畫",
               " Skip all cutscenes",
-              " 過場をすべてスキップ");
+              " ムービーをすべてスキップ");
             A(" 過場",
               " Transition",
-              " 過場");
+              " 幕間");
             A(" 開場",
               " Opening",
               " オープニング");
@@ -365,16 +365,16 @@ namespace StudioVrTools
               "<b>診断</b>");
             A("<b>過場的觸發方式</b>",
               "<b>How transitions trigger</b>",
-              "<b>過場のトリガー方式</b>");
+              "<b>ムービーのトリガー方式</b>");
             A("<b>過場設定檔</b>",
               "<b>CutScene config file</b>",
-              "<b>過場設定ファイル</b>");
+              "<b>CutScene 設定ファイル</b>");
             A("<b>音軌（跟著時間軸走，可任意 seek）</b>",
               "<b>Audio tracks (follow the timeline, seek anywhere)</b>",
               "<b>音声トラック（タイムラインに追従、自由にシーク可）</b>");
             A("<b>頭顯裡的過場畫面</b>",
               "<b>Cutscene screen in the headset</b>",
-              "<b>ヘッドセット内の過場画面</b>");
+              "<b>ヘッドセット内のムービー画面</b>");
             A("<color=#c0392b>時間軸未就緒（每秒自動重試）</color>",
               "<color=#c0392b>Timeline not ready (retrying every second)</color>",
               "<color=#c0392b>タイムライン未準備（毎秒再試行）</color>");
@@ -383,7 +383,7 @@ namespace StudioVrTools
               "<color=#e05b5b>パネル描画エラー：");
             A("<color=#e74c3c><b> 跳過所有動畫</b></color>",
               "<color=#e74c3c><b> Skip all cutscenes</b></color>",
-              "<color=#e74c3c><b> 過場をすべてスキップ</b></color>");
+              "<color=#e74c3c><b> ムービーをすべてスキップ</b></color>");
             A("<color=#e74c3c>紅色 ✕ ＝ 這個檔案不在了",
               "<color=#e74c3c>Red ✕ = this file is gone",
               "<color=#e74c3c>赤い ✕ ＝ このファイルがありません");
@@ -452,7 +452,7 @@ namespace StudioVrTools
               "　（タイムラインがシークできません）");
             A("「只在跟播時」＝按了上面的「從頭播放」或「跟播中」才會播過場。",
               "\"Only while following\" = transitions play only after you press Play from start, or while following.",
-              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけ過場を再生します。");
+              "「追従中のみ」＝上の「最初から再生」または「追従中」のときだけムービーを再生します。");
             A("「維持新卡身材」要從舊卡留下的 ABMX 骨頭",
               "ABMX bones kept from the old card by \"keep body\"",
               "「体型を維持」で旧カードから残す ABMX ボーン");
@@ -2290,6 +2290,307 @@ namespace StudioVrTools
             A("清除比例",
               "Clear scale",
               "倍率を解除");
+            // ---- 補：狀態訊息、報告、其餘畫面文字 ----
+            A("找不到 SteamVR_Controller —— 這一版 VR 插件不是 VRGIN 系，或還沒載入",
+              "SteamVR_Controller not found — this VR plugin isn't VRGIN-based, or isn't loaded yet",
+              "SteamVR_Controller が見つかりません。この VR プラグインは VRGIN 系ではないか、まだ読み込まれていません");
+            A("手柄介面已接上",
+              "Controller interface connected",
+              "コントローラー入力に接続しました");
+            A("接手柄介面時出錯：",
+              "Error connecting to the controller interface: ",
+              "コントローラー入力への接続でエラー：");
+            A("走 VRGIN 的 Mode.Left/Right",
+              "Using VRGIN's Mode.Left/Right",
+              "VRGIN の Mode.Left/Right を使用");
+            A("找手柄失敗：",
+              "Finding the controllers failed: ",
+              "コントローラーの検索に失敗：");
+            A("VRGIN 的編號不可用，改用 SteamVR 的 Leftmost/Rightmost",
+              "VRGIN's indices are unusable; using SteamVR's Leftmost/Rightmost",
+              "VRGIN の番号が使えないため、SteamVR の Leftmost/Rightmost を使用");
+            A("手柄：一支都沒掃到",
+              "Controllers: none found",
+              "コントローラー：1 台も見つかりません");
+            A("手柄：VRGIN 沒給，改用掃裝置編號（",
+              "Controllers: none from VRGIN, scanning device indices (",
+              "コントローラー：VRGIN から取得できず、デバイス番号をスキャン（");
+            A("只找到一支",
+              "only one found",
+              "1 台のみ検出");
+            A("兩支",
+              "two found",
+              "2 台");
+            A("），左右可能顛倒",
+              "); left/right may be swapped",
+              "）、左右が逆の可能性あり");
+            A("AppMenu(左Y/右B)",
+              "AppMenu(L-Y/R-B)",
+              "AppMenu(左Y/右B)");
+            A("A(左X/右A)",
+              "A(L-X/R-A)",
+              "A(左X/右A)");
+            A("左手：",
+              "Left: ",
+              "左手：");
+            A("　　右手：",
+              "　　Right: ",
+              "　　右手：");
+            A("沒連上",
+              "not connected",
+              "未接続");
+            A("搖桿(",
+              "stick(",
+              "スティック(");
+            A(" 按著 ",
+              " holding ",
+              " 押下中 ");
+            A(" 沒按鍵",
+              " no buttons",
+              " ボタンなし");
+            A("接 VRGIN 相機失敗：",
+              "Connecting to the VRGIN camera failed: ",
+              "VRGIN カメラへの接続に失敗：");
+            A("位移計算出現無效值，已把偏移歸零重來",
+              "Invalid value in the movement calculation; offset reset to zero",
+              "移動計算で無効な値が出たため、ずれをゼロに戻しました");
+            A("找不到 VR 原點",
+              "VR origin not found",
+              "VR 原点が見つかりません");
+            A("本來就在相機視角上，沒有東西要退",
+              "Already at the camera view; nothing to undo",
+              "すでにカメラ視点にいるため、戻すものはありません");
+            A("已退回相機視角（原本偏離 ",
+              "Returned to the camera view (offset was ",
+              "カメラ視点に戻りました（元のずれ ");
+            A(" m）",
+              " m)",
+              " m）");
+            A("找不到 VR 原點，沒有存",
+              "VR origin not found, not saved",
+              "VR 原点が見つからないため保存しません");
+            A("目前的姿勢是無效值，沒有存",
+              "Current pose is invalid, not saved",
+              "現在の姿勢が無効な値のため保存しません");
+            A("已記住這個視角（{0},{1},{2}）",
+              "Saved this view ({0}, {1}, {2})",
+              "この視点を記憶しました（{0},{1},{2}）");
+            A("還沒記住任何視角",
+              "No view saved yet",
+              "まだ視点を記憶していません");
+            A("記起來的視角是無效值，沒有移動",
+              "The saved view is invalid, not moved",
+              "記憶した視点が無効な値のため移動しません");
+            A("已回到記住的視角（這一下移動了 ",
+              "Went to the saved view (moved ",
+              "記憶した視点に戻りました（移動量 ");
+            A("視角資料不完整，沒有套用",
+              "View data incomplete, not applied",
+              "視点データが不完全なため適用しません");
+            A("視角資料是無效值，沒有套用",
+              "View data is invalid, not applied",
+              "視点データが無効な値のため適用しません");
+            A("目前的姿勢是無效值，沒有套用",
+              "Current pose is invalid, not applied",
+              "現在の姿勢が無効な値のため適用しません");
+            A("已套用設定檔裡的視角（移動了 ",
+              "Applied the view from the config file (moved ",
+              "設定ファイルの視点を適用しました（移動量 ");
+            A("已清掉記住的視角",
+              "Saved view cleared",
+              "記憶した視点を消去しました");
+            A("（從場上找到的）",
+              " (found in the scene)",
+              "（シーン内から検出）");
+            A("（找不到可用的著色器）",
+              "(no usable shader found)",
+              "（使えるシェーダーが見つかりません）");
+            A("VR 畫面：",
+              "VR screen: ",
+              "VR 画面：");
+            A("　層 ",
+              "　layer ",
+              "　レイヤー ");
+            A("　跟頭",
+              "　following head",
+              "　頭に追従");
+            A("　固定",
+              "　fixed",
+              "　固定");
+            A("　可見=",
+              "　visible=",
+              "　可視=");
+            A("　貼圖 ",
+              "　texture ",
+              "　テクスチャ ");
+            A("　位置 ",
+              "　pos ",
+              "　位置 ");
+            A("　大小 ",
+              "　size ",
+              "　サイズ ");
+            A("VR 畫面失敗：",
+              "VR screen failed: ",
+              "VR 画面でエラー：");
+            A("找不到 Studio.Studio",
+              "Studio.Studio not found",
+              "Studio.Studio が見つかりません");
+            A("找不到 Studio.dicObjectCtrl",
+              "Studio.dicObjectCtrl not found",
+              "Studio.dicObjectCtrl が見つかりません");
+            A("找不到 Studio.OCIItem",
+              "Studio.OCIItem not found",
+              "Studio.OCIItem が見つかりません");
+            A("找不到 OCIItem.itemInfo",
+              "OCIItem.itemInfo not found",
+              "OCIItem.itemInfo が見つかりません");
+            A("找不到 Studio.OIItemInfo",
+              "Studio.OIItemInfo not found",
+              "Studio.OIItemInfo が見つかりません");
+            A("OIItemInfo 少了 group/category/no",
+              "OIItemInfo is missing group/category/no",
+              "OIItemInfo に group/category/no がありません");
+            A("找不到 Studio.ObjectCtrlInfo",
+              "Studio.ObjectCtrlInfo not found",
+              "Studio.ObjectCtrlInfo が見つかりません");
+            A("找不到 ObjectCtrlInfo.treeNodeObject",
+              "ObjectCtrlInfo.treeNodeObject not found",
+              "ObjectCtrlInfo.treeNodeObject が見つかりません");
+            A("找不到 Studio.TreeNodeObject",
+              "Studio.TreeNodeObject not found",
+              "Studio.TreeNodeObject が見つかりません");
+            A("TreeNodeObject 沒有 SetVisible(bool) 也沒有 visible",
+              "TreeNodeObject has neither SetVisible(bool) nor visible",
+              "TreeNodeObject に SetVisible(bool) も visible もありません");
+            A("(FX) 套用出錯：",
+              "(FX) apply error: ",
+              "(FX) の適用でエラー：");
+            A("(FX) 顯示",
+              "(FX) shown",
+              "(FX) 表示");
+            A("(FX) 關閉",
+              "(FX) hidden",
+              "(FX) 非表示");
+            A("　場上 ",
+              "　found ",
+              "　シーン内 ");
+            A(" 個，這次改了 ",
+              " in the scene, changed ",
+              " 個、今回変更 ");
+            A(" 個",
+              " objects",
+              " 個");
+            A("無法讀取選取：",
+              "Can't read the selection: ",
+              "選択を読み取れません：");
+            A("找不到 Studio.treeNodeCtrl",
+              "Studio.treeNodeCtrl not found",
+              "Studio.treeNodeCtrl が見つかりません");
+            A("還沒進工作室",
+              "Not in Studio yet",
+              "まだスタジオに入っていません");
+            A("treeNodeCtrl 是 null",
+              "treeNodeCtrl is null",
+              "treeNodeCtrl が null です");
+            A("找不到 selectObjectCtrl",
+              "selectObjectCtrl not found",
+              "selectObjectCtrl が見つかりません");
+            A("選取清單不是可列舉的",
+              "The selection list isn't enumerable",
+              "選択リストを列挙できません");
+            A("工作區沒有選取任何東西",
+              "Nothing is selected in the workspace",
+              "ワークスペースで何も選択されていません");
+            A("加了 ",
+              "Added ",
+              "追加 ");
+            A("，",
+              ", ",
+              "、");
+            A(" 個已經在清單裡",
+              " already in the list",
+              " 個はすでにリストにあります");
+            A("加入清單失敗：",
+              "Adding to the list failed: ",
+              "リストへの追加に失敗：");
+            A("沒有可以移除的（要先按過「把選取的加入清單」）",
+              "Nothing to remove (press \"Add selection to list\" first)",
+              "削除できるものがありません（先に「選択中のものをリストに追加」を押してください）");
+            A("移除了 ",
+              "Removed ",
+              "削除 ");
+            A(" 個：",
+              ": ",
+              " 個：");
+            A("已關閉",
+              "Off",
+              "オフ");
+            A("桌面模式，不動作",
+              "Desktop mode, idle",
+              "デスクトップモードのため動作しません");
+            A("無法運作：",
+              "Can't run: ",
+              "動作できません：");
+            A("場景變動中（",
+              "Scene changing (",
+              "シーン変更中（");
+            A(" 個物件）…",
+              " objects)…",
+              " 個のオブジェクト）…");
+            A("掃描出錯：",
+              "Scan error: ",
+              "スキャンでエラー：");
+            A("已看過 ",
+              "Checked ",
+              "確認済み ");
+            A(" 個物件（其中家具／特效 ",
+              " objects (items/FX: ",
+              " 個のオブジェクト（うちアイテム／エフェクト ");
+            A(" 個），關掉 ",
+              "), hid ",
+              " 個）、非表示 ");
+            A("，這一輪新增 ",
+              ", new this pass: ",
+              "、今回の新規 ");
+            A("找不到 VRGIN 的 GUIQuadRegistry（不是 VRGIN 系的 VR 插件？）",
+              "VRGIN's GUIQuadRegistry not found (not a VRGIN-based VR plugin?)",
+              "VRGIN の GUIQuadRegistry が見つかりません（VRGIN 系の VR プラグインではない？）");
+            A("已接上 VRGIN 的介面板子",
+              "Connected to VRGIN's UI panels",
+              "VRGIN の UI パネルに接続しました");
+            A("　著色器 ",
+              "　shader ",
+              "　シェーダー ");
+            A("主介面已隱藏（",
+              "Main panel hidden (",
+              "メインパネルを非表示（");
+            A(" 塊）",
+              " panels)",
+              " 枚）");
+            A("GUIQuadRegistry.Quads 不是可列舉的",
+              "GUIQuadRegistry.Quads isn't enumerable",
+              "GUIQuadRegistry.Quads を列挙できません");
+            A("介面板子 ",
+              "Found ",
+              "UI パネル ");
+            A(" 塊",
+              " UI panels",
+              " 枚");
+            A("，底板 ",
+              ", backing ",
+              "、背景板 ");
+            A("，只黏手不加底",
+              ", hand-mount only, no backing",
+              "、手に固定のみ（背景板なし）");
+            A("加黑底失敗：",
+              "Adding the backing failed: ",
+              "背景板の追加に失敗：");
+            A("連接 CutScene 失敗：",
+              "Connecting to CutScene failed: ",
+              "CutScene への接続に失敗：");
+            A("讀 CutScene 狀態失敗：",
+              "Reading the CutScene state failed: ",
+              "CutScene の状態の読み取りに失敗：");
         }
     }
 }

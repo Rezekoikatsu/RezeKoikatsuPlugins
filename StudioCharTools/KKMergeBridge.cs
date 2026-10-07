@@ -76,12 +76,12 @@ namespace StudioCharTools
                 if (Ok && !File.Exists(OutPath))
                 {
                     Ok = false;
-                    Error = "工具回報成功，但找不到產出的檔案：" + OutPath;
+                    Error = Lang.T("工具回報成功，但找不到產出的檔案：") + OutPath;
                 }
                 if (!Ok && string.IsNullOrEmpty(Error))
                 {
                     Error = ExtractError(Json);
-                    if (string.IsNullOrEmpty(Error)) Error = "工具回報失敗";
+                    if (string.IsNullOrEmpty(Error)) Error = Lang.T("工具回報失敗");
                 }
                 Result = Ok ? OutPath : null;
                 Done = true;
@@ -181,7 +181,7 @@ namespace StudioCharTools
             }
             catch (Exception e)
             {
-                task.Fail("寫不出工單：" + e.Message);
+                task.Fail(Lang.T("寫不出工單：") + e.Message);
             }
             return task;
         }

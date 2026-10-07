@@ -266,7 +266,7 @@ namespace StudioVrTools
             try
             {
                 tStudio = ReflectUtil.Find("Studio.Studio");
-                if (tStudio == null) { probeError = "找不到 Studio.Studio"; return false; }
+                if (tStudio == null) { probeError = Lang.T("找不到 Studio.Studio"); return false; }
 
                 // Singleton<Studio>.Instance 是泛型基底的靜態成員。
                 // FlattenHierarchy 抓得到，但不同版本不保證，所以待會還有 FindObjectOfType 備援。
@@ -275,31 +275,31 @@ namespace StudioVrTools
 
                 fDic = tStudio.GetField("dicObjectCtrl",
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (fDic == null) { probeError = "找不到 Studio.dicObjectCtrl"; return false; }
+                if (fDic == null) { probeError = Lang.T("找不到 Studio.dicObjectCtrl"); return false; }
 
                 tOciItem = ReflectUtil.Find("Studio.OCIItem");
-                if (tOciItem == null) { probeError = "找不到 Studio.OCIItem"; return false; }
+                if (tOciItem == null) { probeError = Lang.T("找不到 Studio.OCIItem"); return false; }
 
                 pItemInfo = tOciItem.GetProperty("itemInfo",
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (pItemInfo == null) { probeError = "找不到 OCIItem.itemInfo"; return false; }
+                if (pItemInfo == null) { probeError = Lang.T("找不到 OCIItem.itemInfo"); return false; }
 
                 Type tInfo = ReflectUtil.Find("Studio.OIItemInfo");
-                if (tInfo == null) { probeError = "找不到 Studio.OIItemInfo"; return false; }
+                if (tInfo == null) { probeError = Lang.T("找不到 Studio.OIItemInfo"); return false; }
                 pGroup = tInfo.GetProperty("group", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 pCategory = tInfo.GetProperty("category", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 pNo = tInfo.GetProperty("no", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (pGroup == null || pCategory == null || pNo == null)
-                { probeError = "OIItemInfo 少了 group/category/no"; return false; }
+                { probeError = Lang.T("OIItemInfo 少了 group/category/no"); return false; }
 
                 Type tCtrl = ReflectUtil.Find("Studio.ObjectCtrlInfo");
-                if (tCtrl == null) { probeError = "找不到 Studio.ObjectCtrlInfo"; return false; }
+                if (tCtrl == null) { probeError = Lang.T("找不到 Studio.ObjectCtrlInfo"); return false; }
                 fTreeNode = tCtrl.GetField("treeNodeObject",
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (fTreeNode == null) { probeError = "找不到 ObjectCtrlInfo.treeNodeObject"; return false; }
+                if (fTreeNode == null) { probeError = Lang.T("找不到 ObjectCtrlInfo.treeNodeObject"); return false; }
 
                 tTreeNode = ReflectUtil.Find("Studio.TreeNodeObject");
-                if (tTreeNode == null) { probeError = "找不到 Studio.TreeNodeObject"; return false; }
+                if (tTreeNode == null) { probeError = Lang.T("找不到 Studio.TreeNodeObject"); return false; }
 
                 // 一定要挑「吃一個 bool」的那個多載。
                 // 這個型別上同名的東西不只一個（SetVisibleChild(TreeNodeObject, bool)），
@@ -310,7 +310,7 @@ namespace StudioVrTools
                 pNodeVisible = tTreeNode.GetProperty("visible",
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (mSetVisible == null && pNodeVisible == null)
-                { probeError = "TreeNodeObject 沒有 SetVisible(bool) 也沒有 visible"; return false; }
+                { probeError = Lang.T("TreeNodeObject 沒有 SetVisible(bool) 也沒有 visible"); return false; }
 
                 // 以下是「有的話更好」的部分，找不到也不擋 —— 名稱比對會退化成
                 // 只看工作區清單上的文字，編號比對照常。
@@ -479,13 +479,13 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                FxReport = "(FX) 套用出錯：" + e.Message;
+                FxReport = Lang.T("(FX) 套用出錯：") + e.Message;
                 return;
             }
 
             fxApplied = want;
-            FxReport = "(FX) " + (FxFolderOn ? "顯示" : "關閉")
-                       + "　場上 " + hit + " 個，這次改了 " + changed + " 個";
+            FxReport = (FxFolderOn ? Lang.T("(FX) 顯示") : Lang.T("(FX) 關閉"))
+                       + Lang.T("　場上 ") + hit + Lang.T(" 個，這次改了 ") + changed + Lang.T(" 個");
             if (changed > 0) Debug.Log("[VrFxMute] " + FxReport);
         }
 
@@ -516,28 +516,28 @@ namespace StudioVrTools
         public static string AddSelectedToList(string current, out string report)
         {
             report = "";
-            if (!Probe()) { report = "無法讀取選取：" + probeError; return current; }
+            if (!Probe()) { report = Lang.T("無法讀取選取：") + probeError; return current; }
 
             try
             {
                 if (pTreeCtrl == null)
                     pTreeCtrl = tStudio.GetProperty("treeNodeCtrl",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (pTreeCtrl == null) { report = "找不到 Studio.treeNodeCtrl"; return current; }
+                if (pTreeCtrl == null) { report = Lang.T("找不到 Studio.treeNodeCtrl"); return current; }
 
                 object studio = StudioInstance();
-                if (studio == null) { report = "還沒進工作室"; return current; }
+                if (studio == null) { report = Lang.T("還沒進工作室"); return current; }
 
                 object ctrl = pTreeCtrl.GetValue(studio, null);
-                if (ctrl == null) { report = "treeNodeCtrl 是 null"; return current; }
+                if (ctrl == null) { report = Lang.T("treeNodeCtrl 是 null"); return current; }
 
                 if (pSelectOci == null)
                     pSelectOci = ctrl.GetType().GetProperty("selectObjectCtrl",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (pSelectOci == null) { report = "找不到 selectObjectCtrl"; return current; }
+                if (pSelectOci == null) { report = Lang.T("找不到 selectObjectCtrl"); return current; }
 
                 var sel = pSelectOci.GetValue(ctrl, null) as IEnumerable;
-                if (sel == null) { report = "選取清單不是可列舉的"; return current; }
+                if (sel == null) { report = Lang.T("選取清單不是可列舉的"); return current; }
 
                 string list = (current ?? "").Trim();
                 int added = 0, skipped = 0;
@@ -560,15 +560,15 @@ namespace StudioVrTools
                 }
 
                 if (added == 0 && skipped == 0)
-                { report = "工作區沒有選取任何東西"; return current; }
+                { report = Lang.T("工作區沒有選取任何東西"); return current; }
 
                 lastAdded = added;
-                report = "加了 " + added + " 個" + (skipped > 0 ? "，" + skipped + " 個已經在清單裡" : "");
+                report = Lang.T("加了 ") + added + Lang.T(" 個") + (skipped > 0 ? Lang.T("，") + skipped + Lang.T(" 個已經在清單裡") : "");
                 return list;
             }
             catch (Exception e)
             {
-                report = "加入清單失敗：" + e.GetType().Name + " " + e.Message;
+                report = Lang.T("加入清單失敗：") + e.GetType().Name + " " + e.Message;
                 return current;
             }
         }
@@ -582,7 +582,7 @@ namespace StudioVrTools
         {
             if (lastAdded <= 0)
             {
-                report = "沒有可以移除的（要先按過「把選取的加入清單」）";
+                report = Lang.T("沒有可以移除的（要先按過「把選取的加入清單」）");
                 return current;
             }
 
@@ -602,7 +602,7 @@ namespace StudioVrTools
             }
             lastAdded = 0;
 
-            report = "移除了 " + take + " 個：" + string.Join("、", removed.ToArray());
+            report = Lang.T("移除了 ") + take + Lang.T(" 個：") + string.Join(Lang.T("、"), removed.ToArray());
             return string.Join(", ", parts.ToArray());
         }
 
@@ -657,17 +657,17 @@ namespace StudioVrTools
             if (!active)
             {
                 if (muted.Count > 0) Restore();
-                LastReport = !Enabled ? "已關閉" : "桌面模式，不動作";
+                LastReport = !Enabled ? Lang.T("已關閉") : Lang.T("桌面模式，不動作");
                 return;
             }
 
             if (Time.realtimeSinceStartup < nextScan) return;
             nextScan = Time.realtimeSinceStartup + 0.25f;
 
-            if (!Probe()) { LastReport = "無法運作：" + probeError; return; }
+            if (!Probe()) { LastReport = Lang.T("無法運作：") + probeError; return; }
 
             IDictionary dic = Dic();
-            if (dic == null) { LastReport = "還沒進工作室"; return; }
+            if (dic == null) { LastReport = Lang.T("還沒進工作室"); return; }
 
             int count = dic.Count;
             if (count != lastCount)
@@ -677,7 +677,7 @@ namespace StudioVrTools
                 swept = false;
                 settleAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, SettleSeconds);
                 Prune(dic);
-                LastReport = "場景變動中（" + count + " 個物件）…";
+                LastReport = Lang.T("場景變動中（") + count + Lang.T(" 個物件）…");
                 return;
             }
             if (swept) return;                      // 這批已經看完了，不必每 0.25 秒再翻一次
@@ -766,7 +766,7 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                LastReport = "掃描出錯：" + e.GetType().Name + " " + e.Message;
+                LastReport = Lang.T("掃描出錯：") + e.GetType().Name + " " + e.Message;
                 return false;
             }
 
@@ -776,9 +776,9 @@ namespace StudioVrTools
                 Debug.Log("[VrFxMute] VR 模式：自動取消勾選 " + mutedNow + " 個物件"
                           + "（本場景累計 " + MutedThisScene + "）");
             }
-            LastReport = "已看過 " + handled.Count + " 個物件（其中家具／特效 " + ItemsThisScene
-                         + " 個），關掉 " + MutedThisScene + " 個"
-                         + (looked > 0 ? "，這一輪新增 " + looked : "");
+            LastReport = Lang.T("已看過 ") + handled.Count + Lang.T(" 個物件（其中家具／特效 ") + ItemsThisScene
+                         + Lang.T(" 個），關掉 ") + MutedThisScene + Lang.T(" 個")
+                         + (looked > 0 ? Lang.T("，這一輪新增 ") + looked : "");
             return true;
         }
 

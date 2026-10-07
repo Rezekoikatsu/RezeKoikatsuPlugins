@@ -1783,7 +1783,7 @@ namespace StudioCharTools
             for (int slot = 0; slot < slotCount; slot++)
             {
                 SetStatus(true, Lang.T("存全部換裝：") + CoordLabel(slot)
-                                + "（" + (slot + 1) + " / " + slotCount + "）");
+                                + string.Format(Lang.T("（{0} / {1}）"), slot + 1, slotCount));
 
                 if (!SetCoordinateSlot(oci, slot)) { fail++; continue; }
 
@@ -4317,11 +4317,11 @@ namespace StudioCharTools
             try
             {
                 string name = oci.charInfo.chaFile.parameter.fullname;
-                return string.IsNullOrEmpty(name) ? "(未命名角色)" : name;
+                return string.IsNullOrEmpty(name) ? Lang.T("(未命名角色)") : name;
             }
             catch
             {
-                return "(未命名角色)";
+                return Lang.T("(未命名角色)");
             }
         }
 

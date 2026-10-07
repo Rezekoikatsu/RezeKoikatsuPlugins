@@ -60,7 +60,7 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                LastReport = "連接 CutScene 失敗：" + e.Message;
+                LastReport = Lang.T("連接 CutScene 失敗：") + e.Message;
                 return false;
             }
         }
@@ -109,7 +109,7 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                LastReport = "讀 CutScene 狀態失敗：" + e.Message;
+                LastReport = Lang.T("讀 CutScene 狀態失敗：") + e.Message;
                 return false;
             }
         }

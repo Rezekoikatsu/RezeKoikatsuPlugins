@@ -126,7 +126,7 @@ namespace StudioCharTools
                 result.Add(a);
             }
 
-            LastMessage = "偵測到 " + n + " 個欄位，其中 " + result.Count + " 個列出";
+            LastMessage = Lang.T("偵測到 ") + n + Lang.T(" 個欄位，其中 ") + result.Count + Lang.T(" 個列出");
             return result;
         }
 
@@ -289,15 +289,15 @@ namespace StudioCharTools
                 bool ok = finalFile == EmptyType.ToString();
 
                 LastMessage = ok
-                    ? "已移除第 " + (slot + 1) + " 格"
-                    : "第 " + (slot + 1) + " 格清除失敗，存檔用的陣列仍是 " + finalFile;
+                    ? string.Format(Lang.T("已移除第 {0} 格"), slot + 1)
+                    : string.Format(Lang.T("第 {0} 格清除失敗，存檔用的陣列仍是 "), slot + 1) + finalFile;
                 LastReport = sb.ToString();
                 Debug.Log("[AccessoryTools] " + LastMessage + "\n" + sb);
                 return ok;
             }
             catch (Exception e)
             {
-                LastMessage = "移除失敗: " + e.GetBaseException().Message;
+                LastMessage = Lang.T("移除失敗: ") + e.GetBaseException().Message;
                 LastReport = sb + "\n" + e.GetBaseException();
                 Debug.LogWarning("[AccessoryTools] " + LastReport);
                 return false;
@@ -743,7 +743,7 @@ namespace StudioCharTools
 
             sb.AppendLine("===== 結束 =====");
             Debug.Log(sb.ToString());
-            LastMessage = "第 " + (slot + 1) + " 格診斷已輸出到主控台";
+            LastMessage = string.Format(Lang.T("第 {0} 格診斷已輸出到主控台"), slot + 1);
         }
 
         /// <summary>

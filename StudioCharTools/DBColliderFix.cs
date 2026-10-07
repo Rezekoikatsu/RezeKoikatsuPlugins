@@ -98,7 +98,7 @@ namespace StudioCharTools
 
                 if (tPoseController == null || tCollidersEditor == null)
                 {
-                    initError = "找不到 KKPE（HSPE）的型別，確認 KKPE 有載入（Sunshine 是 KKSPE.dll）";
+                    initError = Lang.T("找不到 KKPE（HSPE）的型別，確認 KKPE 有載入（Sunshine 是 KKSPE.dll）");
                     return;
                 }
 
@@ -149,15 +149,15 @@ namespace StudioCharTools
                 if (mSetIgnore == null) missing.Add("CollidersEditor.SetIgnoreDynamicBone");
                 if (missing.Count > 0)
                 {
-                    initError = "KKPE 內部結構與預期不符（版本不同？）缺少："
-                              + string.Join("、", missing.ToArray());
+                    initError = Lang.T("KKPE 內部結構與預期不符（版本不同？）缺少：")
+                              + string.Join(Lang.T("、"), missing.ToArray());
                     return;
                 }
                 available = true;
             }
             catch (Exception e)
             {
-                initError = "初始化失敗: " + e.Message;
+                initError = Lang.T("初始化失敗: ") + e.Message;
                 available = false;
             }
         }
@@ -245,7 +245,7 @@ namespace StudioCharTools
             if (!available) { LastReport = Unavailable; return null; }
 
             object pc = FindPoseController(oci);
-            if (pc == null) { LastReport = "找不到這個角色的 HSPE PoseController"; return null; }
+            if (pc == null) { LastReport = Lang.T("找不到這個角色的 HSPE PoseController"); return null; }
             int pcId = ((Component)pc).GetInstanceID();
 
             if (!force && remembered.ContainsKey(pcId)) return remembered[pcId];
@@ -281,8 +281,8 @@ namespace StudioCharTools
             }
 
             remembered[pcId] = snap;
-            LastReport = "已記錄 " + snap.byCollider.Count + " 顆碰撞器，"
-                       + snap.enabledCount + "/" + snap.totalCount + " 根骨頭是啟用的";
+            LastReport = Lang.T("已記錄 ") + snap.byCollider.Count + Lang.T(" 顆碰撞器，")
+                       + snap.enabledCount + "/" + snap.totalCount + Lang.T(" 根骨頭是啟用的");
             return snap;
         }
 
@@ -296,7 +296,7 @@ namespace StudioCharTools
             Init();
             if (!available) { LastReport = Unavailable; return null; }
             object pc = FindPoseController(oci);
-            if (pc == null) { LastReport = "找不到這個角色的 HSPE PoseController"; return null; }
+            if (pc == null) { LastReport = Lang.T("找不到這個角色的 HSPE PoseController"); return null; }
 
             Snapshot snap = new Snapshot();
             snap.source = "其他角色範本";
@@ -339,8 +339,8 @@ namespace StudioCharTools
                 snap.byCollider[((Component)collider).GetInstanceID()] = map;
             }
 
-            LastReport = "範本取自 " + donors + " 個其他角色/物件，共 "
-                       + snap.enabledCount + " 條要啟用的骨頭路徑";
+            LastReport = Lang.T("範本取自 ") + donors + Lang.T(" 個其他角色/物件，共 ")
+                       + snap.enabledCount + Lang.T(" 條要啟用的骨頭路徑");
             return snap;
         }
 
@@ -366,10 +366,10 @@ namespace StudioCharTools
         {
             Init();
             if (!available) { LastReport = Unavailable; return 0; }
-            if (snap == null) { LastReport = "沒有可以套用的綁定記錄"; return 0; }
+            if (snap == null) { LastReport = Lang.T("沒有可以套用的綁定記錄"); return 0; }
 
             object pc = FindPoseController(oci);
-            if (pc == null) { LastReport = "找不到這個角色的 HSPE PoseController"; return 0; }
+            if (pc == null) { LastReport = Lang.T("找不到這個角色的 HSPE PoseController"); return 0; }
             Transform pcRoot = ((Component)pc).transform;
 
             int changed = 0, touched = 0, on = 0, colliders = 0;
@@ -413,8 +413,8 @@ namespace StudioCharTools
                 }
             }
 
-            LastReport = "（" + snap.source + "）" + colliders + " 顆碰撞器 / 處理 " + touched
-                       + " 根骨頭，啟用 " + on + " 根，變更 " + changed + " 根";
+            LastReport = string.Format(Lang.T("（{0}）{1} 顆碰撞器 / 處理 {2} 根骨頭，啟用 {3} 根，變更 {4} 根"),
+                                       Lang.T(snap.source), colliders, touched, on, changed);
             return changed;
         }
 
@@ -492,7 +492,7 @@ namespace StudioCharTools
                 }
                 catch { }
             }
-            LastReport = "已關閉 " + n + " 個碰撞器物件的「自動加入新動骨」（存檔後生效）";
+            LastReport = string.Format(Lang.T("已關閉 {0} 個碰撞器物件的「自動加入新動骨」（存檔後生效）"), n);
             return n;
         }
 
@@ -524,22 +524,22 @@ namespace StudioCharTools
             Init();
             if (!available) return Unavailable;
             object pc = FindPoseController(oci);
-            if (pc == null) return "找不到這個角色的 HSPE PoseController（該角色可能還沒被 KKPE 碰過）";
+            if (pc == null) return Lang.T("找不到這個角色的 HSPE PoseController（該角色可能還沒被 KKPE 碰過）");
             Transform pcRoot = ((Component)pc).transform;
 
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             Snapshot snap = GetRemembered(oci);
-            sb.Append("對象：").Append(Label(oci)).Append("\n");
+            sb.Append(Lang.T("對象：")).Append(Label(oci)).Append("\n");
             sb.Append(snap == null
-                ? "綁定記錄：無（這個場景還沒在這裡換過人）\n"
-                : "綁定記錄：有，" + snap.enabledCount + " 根啟用（" + snap.source + "）\n");
-            sb.Append("自動加入新動骨仍開著的碰撞器：").Append(CountAutoAddOn()).Append(" 個\n");
+                ? Lang.T("綁定記錄：無（這個場景還沒在這裡換過人）\n")
+                : Lang.T("綁定記錄：有，") + snap.enabledCount + Lang.T(" 根啟用（") + Lang.T(snap.source) + Lang.T("）\n"));
+            sb.Append(Lang.T("自動加入新動骨仍開著的碰撞器：")).Append(CountAutoAddOn()).Append(Lang.T(" 個\n"));
             int pcCount = 0;
             foreach (object ignore in AllPoseControllers()) pcCount++;
             int edCount = 0;
             foreach (object ignore in AllCollidersEditors()) edCount++;
-            sb.Append("掃到 PoseController ").Append(pcCount)
-              .Append(" 個 / CollidersEditor ").Append(edCount).Append(" 個\n\n");
+            sb.Append(Lang.T("掃到 PoseController ")).Append(pcCount)
+              .Append(Lang.T(" 個 / CollidersEditor ")).Append(edCount).Append(Lang.T(" 個\n\n"));
 
             int idx = 0;
             foreach (KeyValuePair<object, object> pair in EachDirtyCollider())
@@ -572,15 +572,15 @@ namespace StudioCharTools
                     }
                 }
                 sb.Append(idx).Append(". ").Append(ColliderLabel(collider, editor))
-                  .Append("  啟用 ").Append(on).Append(" / ").Append(total).Append("\n");
+                  .Append(Lang.T("  啟用 ")).Append(on).Append(" / ").Append(total).Append("\n");
                 if (on > 0)
                 {
                     sb.Append("     ").Append(string.Join(", ", names.ToArray()));
-                    if (on > names.Count) sb.Append(" …（另外 ").Append(on - names.Count).Append(" 根）");
+                    if (on > names.Count) sb.Append(Lang.T(" …（另外 ")).Append(on - names.Count).Append(Lang.T(" 根）"));
                     sb.Append("\n");
                 }
             }
-            if (idx == 0) sb.Append("場上沒有被編輯過的 Dynamic Bone Collider。\n");
+            if (idx == 0) sb.Append(Lang.T("場上沒有被編輯過的 Dynamic Bone Collider。\n"));
             return sb.ToString();
         }
 
@@ -848,7 +848,7 @@ namespace StudioCharTools
                 }
             }
             catch { }
-            return "角色";
+            return Lang.T("角色");
         }
     }
 }

@@ -59,7 +59,7 @@ namespace StudioCutScene
             {
                 File_ = Path.Combine(dir, Path.GetFileNameWithoutExtension(cardPath) + ".view.json");
             }
-            catch (Exception e) { LastReport = "組不出檔名：" + e.Message; return; }
+            catch (Exception e) { LastReport = Lang.T("組不出檔名：") + e.Message; return; }
 
             if (!System.IO.File.Exists(File_)) { LastReport = Lang.T("這張卡還沒有存過視角"); return; }
 

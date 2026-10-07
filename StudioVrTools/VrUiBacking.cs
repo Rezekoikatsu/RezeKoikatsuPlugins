@@ -180,7 +180,7 @@ namespace StudioVrTools
             string used;
             Shader sh = VrScreen.PickShader(out used);
             if (sh == null) return null;
-            shaderInfo = "　著色器 " + used;
+            shaderInfo = Lang.T("　著色器 ") + used;
 
             var go = new GameObject("VrTools UI Backing");
             UnityEngine.Object.DontDestroyOnLoad(go);
@@ -354,7 +354,7 @@ namespace StudioVrTools
             {
                 HideQuads();
                 HideAll();
-                LastReport = "主介面已隱藏（" + hiddenByUs.Count + " 塊）";
+                LastReport = Lang.T("主介面已隱藏（") + hiddenByUs.Count + Lang.T(" 塊）");
                 return;
             }
             RestoreQuads();
@@ -367,7 +367,7 @@ namespace StudioVrTools
             {
                 object list = piQuads.GetValue(null, null);
                 var en = list as IEnumerable;
-                if (en == null) { LastReport = "GUIQuadRegistry.Quads 不是可列舉的"; return; }
+                if (en == null) { LastReport = Lang.T("GUIQuadRegistry.Quads 不是可列舉的"); return; }
 
                 Prune();
                 Camera head = VrScreen.VrCamera();
@@ -431,13 +431,13 @@ namespace StudioVrTools
                         if (b.go != null && b.go.activeSelf) b.go.SetActive(false);
                 }
 
-                LastReport = "介面板子 " + seen + " 塊"
-                             + (Enabled ? "，底板 " + Tint.r.ToString("F2") : "，只黏手不加底")
+                LastReport = Lang.T("介面板子 ") + seen + Lang.T(" 塊")
+                             + (Enabled ? Lang.T("，底板 ") + Tint.r.ToString("F2") : Lang.T("，只黏手不加底"))
                              + texInfo + shaderInfo;
             }
             catch (Exception e)
             {
-                LastReport = "加黑底失敗：" + e.Message;
+                LastReport = Lang.T("加黑底失敗：") + e.Message;
             }
         }
     }

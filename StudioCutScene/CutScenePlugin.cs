@@ -411,7 +411,7 @@ namespace StudioCutScene
                 viewApplied = scene;          // 剛存的就是現在的位置，不用再套一次
                 message = (SceneCount() <= 1 ? Lang.T("已把視角存進這張卡")
                            : string.Format(Lang.T("已把視角存進場景 {0}"), scene + 1))
-                          + "：" + ViewStore.LastReport;
+                          + Lang.T("：") + ViewStore.LastReport;
                 Logger.LogInfo("[CutScene] " + message);
             }
             else
@@ -1041,10 +1041,10 @@ namespace StudioCutScene
         static string WatchNote()
         {
             if (!SceneLoadWatch.Active)
-                return "載入事件沒掛上 → " + SceneLoadWatch.LastReport;
+                return Lang.T("載入事件沒掛上 → ") + Lang.T(SceneLoadWatch.LastReport);
             if (string.IsNullOrEmpty(SceneLoadWatch.LastPath))
-                return "載入事件掛上了，但一次路徑都沒收到";
-            return "載入事件收到的是 " + Path.GetFileName(SceneLoadWatch.LastPath);
+                return Lang.T("載入事件掛上了，但一次路徑都沒收到");
+            return Lang.T("載入事件收到的是 ") + Path.GetFileName(SceneLoadWatch.LastPath);
         }
 
         void AutoTick()
@@ -1576,7 +1576,7 @@ namespace StudioCutScene
             }
 
             trackWarning = warned.Count == 0 ? ""
-                : "⚠ " + string.Join("、", warned.ToArray());
+                : "⚠ " + string.Join(Lang.T("、"), warned.ToArray());
         }
 
         /// <summary>音軌對應點有問題時顯示在面板上的那一行。沒問題就是空字串。</summary>
@@ -2739,7 +2739,7 @@ namespace StudioCutScene
                     Lang.T(" 自動載入（比對時間軸總長度）"), Fit.WT(210, Lang.T(" 自動載入（比對時間軸總長度）")));
             if (GUILayout.Button(Lang.T("立刻重找"), Fit.WB(80, Lang.T("立刻重找"))))
                 RescanNow();
-            GUILayout.Label(cfgSearchDirs == null ? "" : Lang.T("搜尋：") + Lang.T("卡片旁邊") + "；" + cfgSearchDirs.Value, Small());
+            GUILayout.Label(cfgSearchDirs == null ? "" : Lang.T("搜尋：") + Lang.T("卡片旁邊") + Lang.T("；") + cfgSearchDirs.Value, Small());
             GUILayout.EndHorizontal();
             if (ambiguous != null)
             {
@@ -3023,11 +3023,11 @@ namespace StudioCutScene
             // --- 卡頓計量（診斷用，直接說明不同步是誰造成的）---
             GUILayout.BeginHorizontal();
             string stall = StallCount == 0
-                ? "  卡頓 0 次 —— 主執行緒沒停頓過"
-                : "  卡頓 " + StallCount + " 次，時間軸累計少掉 " + StallLost.ToString("F2") + " s"
-                  + "（最久 " + (StallWorst * 1000f).ToString("F0") + " ms"
-                  + (StallGap > 0f ? "，間隔 " + StallGap.ToString("F1") + " s" : "") + "）";
-            GUILayout.Label(stall, Small(), GUILayout.Width(400));
+                ? Lang.T("  卡頓 0 次 —— 主執行緒沒停頓過")
+                : Lang.T("  卡頓 ") + StallCount + Lang.T(" 次，時間軸累計少掉 ") + StallLost.ToString("F2") + " s"
+                  + Lang.T("（最久 ") + (StallWorst * 1000f).ToString("F0") + " ms"
+                  + (StallGap > 0f ? Lang.T("，間隔 ") + StallGap.ToString("F1") + " s" : "") + Lang.T("）");
+            GUILayout.Label(stall, Small(), Fit.W(400, stall, Small()));
             if (GUILayout.Button(Lang.T("歸零"), Fit.WB(50, Lang.T("歸零")))) ResetStallMeter();
             GUILayout.EndHorizontal();
             if (StallLost > 0.1f)
@@ -3090,10 +3090,10 @@ namespace StudioCutScene
                 string cp = ScenePathProbe.Detect();
                 GUILayout.Label(string.IsNullOrEmpty(cp)
                     ? Lang.T("問不到目前的卡片路徑 —— 改用總長度比對")
-                    : Path.GetFileName(cp) + Lang.T("　（來源 ") + ScenePathProbe.Source + Lang.T("）"), Small());
+                    : Path.GetFileName(cp) + Lang.T("　（來源 ") + Lang.T(ScenePathProbe.Source) + Lang.T("）"), Small());
                 GUILayout.EndHorizontal();
                 GUILayout.Label(Lang.T("工具列按鈕：") + Lang.T(ToolbarButton.Status), Small());
-                GUILayout.Label(Lang.T("暫停方式 ") + TimelineBridge.PauseMode
+                GUILayout.Label(Lang.T("暫停方式 ") + Lang.T(TimelineBridge.PauseMode)
                                 + (TimelineBridge.CanSeek ? "" : Lang.T("　（時間軸跳不動）"))
                                 + (TimelineBridge.Freezing ? Lang.T("　凍結模式作用中") : ""), Small());
                 GUILayout.EndVertical();
@@ -3130,7 +3130,7 @@ namespace StudioCutScene
                 cfgAutoView.Value = GUILayout.Toggle(cfgAutoView.Value, Lang.T(" 切場景自動套用"),
                                                      Fit.WT(120, Lang.T(" 切場景自動套用")));
             GUILayout.EndHorizontal();
-            GUILayout.Label(ViewStore.LastReport, Small());
+            GUILayout.Label(Lang.T(ViewStore.LastReport), Small());
 
             // 工具列圖示的開關擺在整個面板的最右下角，跟 F6 / F9 一致。
             GUILayout.BeginHorizontal();

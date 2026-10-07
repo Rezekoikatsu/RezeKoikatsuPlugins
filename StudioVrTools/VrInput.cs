@@ -152,7 +152,7 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                LastReport = "接手柄介面時出錯：" + e.Message;
+                LastReport = Lang.T("接手柄介面時出錯：") + e.Message;
             }
         }
 
@@ -231,7 +231,7 @@ namespace StudioVrTools
 
                 if (leftDev != null || rightDev != null)
                 {
-                    LastReport = "走 VRGIN 的 Mode.Left/Right";
+                    LastReport = Lang.T("走 VRGIN 的 Mode.Left/Right");
                     return;
                 }
 
@@ -256,7 +256,7 @@ namespace StudioVrTools
             }
             catch (Exception e)
             {
-                LastReport = "找手柄失敗：" + e.Message;
+                LastReport = Lang.T("找手柄失敗：") + e.Message;
             }
         }
 
@@ -279,7 +279,7 @@ namespace StudioVrTools
 
                 leftDev = left;
                 rightDev = right;
-                LastReport = "VRGIN 的編號不可用，改用 SteamVR 的 Leftmost/Rightmost";
+                LastReport = Lang.T("VRGIN 的編號不可用，改用 SteamVR 的 Leftmost/Rightmost");
                 return true;
             }
             catch { return false; }
@@ -351,15 +351,15 @@ namespace StudioVrTools
                 else if (second == null) { second = dev; break; }
             }
 
-            if (first == null) { LastReport = "手柄：一支都沒掃到"; return; }
+            if (first == null) { LastReport = Lang.T("手柄：一支都沒掃到"); return; }
 
             // 掃出來的順序不保證左先。以前這裡有個「左右對調」的開關，
             // 但前面兩條路（VRGIN 的 Mode.Left/Right、SteamVR 的 Leftmost/Rightmost）
             // 都是明確指定左右的，會掉到這條純屬例外，留一個開關反而讓人以為要常用。
             leftDev = first;
             rightDev = second;
-            LastReport = "手柄：VRGIN 沒給，改用掃裝置編號（"
-                         + (second == null ? "只找到一支" : "兩支") + "），左右可能顛倒";
+            LastReport = Lang.T("手柄：VRGIN 沒給，改用掃裝置編號（")
+                         + (second == null ? Lang.T("只找到一支") : Lang.T("兩支")) + Lang.T("），左右可能顛倒");
         }
 
         static object DeviceOf(object controller)
@@ -551,21 +551,21 @@ namespace StudioVrTools
             {
                 bool left = h == 0;
                 object d = left ? leftDev : rightDev;
-                sb.Append(left ? "左手：" : "　　右手：");
-                if (d == null) { sb.Append("沒連上"); continue; }
+                sb.Append(left ? Lang.T("左手：") : Lang.T("　　右手："));
+                if (d == null) { sb.Append(Lang.T("沒連上")); continue; }
 
                 Vector2 ax = Axis(left, BtnStick);
-                sb.Append("搖桿(").Append(ax.x.ToString("F2")).Append(',')
+                sb.Append(Lang.T("搖桿(")).Append(ax.x.ToString("F2")).Append(',')
                   .Append(ax.y.ToString("F2")).Append(')');
 
                 bool any = false;
                 for (int i = 0; i < DiagButtons.Length; i++)
                 {
                     if (!Press(left, DiagButtons[i])) continue;
-                    sb.Append(any ? "+" : " 按著 ").Append(DiagNames[i]);
+                    sb.Append(any ? "+" : Lang.T(" 按著 ")).Append(Lang.T(DiagNames[i]));
                     any = true;
                 }
-                if (!any) sb.Append(" 沒按鍵");
+                if (!any) sb.Append(Lang.T(" 沒按鍵"));
             }
             return sb.ToString();
         }

@@ -854,7 +854,7 @@ namespace StudioCutScene
             Lang.Set(cfgLang.Value);
             cfgUiScale = Config.Bind("General", "UI Scale", 1f,
                 "面板的縮放倍率，0.6 ～ 2（1 = 原本大小）。字太小或面板太佔畫面時調這個。\n"
-                + "面板的設置裡也可以調，三支插件會一起變");
+                + "面板的設置裡也可以調。只影響這一支插件的面板");
             Fit.SetScale(cfgUiScale.Value);
             cfgToolbarButton = Config.Bind("General", "Show Toolbar Button", true,
                 "工作室左邊那排工具列上那顆膠卷圖示（右下角有個 R）。"
@@ -1608,10 +1608,8 @@ namespace StudioCutScene
             Lang.Follow(cfgLang.Value, out langNow);
             if (langNow != cfgLang.Value) cfgLang.Value = langNow;
 
-            // 別的插件面板上改了介面縮放就跟著改
-            float scaleNow;
-            Fit.FollowScale(cfgUiScale.Value, out scaleNow);
-            if (Mathf.Abs(scaleNow - cfgUiScale.Value) > 0.0001f) cfgUiScale.Value = scaleNow;
+            // 介面縮放：設定檔被改了（F1 設定管理員、重置為預設）就跟上
+            if (Mathf.Abs(Fit.Scale - cfgUiScale.Value) > 0.0001f) Fit.SetScale(cfgUiScale.Value);
 
             if (Input.GetKeyDown(HOTKEY)) { show = !show; ToolbarButton.Sync(show); }
 

@@ -105,16 +105,13 @@ namespace StudioCutScene
         // IMGUI 的視窗會記住建立當下的矩陣，滑鼠座標也會照著換算，所以拖曳、點擊、
         // 捲動清單都不用另外處理。倍率是 1 的時候完全不碰矩陣，跟沒有這個功能一樣。
         //
-        // 跟語言一樣，三支插件共用同一個倍率：在任何一支面板上改，另外兩支下一幀就跟上。
-        // 三支不是同一個組件，所以共用狀態走 AppDomain 那張表（作法照抄 Lang）。
+        // 三支插件**各自**設定、互不影響（每支面板的大小和內容量差很多，
+        // 共用一個倍率反而每支都不合適）。這個類別三支各編一份，所以 Scale 本來就是各自的。
 
-        const string K_SCALE = "reze.studio.uiscale";
-        const string K_SCALE_STAMP = "reze.studio.uiscale.stamp";
         public const float SCALE_MIN = 0.6f, SCALE_MAX = 2f;
 
-        /// <summary>目前倍率。直接改這個不會同步給其他插件，請用 SetScale()。</summary>
+        /// <summary>這支插件目前的倍率。</summary>
         public static float Scale = 1f;
-        static int scaleStamp = -1;
 
         static float Snap(float s)
         {
@@ -123,44 +120,9 @@ namespace StudioCutScene
             return Mathf.Round(s * 20f) / 20f;            // 0.05 一格
         }
 
-        /// <summary>改倍率，並公布給另外兩支插件。</summary>
         public static void SetScale(float s)
         {
             Scale = Snap(s);
-            try
-            {
-                AppDomain.CurrentDomain.SetData(K_SCALE, Scale);
-                object o = AppDomain.CurrentDomain.GetData(K_SCALE_STAMP);
-                int n = o is int ? (int)o : 0;
-                scaleStamp = n + 1;
-                AppDomain.CurrentDomain.SetData(K_SCALE_STAMP, scaleStamp);
-            }
-            catch { }
-        }
-
-        /// <summary>每幀叫一次。別人改了倍率就跟著改，adopted 是要寫回自己設定檔的值。</summary>
-        public static void FollowScale(float myCfgValue, out float adopted)
-        {
-            adopted = myCfgValue;
-            try
-            {
-                object st = AppDomain.CurrentDomain.GetData(K_SCALE_STAMP);
-                int n = st is int ? (int)st : 0;
-                if (scaleStamp < 0) { scaleStamp = n; Scale = Snap(myCfgValue); return; }
-                if (n != scaleStamp)
-                {
-                    scaleStamp = n;
-                    object o = AppDomain.CurrentDomain.GetData(K_SCALE);
-                    if (o is float)
-                    {
-                        Scale = Snap((float)o);
-                        adopted = Scale;
-                        return;
-                    }
-                }
-            }
-            catch { }
-            Scale = Snap(myCfgValue);
         }
 
         /// <summary>畫視窗之前呼叫，回傳原本的矩陣；畫完交給 EndScale 還原。</summary>

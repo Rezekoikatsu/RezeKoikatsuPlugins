@@ -286,6 +286,10 @@ namespace StudioVrTools
                 "0 = 繁體中文（預設）　1 = English　2 = 日本語。\n"
                 + "面板最下方的 Language 按鈕也可以切，三支插件會一起換");
             Lang.Set(cfgLang.Value);
+            cfgUiScale = Config.Bind("Interface", "UI Scale", 1f,
+                "面板的縮放倍率，0.6 ～ 2（1 = 原本大小）。字太小或面板太佔畫面時調這個。\n"
+                + "面板的設置裡也可以調，三支插件會一起變");
+            Fit.SetScale(cfgUiScale.Value);
             cfgToolbarButton = Config.Bind("General", "Show Toolbar Button", true,
                 "工作室左邊那排工具列上那顆 VR 頭顯圖示（右下角有個 R）。"
                 + "關掉就只剩 F9 熱鍵。改完立刻生效，不用重開遊戲");
@@ -322,6 +326,11 @@ namespace StudioVrTools
             int langNow;
             Lang.Follow(cfgLang.Value, out langNow);
             if (langNow != cfgLang.Value) cfgLang.Value = langNow;
+
+            // 別的插件面板上改了介面縮放就跟著改
+            float scaleNow;
+            Fit.FollowScale(cfgUiScale.Value, out scaleNow);
+            if (Mathf.Abs(scaleNow - cfgUiScale.Value) > 0.0001f) cfgUiScale.Value = scaleNow;
 
             if (Input.GetKeyDown(cfgPanelKey.Value)) { show = !show; ToolbarButton.Sync(show); }
             TickToolbar();
@@ -763,6 +772,7 @@ namespace StudioVrTools
             // 那是個常按的開關，不該藏在還要先開一層的子視窗裡。
 
             GUILayout.Space(8f);
+            if (Fit.ScaleRow()) cfgUiScale.Value = Fit.Scale;
             GUILayout.BeginHorizontal();
             DrawResetButton();
             GUILayout.FlexibleSpace();
@@ -1374,6 +1384,7 @@ namespace StudioVrTools
         // ------------------------------------------------------------ 語言與重置
 
         ConfigEntry<int> cfgLang;
+        ConfigEntry<float> cfgUiScale;
         float resetArmedUntil;
 
         /// <summary>
@@ -1469,6 +1480,8 @@ namespace StudioVrTools
             if (!show) return;
             VrSkin.Publish(cfgVrSkin.Value, cfgVrSkinOnlyVr.Value);
             GUISkin savedSkin = VrSkin.Begin();
+            Matrix4x4 savedMatrix = Fit.BeginScale();     // 介面縮放
+            bool xua = Xua.Begin();                       // 視窗標題不要被 AutoTranslator 再翻一次
             EnsureStyles();
             // 語言換了：寬度重設成這個語言的底寬（視窗會被內容撐大但不會自己縮回來）。
             if (Fit.LanguageChanged(ref fitLang))
@@ -1477,13 +1490,21 @@ namespace StudioVrTools
                 settingsWin.width = 470f * Fit.Wide;
                 ctrlWin.width = 760f * Fit.Wide;
             }
-            win = GUILayout.Window(0x56520001, win, DrawWindow,
-                                   NAME + " " + VERSION + Lang.T("　(") + cfgPanelKey.Value + ")");
-            if (showSettings)
-                settingsWin = GUILayout.Window(0x56520002, settingsWin, DrawSettings, Lang.T("設置"));
-            if (showCtrlSettings)
-                ctrlWin = GUILayout.Window(0x56520003, ctrlWin, DrawCtrlSettings, Lang.T("手柄設置"));
-            VrSkin.End(savedSkin);
+            try
+            {
+                win = GUILayout.Window(0x56520001, win, Xua.Wrap(DrawWindow),
+                                       NAME + " " + VERSION + Lang.T("　(") + cfgPanelKey.Value + ")");
+                if (showSettings)
+                    settingsWin = GUILayout.Window(0x56520002, settingsWin, Xua.Wrap(DrawSettings), Lang.T("設置"));
+                if (showCtrlSettings)
+                    ctrlWin = GUILayout.Window(0x56520003, ctrlWin, Xua.Wrap(DrawCtrlSettings), Lang.T("手柄設置"));
+            }
+            finally
+            {
+                Xua.End(xua);
+                Fit.EndScale(savedMatrix);
+                VrSkin.End(savedSkin);
+            }
         }
 
         /// <summary>

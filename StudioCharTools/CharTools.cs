@@ -281,6 +281,10 @@ namespace StudioCharTools
                 "0 = 繁體中文（預設）　1 = English　2 = 日本語。\n"
                 + "面板最下方的 Language 按鈕也可以切，三支插件會一起換");
             Lang.Set(cfgLang.Value);
+            cfgUiScale = Config.Bind("Interface", "UI Scale", 1f,
+                "面板的縮放倍率，0.6 ～ 2（1 = 原本大小）。字太小或面板太佔畫面時調這個。\n"
+                + "面板的設置裡也可以調，三支插件會一起變");
+            Fit.SetScale(cfgUiScale.Value);
             cfgToolbarButton = Config.Bind("Interface", "Show Toolbar Button", true,
                 "工作室左邊那排工具列上那顆白色小人（右下角有個 R）。"
                 + "關掉就只剩熱鍵開面板。改完立刻生效，不用重開遊戲");
@@ -525,6 +529,11 @@ namespace StudioCharTools
             Lang.Follow(cfgLang.Value, out langNow);
             if (langNow != cfgLang.Value) cfgLang.Value = langNow;
 
+            // 別的插件面板上改了介面縮放就跟著改
+            float scaleNow;
+            Fit.FollowScale(cfgUiScale.Value, out scaleNow);
+            if (Mathf.Abs(scaleNow - cfgUiScale.Value) > 0.0001f) cfgUiScale.Value = scaleNow;
+
             // SyncSettings 丟例外的話，後面的熱鍵判斷就永遠跑不到 ——
             // 症狀一樣是「F6 按了沒反應」，而且 Catch Unity Event Exceptions
             // 會把例外吃掉，log 裡什麼都看不到。所以各自包，錯一次記一次。
@@ -590,9 +599,16 @@ namespace StudioCharTools
 
             VrSkin.Follow();   // 設定統一由 F9 管，見 VrSkin.Follow 的註解
             GUISkin savedSkin = VrSkin.Begin();
+            Matrix4x4 savedMatrix = Fit.BeginScale();     // 介面縮放
+            bool xua = Xua.Begin();                       // 視窗標題不要被 AutoTranslator 再翻一次
             try { DrawAllWindows(); }
             catch (Exception e) { Warn("OnGUI", e); }
-            finally { VrSkin.End(savedSkin); }
+            finally
+            {
+                Xua.End(xua);
+                Fit.EndScale(savedMatrix);
+                VrSkin.End(savedSkin);
+            }
         }
 
         int fitLang = -1;
@@ -605,40 +621,40 @@ namespace StudioCharTools
                 charPickerRect.width = 660f * Fit.Wide;
 
             if (showCarryPrompt)
-                carryPromptRect = GUILayout.Window(8898, carryPromptRect, CarryPromptWindow, Lang.T("套用著色器？"));
+                carryPromptRect = GUILayout.Window(8898, carryPromptRect, Xua.Wrap(CarryPromptWindow), Lang.T("套用著色器？"));
             if (showCharPicker)
-                charPickerRect = GUILayout.Window(8889, charPickerRect, CharPickerWindow,
+                charPickerRect = GUILayout.Window(8889, charPickerRect, Xua.Wrap(CharPickerWindow),
                     Lang.T("選擇場景角色 (") + HotkeyLabel() + ")");
 
             if (showGenericCardPicker)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
                     genericCardPickerRect.width * Fit.Wide, Mathf.Max(charPickerRect.height, 520f));
-                GUILayout.Window(8890, sideRect, DrawGenericCardPicker, genericCardPickerTitle);
+                GUILayout.Window(8890, sideRect, Xua.Wrap(DrawGenericCardPicker), genericCardPickerTitle);
             }
             else if (showAccPanel)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
                     520f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
-                GUILayout.Window(8893, sideRect, AccessoryWindow, Lang.T("飾品欄管理"));
+                GUILayout.Window(8893, sideRect, Xua.Wrap(AccessoryWindow), Lang.T("飾品欄管理"));
             }
             else if (showBlendLock)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
                     560f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
-                GUILayout.Window(8891, sideRect, BlendLockWindow, Lang.T("型態鍵鎖定"));
+                GUILayout.Window(8891, sideRect, Xua.Wrap(BlendLockWindow), Lang.T("型態鍵鎖定"));
             }
             else if (showDbFix)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
                     620f * Fit.Wide, Mathf.Max(charPickerRect.height, 620f));
-                GUILayout.Window(8895, sideRect, DbColliderWindow, Lang.T("碰撞器綁定修復"));
+                GUILayout.Window(8895, sideRect, Xua.Wrap(DbColliderWindow), Lang.T("碰撞器綁定修復"));
             }
             else if (showSettings)
             {
                 sideRect = new Rect(charPickerRect.x + charPickerRect.width + 8, charPickerRect.y,
                     560f * Fit.Wide, Mathf.Max(charPickerRect.height, 560f));
-                GUILayout.Window(8894, sideRect, SettingsWindow, Lang.T("設置"));
+                GUILayout.Window(8894, sideRect, Xua.Wrap(SettingsWindow), Lang.T("設置"));
             }
 
         }
@@ -2357,6 +2373,7 @@ namespace StudioCharTools
         // ------------------------------------------------------------ 語言與重置
 
         ConfigEntry<int> cfgLang;
+        ConfigEntry<float> cfgUiScale;
         float resetArmedUntil;
 
         /// <summary>
@@ -2368,6 +2385,7 @@ namespace StudioCharTools
         void DrawLangAndReset()
         {
             GUILayout.Space(8f);
+            if (Fit.ScaleRow()) cfgUiScale.Value = Fit.Scale;
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Button(Lang.ButtonLabel, GUILayout.Width(170), GUILayout.Height(22)))
@@ -3293,8 +3311,9 @@ namespace StudioCharTools
             if (carryShaderMode == 2) { act(true); return; }
             carryPromptAct = act;
             carryPromptWho = who ?? "";
-            carryPromptRect.x = (Screen.width - carryPromptRect.width) / 2f;
-            carryPromptRect.y = (Screen.height - carryPromptRect.height) / 2f;
+            // 視窗座標是縮放之後的座標系，螢幕寬高要跟著換算
+            carryPromptRect.x = (Fit.ScreenW - carryPromptRect.width) / 2f;
+            carryPromptRect.y = (Fit.ScreenH - carryPromptRect.height) / 2f;
             showCarryPrompt = true;
         }
 

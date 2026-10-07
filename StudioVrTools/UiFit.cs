@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace StudioVrTools
@@ -97,6 +99,109 @@ namespace StudioVrTools
         public static GUILayoutOption WT(float w, string text) { return W(w, text, GUI.skin.toggle); }
         public static GUILayoutOption WX(float w, string text) { return W(w, text, GUI.skin.box); }
 
+        // ------------------------------------------------------------ 介面縮放
+        //
+        // 整個面板（連文字）放大縮小。做法是畫視窗之前把 GUI.matrix 乘上倍率 ——
+        // IMGUI 的視窗會記住建立當下的矩陣，滑鼠座標也會照著換算，所以拖曳、點擊、
+        // 捲動清單都不用另外處理。倍率是 1 的時候完全不碰矩陣，跟沒有這個功能一樣。
+        //
+        // 跟語言一樣，三支插件共用同一個倍率：在任何一支面板上改，另外兩支下一幀就跟上。
+        // 三支不是同一個組件，所以共用狀態走 AppDomain 那張表（作法照抄 Lang）。
+
+        const string K_SCALE = "reze.studio.uiscale";
+        const string K_SCALE_STAMP = "reze.studio.uiscale.stamp";
+        public const float SCALE_MIN = 0.6f, SCALE_MAX = 2f;
+
+        /// <summary>目前倍率。直接改這個不會同步給其他插件，請用 SetScale()。</summary>
+        public static float Scale = 1f;
+        static int scaleStamp = -1;
+
+        static float Snap(float s)
+        {
+            if (float.IsNaN(s) || s <= 0f) s = 1f;
+            s = Mathf.Clamp(s, SCALE_MIN, SCALE_MAX);
+            return Mathf.Round(s * 20f) / 20f;            // 0.05 一格
+        }
+
+        /// <summary>改倍率，並公布給另外兩支插件。</summary>
+        public static void SetScale(float s)
+        {
+            Scale = Snap(s);
+            try
+            {
+                AppDomain.CurrentDomain.SetData(K_SCALE, Scale);
+                object o = AppDomain.CurrentDomain.GetData(K_SCALE_STAMP);
+                int n = o is int ? (int)o : 0;
+                scaleStamp = n + 1;
+                AppDomain.CurrentDomain.SetData(K_SCALE_STAMP, scaleStamp);
+            }
+            catch { }
+        }
+
+        /// <summary>每幀叫一次。別人改了倍率就跟著改，adopted 是要寫回自己設定檔的值。</summary>
+        public static void FollowScale(float myCfgValue, out float adopted)
+        {
+            adopted = myCfgValue;
+            try
+            {
+                object st = AppDomain.CurrentDomain.GetData(K_SCALE_STAMP);
+                int n = st is int ? (int)st : 0;
+                if (scaleStamp < 0) { scaleStamp = n; Scale = Snap(myCfgValue); return; }
+                if (n != scaleStamp)
+                {
+                    scaleStamp = n;
+                    object o = AppDomain.CurrentDomain.GetData(K_SCALE);
+                    if (o is float)
+                    {
+                        Scale = Snap((float)o);
+                        adopted = Scale;
+                        return;
+                    }
+                }
+            }
+            catch { }
+            Scale = Snap(myCfgValue);
+        }
+
+        /// <summary>畫視窗之前呼叫，回傳原本的矩陣；畫完交給 EndScale 還原。</summary>
+        public static Matrix4x4 BeginScale()
+        {
+            Matrix4x4 old = GUI.matrix;
+            if (Mathf.Abs(Scale - 1f) > 0.001f)
+                GUI.matrix = old * Matrix4x4.Scale(new Vector3(Scale, Scale, 1f));
+            return old;
+        }
+
+        public static void EndScale(Matrix4x4 old)
+        {
+            GUI.matrix = old;
+        }
+
+        /// <summary>縮放之後，視窗座標系裡的螢幕寬高（要把視窗置中、貼邊時用這個，不要用 Screen.width）。</summary>
+        public static float ScreenW { get { return Screen.width / Scale; } }
+        public static float ScreenH { get { return Screen.height / Scale; } }
+
+        /// <summary>
+        /// 設置裡的那一列：「介面縮放 100%  [－] [＋] [100%]」。
+        /// 有改的話回傳 true，呼叫端要把 Fit.Scale 寫回自己的設定檔。
+        /// </summary>
+        public static bool ScaleRow()
+        {
+            float want = Scale;
+            GUILayout.BeginHorizontal();
+            string label = Lang.T("介面縮放") + " " + Mathf.RoundToInt(Scale * 100f) + "%";
+            GUILayout.Label(label, WL(110f, label));
+            if (GUILayout.Button("-", GUILayout.Width(30f), GUILayout.Height(22f))) want = Scale - 0.1f;
+            if (GUILayout.Button("+", GUILayout.Width(30f), GUILayout.Height(22f))) want = Scale + 0.1f;
+            if (GUILayout.Button("100%", GUILayout.Width(52f), GUILayout.Height(22f))) want = 1f;
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            want = Snap(want);
+            if (Mathf.Abs(want - Scale) < 0.001f) return false;
+            SetScale(want);
+            return true;
+        }
+
         // ------------------------------------------------------------ 自動換列
         //
         // 一列放很多顆「不指定寬度」的按鈕時，IMGUI 不會自己換列：
@@ -141,6 +246,102 @@ namespace StudioVrTools
         public static void FlowEnd()
         {
             GUILayout.EndHorizontal();
+        }
+    }
+    /// <summary>
+    /// 畫自己的面板時，請 XUnity.AutoTranslator 先不要動手。
+    ///
+    /// 為什麼需要
+    /// ----------
+    /// AutoTranslator 會攔 IMGUI 的文字，拿去查它自己的翻譯檔。玩家如果裝了
+    /// 「英文 → 簡體中文」的翻譯包（HF Patch 的中文化就是），這三支面板切到英文之後，
+    /// 剛好在它翻譯檔裡的短句（Show / Hide / Close / Settings / Accessories…）
+    /// 會被它再翻回簡體中文 —— 畫面上就變成英文夾著簡體字，看起來像「沒翻完」。
+    /// 面板的語言由面板自己管，不需要它幫忙。
+    ///
+    /// AutoTranslator 自己有一份「這些外掛的 IMGUI 不要翻」的名單（BlacklistedIMGUIPlugins），
+    /// 它的做法就是在視窗函式前後呼叫 DisableAutoTranslator / EnableAutoTranslator。
+    /// 這裡直接做同一件事，玩家就不用自己去改它的設定檔。
+    ///
+    /// 型別和方法名稱是用實際安裝的 XUnity.AutoTranslator.Plugin.Core.dll（5.4.3 和 5.5.0）
+    /// 翻出來確認的。沒裝、或哪天改了名字，這裡就什麼都不做。
+    /// </summary>
+    internal static class Xua
+    {
+        static bool probed;
+        static FieldInfo fCurrent, fDisabled;
+        static MethodInfo mOff, mOn;
+        static object plugin;
+        static readonly Dictionary<GUI.WindowFunction, GUI.WindowFunction> wrapped =
+            new Dictionary<GUI.WindowFunction, GUI.WindowFunction>();
+
+        static void Probe()
+        {
+            if (probed) return;
+            probed = true;
+            try
+            {
+                Type t = null;
+                foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (a.GetName().Name != "XUnity.AutoTranslator.Plugin.Core") continue;
+                    t = a.GetType("XUnity.AutoTranslator.Plugin.Core.AutoTranslationPlugin", false);
+                    break;
+                }
+                if (t == null) return;
+                const BindingFlags S = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+                const BindingFlags I = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+                fCurrent = t.GetField("Current", S);
+                fDisabled = t.GetField("_temporarilyDisabled", I);
+                mOff = t.GetMethod("DisableAutoTranslator", I, null, Type.EmptyTypes, null);
+                mOn = t.GetMethod("EnableAutoTranslator", I, null, Type.EmptyTypes, null);
+                if (fCurrent == null || mOff == null || mOn == null) { fCurrent = null; }
+            }
+            catch { fCurrent = null; }
+        }
+
+        /// <summary>
+        /// 暫停翻譯。回傳 true 表示「是我關的」，要交給 End 開回去。
+        /// 本來就被別人關著的話不動它（回傳 false），免得幫別人提早開回來。
+        /// </summary>
+        public static bool Begin()
+        {
+            try
+            {
+                Probe();
+                if (fCurrent == null) return false;
+                if (plugin == null) plugin = fCurrent.GetValue(null);
+                if (plugin == null) return false;
+                if (fDisabled != null && (bool)fDisabled.GetValue(plugin)) return false;
+                mOff.Invoke(plugin, null);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        public static void End(bool mine)
+        {
+            if (!mine) return;
+            try { mOn.Invoke(plugin, null); } catch { }
+        }
+
+        /// <summary>
+        /// 把視窗函式包一層。視窗的內容不是在 GUILayout.Window 那一行畫的，
+        /// 而是 OnGUI 結束之後才被叫回來，所以光在 OnGUI 裡前後包住不夠。
+        /// 同一個函式只包一次（記在表裡），不會每幀配新的委派。
+        /// </summary>
+        public static GUI.WindowFunction Wrap(GUI.WindowFunction f)
+        {
+            GUI.WindowFunction w;
+            if (wrapped.TryGetValue(f, out w)) return w;
+            w = delegate(int id)
+            {
+                bool mine = Begin();
+                try { f(id); }
+                finally { End(mine); }
+            };
+            wrapped[f] = w;
+            return w;
         }
     }
 }

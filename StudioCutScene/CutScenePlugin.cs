@@ -51,6 +51,9 @@ namespace StudioCutScene
         public float offset;        // 音檔中對應 from 的位置（秒）。沒有 anchors 時用這個
         public float volume = 1f;
         public bool mute;
+        // 這一段是「下一張來源卡」的開頭（kkscenebridge 把好幾張卡的設定檔接成一份時標的）。
+        // 只影響進度條上章節箭頭的顏色：兩張卡的交接處畫紅色，一般章節是藍色。
+        public bool cardStart;
 
         // 對應點：anchorT[i] 這個 timeline 時間，對應到音檔的 anchorA[i]。
         // 兩點以上就用折線內插，等於用折線逼近 ∫dt/timeScale。
@@ -201,7 +204,7 @@ namespace StudioCutScene
     {
         public const string GUID = "reze.studio.cutscene";
         public const string NAME = "Studio CutScene";
-        public const string VERSION = "1.15.1";
+        public const string VERSION = "1.15.2";
 
         // 對應折線只擋「倒退」，不擋「陡」。
         // 斜率 = 該處的 1/timeScale：卡片把時間流速調到 0.03（近乎定格）時
@@ -2233,6 +2236,7 @@ namespace StudioCutScene
                         tr.offset = e.F("offset", 0f);
                         tr.volume = e.F("volume", 1f);
                         tr.mute   = e.B("mute", false);
+                        tr.cardStart = e.B("cardStart", false);
 
                         // files: { "配音名稱": "這一段的音檔", ... } —— 這一段自己的配音檔
                         // maps : 同 variantMaps 的格式，秒數是這一段自己那個音檔的
@@ -3328,14 +3332,22 @@ namespace StudioCutScene
             // 章節：每一段場景的起點。跟「段落」清單裡那幾列「場景 N 開始」同一份資料。
             if (cfg != null && cfg.tracks != null)
             {
+                // 藍色 = 同一張卡裡的場景；紅色 = 兩張來源卡的交接處（合併卡的設定檔才有）。
+                // 紅的後畫，兩個箭頭靠很近時紅的在上面。
                 var mark = new Color(0.31f, 0.67f, 0.96f, 1f);
-                for (int i = 0; i < cfg.tracks.Length; i++)
+                var cardMark = new Color(0.91f, 0.30f, 0.24f, 1f);
+                for (int pass = 0; pass < 2; pass++)
                 {
-                    float f = cfg.tracks[i].from;
-                    if (f <= 0.001f || f >= dur) continue;
-                    float cx = bar.x + bar.width * (f / dur);
-                    Tri(cx, bar.y - 7f, 7f, 5f, mark, true);    // ▼ 在上
-                    Tri(cx, bar.yMax + 2f, 7f, 5f, mark, false); // ▲ 在下
+                    for (int i = 0; i < cfg.tracks.Length; i++)
+                    {
+                        if (cfg.tracks[i].cardStart != (pass == 1)) continue;
+                        float f = cfg.tracks[i].from;
+                        if (f <= 0.001f || f >= dur) continue;
+                        float cx = bar.x + bar.width * (f / dur);
+                        Color mc = pass == 1 ? cardMark : mark;
+                        Tri(cx, bar.y - 7f, 7f, 5f, mc, true);    // ▼ 在上
+                        Tri(cx, bar.yMax + 2f, 7f, 5f, mc, false); // ▲ 在下
+                    }
                 }
             }
 

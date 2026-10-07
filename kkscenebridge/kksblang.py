@@ -2308,6 +2308,9 @@ A('接 F7 設定（cutscene.json）…',
 A('；F7 設定已接好：{0}',
   '; F7 config joined: {0}',
   '；F7 設定を結合しました：{0}')
+A('[提醒] 額外分頁 {0} 載入失敗：',
+  '[Note] Extra tab {0} failed to load:',
+  '[お知らせ] 追加タブ {0} を読み込めませんでした：')
 A('[提醒] F7 設定（cutscene.json）沒有接成：{0}',
   '[Note] The F7 config (cutscene.json) could not be joined: {0}',
   '[注意] F7 設定（cutscene.json）を結合できませんでした：{0}')

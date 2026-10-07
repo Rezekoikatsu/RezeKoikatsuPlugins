@@ -84,6 +84,8 @@ audio and video files stay separate, and the plugin switches files as playback m
 - A cutscene can carry its own source video: `"source": "video path"` (used with `videoStart` / `videoEnd`; unlike
   `video`, which plays the whole file), plus `"track": track index` — whose audio file to keep playing during
   the cutscene
+- A track can be flagged `"cardStart": true` (since 1.15.2): this segment is where the next source card begins.
+  It only changes the colour of the chapter marker on the seek bar (see "The panel" below)
 - Configs without these fields behave exactly as before
 
 kkscenebridge also writes a `pairs` array into the json holding each segment's head and tail
@@ -96,6 +98,9 @@ middle one is off, which is very hard to diagnose.
 ## The panel
 
 - Play / Pause / Stop / Play from start (including the opening), plus a draggable seek bar
+- The ▼▲ marks on the seek bar are chapters (where each "Scene N start" is): **blue** is a scene inside the same card,
+  **red** is the junction between two source cards (flagged by kkscenebridge 1.1.7+ when it joins several cards'
+  configs; join an older merged config again to get them)
 - **Segment list** — each transition can be test-played on its own, skipped, or reset. Each "Scene N start" plays from that segment and does **not** replay that segment's own transition
 - **Skip all cutscenes** — for this session only; not written to the config
 - **Auto replay** — whether to play again when the timeline wraps back to 0 (default off, otherwise the whole thing loops forever)

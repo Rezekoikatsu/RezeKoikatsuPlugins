@@ -25,6 +25,9 @@ F7 的設定檔原本是「一張卡、每個配音版本一個音檔、一支�
 
   音軌帶 files、過場帶 source 的設定檔需要 StudioCutScene 1.14.0 以上。
 
+  4. **交接處**：每張卡（第一張除外）的第一條音軌標上 cardStart，
+     F7 進度條上那個章節的箭頭畫成紅色（StudioCutScene 1.15.2 以上；舊版會忽略這個欄位）。
+
   另外，接在中間的「開場」「片尾」改成「過場」——
   插件看到 ending 播完會把整部停下來，那只該發生在最後一張。
 
@@ -378,6 +381,7 @@ def build(parts, rows=None, out_card="", log=print):
                 if mp:
                     t["maps"] = mp
                 t["_part"] = i
+            t["_card"] = i
             tracks.append(t)
 
         for cu in (c.get("cuts") or []):
@@ -428,6 +432,17 @@ def build(parts, rows=None, out_card="", log=print):
             continue
         before = [k for k in mine if tracks[k]["from"] <= x["t"] + 0.05]
         x["track"] = before[-1] if before else mine[0]
+    # 兩張卡的交接處：每張卡（第一張有音軌的除外）的第一條音軌標上 cardStart。
+    # F7 的進度條上，這個章節的箭頭畫成紅色（一般章節是藍色），一眼看得出哪裡是換卡。
+    # 來源卡本身就是合併過的話，它裡面原有的 cardStart 照樣留著。
+    seen = set()
+    for t in tracks:
+        i = t.pop("_card", None)
+        if i is None or i in seen:
+            continue
+        if seen:
+            t["cardStart"] = True
+        seen.add(i)
     for t in tracks:
         t.pop("_part", None)
 

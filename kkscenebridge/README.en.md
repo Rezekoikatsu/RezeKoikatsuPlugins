@@ -88,6 +88,8 @@ merging — **no need to measure sync points again**.
 - If the original cards' audio or video files are moved or renamed, the joined config can no longer find
   them (the voice button turns red on the F7 panel) — just join again
 - Cards without a config can be mixed in; that part simply has no voice or cutscenes
+- The junction between two cards is flagged in the config, and F7 draws that chapter marker on its seek bar in **red**
+  (scenes inside one card are blue; needs F7 1.15.2+, older versions still play it and just draw everything blue)
 - **Don't regenerate a joined config in the Cutscene audio tab** (it asks first): edit the original
   cards' configs and join again
 - The cards' `.view.json` (view settings) are not joined

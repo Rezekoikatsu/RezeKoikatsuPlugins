@@ -41,7 +41,7 @@ import kklang
 kklang.set_lang(L.Current)
 
 APP_NAME = "kkscenebridge"
-VERSION = "1.1.6"
+VERSION = "1.1.7"
 RED = "#c0392b"
 
 
@@ -1003,6 +1003,7 @@ class MainWindow(QMainWindow):
         i = self.tabs.addTab(self.bridge_tab, T("人物卡合卡"))
         self.tabs.setTabToolTip(i, T("原本的 kkbridge：人物卡附加飾品、移植整套換裝、修卡。\nF6（StudioCharTools）的「添加飾品」「保持服裝換人」要這個程式開著、而且這一頁的「監看工單」在監看中。"))
         self.tabs.addTab(settings_tab, T("設定"))
+        self.extra_tabs = []
 
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
@@ -1065,6 +1066,40 @@ class MainWindow(QMainWindow):
         self.table.mode_changed.connect(self.audio_tab.sync_mode)
         # 紀錄欄和訊號都接好了才開始監看工單
         self.bridge_tab.autostart()
+        self._load_extra_tabs()
+
+    def _load_extra_tabs(self):
+        """選用的額外分頁：放在程式旁邊（exe 或 kkscenebridge.py 那個資料夾）的 kktab_*.py。
+
+        給自己加工具頁用的，沒有這種檔案就什麼都不會發生。每個檔案要有：
+            TAB_TITLE = "分頁名稱"
+            def make_tab(host): ...    # host 是這個主視窗；回傳一個 QWidget
+        回傳的元件如果有 log_line / status 訊號、save_state() / shutdown() 函式，
+        會跟內建分頁一樣被接上（紀錄欄、狀態列、存設定、關視窗）。
+        載入失敗只在紀錄欄留一筆，不影響其他分頁。
+        """
+        import importlib.util
+        try:
+            files = sorted(app_dir().glob("kktab_*.py"))
+        except Exception:                               # noqa: BLE001
+            files = []
+        for f in files:
+            try:
+                spec = importlib.util.spec_from_file_location(f.stem, str(f))
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[f.stem] = mod
+                spec.loader.exec_module(mod)
+                tab = mod.make_tab(self)
+                # 排在「設定」前面
+                self.tabs.insertTab(max(0, self.tabs.count() - 1), tab,
+                                    str(getattr(mod, "TAB_TITLE", f.stem)))
+                if hasattr(tab, "log_line"):
+                    tab.log_line.connect(self.append_log)
+                if hasattr(tab, "status"):
+                    tab.status.connect(lambda m: self.status.showMessage(m, 8000))
+                self.extra_tabs.append(tab)
+            except Exception:                           # noqa: BLE001
+                self.append_log(T("[提醒] 額外分頁 {0} 載入失敗：").format(f.name) + "\n" + traceback.format_exc())
 
     def _apply_base_name(self):
         base = self.edit_base.text().strip()
@@ -1520,7 +1555,7 @@ class MainWindow(QMainWindow):
     def save_ui_settings(self):
         # 每個分頁自己把狀態寫進共用的 settings，這裡只負責收集 + 落地。
         # 不然新增分頁就得記得回來改這個函式，遲早會漏。
-        for tab in (getattr(self, "cut_tab", None), getattr(self, "tree_tab", None)):
+        for tab in [getattr(self, "cut_tab", None), getattr(self, "tree_tab", None)] + list(getattr(self, "extra_tabs", [])):
             if tab is not None and hasattr(tab, "save_state"):
                 try:
                     tab.save_state()
@@ -1691,6 +1726,30 @@ class MainWindow(QMainWindow):
         self.table.set_failed(path, msg)
         self.append_log(T("[讀卡失敗] {0}：{1}").format(Path(path).name, msg))
 
+    def merge_opts(self):
+        """設定頁目前勾的那些「整理／合併」選項，整理成 MergeWorker 吃的格式。
+        （跟某一次合併有關的東西 —— 存檔版本、音頻、F7 設定 —— 不在這裡，由呼叫的人自己加。）"""
+        return {
+            "gap": self.spin_gap.value(),
+            "camera_switch": self.chk_cam.isChecked(),
+            "group": self.chk_group.isChecked(),
+            "nc_rename": self.chk_nc.isChecked(),
+            "subfolders": self.chk_sub.isChecked(),
+            "zero_chain": self.chk_zero.isChecked(),
+            "auto_camera": self.chk_autocam.isChecked(),
+            "enable_tracks": self.chk_enable.isChecked(),
+            "tl_clean": self.chk_tlclean.isChecked(),
+            "tl_mismatch": self.chk_tlmis.isChecked(),
+            "shader_type": self.cmb_shader.currentData() or "",
+            "park": self.chk_park.isChecked(),
+            "park_lead": float(self.spin_lead.value()),
+            "nc_enable_tracks": self.chk_ncen.isChecked(),
+            "clear_frame": self.chk_frame.isChecked(),
+            "enable_all_tracks": self.chk_enall.isChecked(),
+            "cam_tracks": self.chk_camtr.isChecked(),
+            "cam_name": self.edit_cam.text().strip(),
+        }
+
     def run(self):
         ok, why = self.table.ready()
         if not ok:
@@ -1737,32 +1796,15 @@ class MainWindow(QMainWindow):
                     ) != QMessageBox.StandardButton.Yes:
                 return
         self.save_ui_settings()
-        opts = {
-            "gap": self.spin_gap.value(),
-            "camera_switch": self.chk_cam.isChecked(),
-            "group": self.chk_group.isChecked(),
-            "nc_rename": self.chk_nc.isChecked(),
-            "subfolders": self.chk_sub.isChecked(),
-            "zero_chain": self.chk_zero.isChecked(),
-            "auto_camera": self.chk_autocam.isChecked(),
-            "enable_tracks": self.chk_enable.isChecked(),
-            "tl_clean": self.chk_tlclean.isChecked(),
-            "tl_mismatch": self.chk_tlmis.isChecked(),
-            "shader_type": self.cmb_shader.currentData() or "",
-            "park": self.chk_park.isChecked(),
-            "park_lead": float(self.spin_lead.value()),
-            "nc_enable_tracks": self.chk_ncen.isChecked(),
-            "clear_frame": self.chk_frame.isChecked(),
-            "enable_all_tracks": self.chk_enall.isChecked(),
-            "cam_tracks": self.chk_camtr.isChecked(),
-            "cam_name": self.edit_cam.text().strip(),
+        opts = self.merge_opts()
+        opts.update({
             "save_version": self.chosen_version(),
             "audio_root": self.settings.get("audio_root", ""),
             "audio_rel_prefix": self.settings.get("audio_rel_prefix", ""),
             "audio_dir": self.settings.get("audio_dir", ""),
             "audio_mode": self.settings.get("audio_mode", V.MODE_REL),
             "audio_rows": self.table.audio_rows(),
-        }
+        })
         opts["cut"] = None
         if self.chk_cut.isChecked():
             cut = self._prepare_cut()
@@ -1884,6 +1926,12 @@ class MainWindow(QMainWindow):
         self.cut_tab.shutdown()
         self.tree_tab.shutdown()
         self.bridge_tab.shutdown()
+        for tab in getattr(self, "extra_tabs", []):
+            if hasattr(tab, "shutdown"):
+                try:
+                    tab.shutdown()
+                except Exception:                       # noqa: BLE001
+                    pass
         for obj, th in ((self.loader, self.lthread), (self.worker, self.wthread)):
             obj.stop()
             th.quit()

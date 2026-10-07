@@ -295,6 +295,35 @@ def remap_object_index(xml, fn):
 
 
 RE_INTERP_HEAD = re.compile(r'<interpolable\b[^>]*?>')
+RE_INTERP_BLOCK = re.compile(r'<interpolable\b[^>]*?(?:/>|>.*?</interpolable>)', re.S)
+RE_KF_INT_VALUE = re.compile(r'(<keyframe\b[^>]*?\bvalue=")(-?\d+)(")')
+
+
+def remap_me_texture_keys(xml, texmap):
+    """MaterialEditor 的「貼圖」軌道（owner="MaterialEditor" id="textureProperty"）：
+    每個關鍵影格的 value 是場景貼圖字典裡的編號。合併時第二張卡的貼圖會被重新編號，
+    這裡的編號也要跟著換，不然關鍵影格會指到別張貼圖。
+
+    回傳 (新的 xml, 改了幾格)。只動這一種軌道，其他軌道一個字都不碰。
+    """
+    if not texmap or 'id="textureProperty"' not in xml:
+        return xml, 0
+    n = [0]
+
+    def blk(m):
+        s = m.group(0)
+        head = s[:s.index(">") + 1]
+        if 'owner="MaterialEditor"' not in head or 'id="textureProperty"' not in head:
+            return s
+
+        def kf(k):
+            v = int(k.group(2))
+            nv = texmap.get(v, v)
+            if nv != v:
+                n[0] += 1
+            return k.group(1) + str(nv) + k.group(3)
+        return RE_KF_INT_VALUE.sub(kf, s)
+    return RE_INTERP_BLOCK.sub(blk, xml), n[0]
 
 
 def remap_nc_parameter(xml, fn):

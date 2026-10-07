@@ -698,6 +698,11 @@ def _merge_into(A, B, off, warn, group_name_a=None, group_name_b=None,
 
     log(f"  + {len(b_nodes_old)} 個節點（dicKey +{K}），時間平移 +{S.fmt_time(off)}")
 
+    # ---- 貼圖字典（要在 timeline 之前：MaterialEditor 的貼圖軌道用的是貼圖編號）----
+    da, db = A.kkex, B.kkex
+    texmap = ({} if _skipped("textures") and _skip_note("textures", warn) is not None
+              else merge_textures(da, db, warn))
+
     # ---- timeline ----
     a_xml, b_xml = A.timeline_xml(), B.timeline_xml()
     if a_xml and b_xml:
@@ -709,6 +714,9 @@ def _merge_into(A, B, off, warn, group_name_a=None, group_name_b=None,
             bb = S.remap_nc_parameter(bb, lambda p: p + n_nc_a)
         if off:
             bb = S.shift_keyframe_times(bb, off)
+        bb, n_texkf = S.remap_me_texture_keys(bb, texmap)
+        if n_texkf:
+            log(f"  + MaterialEditor 貼圖軌道：{n_texkf} 格關鍵影格的貼圖編號已重新對應")
         ab, gl_a = S.extract_global_tracks(ab)
         bb, gl_b = S.extract_global_tracks(bb)
         globals_xml = ""
@@ -727,9 +735,6 @@ def _merge_into(A, B, off, warn, group_name_a=None, group_name_b=None,
         warn.append("底卡沒有 timeline，直接用第二張的")
 
     # ---- KKEx ----
-    da, db = A.kkex, B.kkex
-    texmap = ({} if _skipped("textures") and _skip_note("textures", warn) is not None
-              else merge_textures(da, db, warn))
     counts = {}
     counts["nodesConstraints"] = (
         _skip_note("nodesConstraints", warn) if _skipped("nodesConstraints") else

@@ -840,6 +840,18 @@ namespace StudioCharTools
             A("（同步 {0} 套）",
               " (synced {0} outfits)",
               "（{0} 着同期）");
+            A("換角色後重新初始化 BetterPenetration",
+              "Reinitialize BetterPenetration after swap",
+              "入れ替え後に BetterPenetration を再初期化");
+            A("🔄 已重新初始化 BetterPenetration",
+              "🔄 BetterPenetration reinitialized",
+              "🔄 BetterPenetration を再初期化しました");
+            A("換角色沿用場景原角色的身形選擇",
+              "Keep scene character's UncensorSelector bodies on swap",
+              "入れ替え時にシーンのキャラの UncensorSelector 体型を維持");
+            A("🧍 已沿用場景原角色的身形選擇",
+              "🧍 Kept the scene character's UncensorSelector bodies",
+              "🧍 シーンのキャラの UncensorSelector 体型を維持しました");
             A("換角色套用場景原角色的著色器",
               "Apply scene character's shaders on swap",
               "入れ替え時にシーンのキャラのシェーダーを適用");

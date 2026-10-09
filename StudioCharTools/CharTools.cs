@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.1.1";
+        public const string Version = "1.1.2";
 
         internal static CharToolsPlugin Instance;
 
@@ -155,6 +155,10 @@ namespace StudioCharTools
         private bool autoApplyBlendPreset = true;
         /// <summary>換人時帶入場景原角色的著色器：0 = 關、1 = 每次詢問、2 = 自動。</summary>
         private int carryShaderMode = 1;
+        /// <summary>換人時沿用場景原角色在 UncensorSelector 選的身形（身體／第二項／第三項）。</summary>
+        private bool carryUncensor = true;
+        /// <summary>換人後讓 BetterPenetration 重新初始化（等於重新開卡）。</summary>
+        private bool refreshBp = true;
         private bool showCarryPrompt;
         private Action<bool> carryPromptAct;
         private string carryPromptWho = "";
@@ -244,6 +248,7 @@ namespace StudioCharTools
         BepInEx.Configuration.ConfigEntry<float> cfgSettleSeconds;
         BepInEx.Configuration.ConfigEntry<int> cfgThumbMaxH;
         BepInEx.Configuration.ConfigEntry<int> cfgCarryShader;
+        BepInEx.Configuration.ConfigEntry<bool> cfgCarryUncensor, cfgRefreshBp;
         BepInEx.Configuration.ConfigEntry<bool> cfgHeadAnchor;
         BepInEx.Configuration.ConfigEntry<bool> cfgToolbarButton;
         BepInEx.Configuration.ConfigEntry<float> cfgFrameScale, cfgHeadAtY;
@@ -307,6 +312,10 @@ namespace StudioCharTools
             cfgAutoApplyBlend = Config.Bind("Swap", "Auto Apply Blendshapes", true, "");
             cfgCarryShader = Config.Bind("Swap", "Carry Scene Shaders", 1,
                 "換人時把場景原角色的著色器（MaterialEditor）帶到新角色：0 = 關、1 = 每次詢問、2 = 自動");
+            cfgCarryUncensor = Config.Bind("Swap", "Carry Scene Uncensor", true,
+                "換人時沿用場景原角色在 UncensorSelector（身形選擇）選的身體與其他兩項、連同顯示開關。關掉 = 用新卡自己存的");
+            cfgRefreshBp = Config.Bind("Swap", "Refresh BetterPenetration On Swap", true,
+                "換人後讓 BetterPenetration 照卡上的設定重新初始化（不然要重新開卡才會對準）");
             cfgKeepExpression = Config.Bind("Swap", "Keep Expression On Swap", true,
                 "換人後把眉／眼／嘴表情、開合、眨眼、臉紅、眼淚、視線改回換人前的樣子。關掉 = 用新卡自己存的表情");
             cfgKeepOldHead = Config.Bind("Swap", "KeepNewBody Keep Old Head Size", true,
@@ -342,6 +351,8 @@ namespace StudioCharTools
             CardSaver.CoordToTemp = cfgCoordToTemp.Value;
             autoApplyBlendPreset = cfgAutoApplyBlend.Value;
             carryShaderMode = Mathf.Clamp(cfgCarryShader.Value, 0, 2);
+            carryUncensor = cfgCarryUncensor.Value;
+            refreshBp = cfgRefreshBp.Value;
             keepExpression = cfgKeepExpression.Value;
             keepOldHeadSize = cfgKeepOldHead.Value;
             abmxKeepBones = cfgAbmxKeepBones.Value ?? "";
@@ -419,6 +430,8 @@ namespace StudioCharTools
             cfgCoordToTemp.Value = CardSaver.CoordToTemp;
             cfgAutoApplyBlend.Value = autoApplyBlendPreset;
             cfgCarryShader.Value = carryShaderMode;
+            cfgCarryUncensor.Value = carryUncensor;
+            cfgRefreshBp.Value = refreshBp;
             cfgKeepExpression.Value = keepExpression;
             cfgKeepOldHead.Value = keepOldHeadSize;
             cfgAbmxKeepBones.Value = abmxKeepBones ?? "";
@@ -2272,6 +2285,8 @@ namespace StudioCharTools
             if (GUILayout.Toggle(carryShaderMode == 1, " " + Lang.T("詢問"), Fit.WT(OptRadioW, " " + Lang.T("詢問")))) carryShaderMode = 1;
             if (GUILayout.Toggle(carryShaderMode == 2, " " + Lang.T("自動"), Fit.WT(OptRadioW, " " + Lang.T("自動")))) carryShaderMode = 2;
             GUILayout.EndHorizontal();
+            carryUncensor = OptRow("換角色沿用場景原角色的身形選擇", carryUncensor, "是", "否");
+            refreshBp = OptRow("換角色後重新初始化 BetterPenetration", refreshBp, "是", "否");
 
             keepOldHeadSize = OptRow("維持新卡身材：頭大小沿用舊卡", keepOldHeadSize, "是", "否");
             GUILayout.Label(Lang.T("「維持新卡身材」要從舊卡留下的 ABMX 骨頭"),
@@ -3360,6 +3375,31 @@ namespace StudioCharTools
             statusMsg += "\n" + string.Format(Lang.T("🎨 已套用場景原角色的著色器（{0} 個材質）"), total);
         }
 
+        /// <summary>等新角色的 UncensorSelector 讀完自己的卡再寫回；套兩次，擋掉晚到的重新載入。</summary>
+        IEnumerator UncensorCarryRoutine(Studio.OCIChar ofem, UncensorCarry.Snapshot snap)
+        {
+            bool changed = false;
+            foreach (float wait in new[] { 1.0f, 1.5f })
+            {
+                yield return new WaitForSeconds(wait);
+                ChaControl cha = null;
+                try { cha = ofem.charInfo; } catch { }
+                if (cha == null) yield break;
+                if (UncensorCarry.Apply(cha, snap)) changed = true;
+                Logger.LogInfo("[UncensorCarry] " + UncensorCarry.LastReport);
+            }
+            if (changed) statusMsg += "\n" + Lang.T("🧍 已沿用場景原角色的身形選擇");
+        }
+
+        /// <summary>等身形選擇寫回（約 2.5 秒）之後再讓 BP 重建，不然它會照舊網格建。</summary>
+        IEnumerator BpRefreshRoutine()
+        {
+            yield return new WaitForSeconds(3.5f);
+            int n = BpRefresh.RefreshAll();
+            Logger.LogInfo("[BpRefresh] " + BpRefresh.LastReport);
+            if (n > 0) statusMsg += "\n" + Lang.T("🔄 已重新初始化 BetterPenetration");
+        }
+
         void DoSwapCharacterAppearance(Studio.OCIChar ofem, string path)
         {
             DoSwapCharacterAppearance(ofem, path, SwapMode.KeepOldBody);
@@ -3397,6 +3437,13 @@ namespace StudioCharTools
                     Logger.LogInfo("[ShaderCarry] 換人前記下場景原角色的著色器：\n" + ShaderCarry.LastReport);
                 }
                 if (ofem == null) { statusMsg = "❌ 選擇的節點不是角色！"; return; }
+
+                UncensorCarry.Snapshot uncSnap = null;
+                if (carryUncensor && UncensorCarry.Available)
+                {
+                    uncSnap = UncensorCarry.Capture(ofem.charInfo);
+                    Logger.LogInfo("[UncensorCarry] 換人前記下場景原角色的身形選擇：" + UncensorCarry.LastReport);
+                }
 
                 bool keepFull = KeepsFullBody(mode);
 
@@ -3608,6 +3655,10 @@ namespace StudioCharTools
                 statusMsg = string.Format(Lang.T("⏳ 換人中（{0}）…"), SwapModeName(mode));
                 if (shaderSnap != null && shaderSnap.Entries.Count > 0)
                     StartCoroutine(ShaderCarryRoutine(ofem, shaderSnap));
+                if (uncSnap != null && uncSnap.Valid)
+                    StartCoroutine(UncensorCarryRoutine(ofem, uncSnap));
+                if (refreshBp && BpRefresh.Available)
+                    StartCoroutine(BpRefreshRoutine());
                 StartCoroutine(KeepBodyRestoreRoutine(ofem, savedShape, savedShapeIdx, savedAbmx,
                                                       savedLastname, savedFirstname,
                                                       savedPose, savedAnime, dbSnap, dbGuard, mode,

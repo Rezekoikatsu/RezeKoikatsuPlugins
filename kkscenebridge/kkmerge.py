@@ -1019,8 +1019,8 @@ def transplant(src_path, src_outfit, dst_path, dst_outfit, out_path,
         d_raw_v, s_raw_v = D.get(guid, key), S.get(guid, key)
         if d_raw_v is None and s_raw_v is None:
             continue
-        s_items = arr_split(unpack(s_raw_v)) if s_raw_v else []
-        d_items = arr_split(unpack(d_raw_v)) if d_raw_v else []
+        s_items = arr_split(unpack(s_raw_v)) if s_raw_v and s_raw_v != b"\xc0" else []
+        d_items = arr_split(unpack(d_raw_v)) if d_raw_v and d_raw_v != b"\xc0" else []
         field = next((_coord_field(unpack(e)) for e in d_items + s_items), None)
         if field is None:
             continue

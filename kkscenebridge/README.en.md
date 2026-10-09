@@ -138,6 +138,8 @@ absolute path, or embedded in the card.
 - **Delete**: items are only marked; on save they're deleted and every Timeline/NC reference is fixed
 - Items under a character's attach point can only move within that attach point
 - By default a `<card>.png.bak` backup is made before saving over the card
+- **Screen effects**: depth of field, ambient occlusion, bloom, vignette, fog and sun shafts can be switched on or off without
+  opening the game. In merged cards every segment's `[ENV]` marker is changed too, so F7 doesn't switch it back per segment
 
 ## Chara card merge (formerly kkbridge)
 

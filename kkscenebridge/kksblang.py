@@ -787,6 +787,36 @@ A('把展開/收合狀態一起存進卡片',
 A('勾了的話，下次在遊戲裡開這張卡，資料夾的展開狀態會跟你現在看到的一樣',
   'If checked, folders open in the game exactly as you see them now',
   'オンにすると、ゲームでこのカードを開いた時のフォルダの開閉が今と同じになります')
+A('景深',
+  'Depth of field',
+  '被写界深度')
+A('環境遮擋',
+  'Ambient occlusion',
+  'アンビエントオクルージョン')
+A('光暈',
+  'Bloom',
+  'ブルーム')
+A('暈影',
+  'Vignette',
+  'ビネット')
+A('霧化',
+  'Fog',
+  'フォグ')
+A('太陽光束',
+  'Sun shafts',
+  'サンシャフト')
+A('畫面效果（勾＝開；改完按「存回這張卡」）',
+  'Screen effects (checked = on; click "Save to this card" when done)',
+  '画面効果（オン＝描画；変更後「このカードに保存」）')
+A('[ENV] 記號：%d 個一起改成「%s %s」（F7 播放時各段才不會又切回去）',
+  '[ENV] markers: %d also set to "%s %s" (so F7 does not switch it back per segment)',
+  '[ENV] マーカー：%d 個も「%s %s」に変更（F7 再生時に各シーンで戻らないように）')
+A('開',
+  'on',
+  'オン')
+A('關',
+  'off',
+  'オフ')
 A('備份 .bak',
   'Backup .bak',
   '.bak を作成')

@@ -41,7 +41,7 @@ import kklang
 kklang.set_lang(L.Current)
 
 APP_NAME = "kkscenebridge"
-VERSION = "1.1.7"
+VERSION = "1.1.8"
 RED = "#c0392b"
 
 

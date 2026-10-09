@@ -115,6 +115,17 @@ Parameters, colours, textures and reflections all stay the new character's own. 
 renderer, not by material name, so it works across different head mods. Without MaterialEditor this
 feature quietly does nothing.
 
+### Keeping the scene's UncensorSelector bodies, and reinitialising BetterPenetration on swap
+
+The swap section of Settings has two more options, both on by default:
+
+- **Keep scene character's UncensorSelector bodies on swap**: the body, the other two selections and their
+  display toggles come from the original scene character instead of the new card. The scene's poses and
+  alignment were made for those selections. Does nothing without UncensorSelector.
+- **Reinitialize BetterPenetration after swap**: after a swap BP still holds the old character's anchor points
+  and colliders, so it only lined up again after reloading the scene. This rebuilds BP for every character in
+  the scene from its card settings, the same as reloading. Does nothing without the Studio build of BP.
+
 ## Side panels
 
 - **Accessory manager** — lists every accessory on the character; toggle them, copy to another character. The top row shows, hides or removes All / Main / Sub accessories at once (remove needs a second click within 3 s)

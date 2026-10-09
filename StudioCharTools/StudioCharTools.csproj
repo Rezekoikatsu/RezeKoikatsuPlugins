@@ -84,6 +84,7 @@
     <Compile Include="AbmxFilter.cs" />
     <Compile Include="AccessoryTools.cs" />
     <Compile Include="ShaderCarry.cs" />
+    <Compile Include="UncensorCarry.cs" />
     <Compile Include="ScreenGrab.cs" />
     <Compile Include="BlendShapeLockSceneController.cs" />
   </ItemGroup>

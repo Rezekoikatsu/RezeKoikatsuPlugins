@@ -397,6 +397,7 @@ class TreeTab(QWidget):
         row2.addWidget(self.btn_saveas)
         root.addLayout(row2)
 
+        root.addWidget(self._effects_box())
         root.addWidget(self._transform_box())
 
         self.lbl_state = QLabel("")
@@ -418,8 +419,90 @@ class TreeTab(QWidget):
         self.setAcceptDrops(True)
         self._set_busy(False)
 
+    # ---- 畫面效果（場景卡標頭的開關）----
+    # 這些是 Studio「畫面效果」面板的「描畫」開關，存在場景卡標頭，跟物件樹無關，
+    # 改了只動一個位元組，RANK、timeline、NC 都不受影響。
+    EFFECTS = (
+        ("enableDepth", T("景深")),
+        ("enableAOE", T("環境遮擋")),
+        ("enableBloom", T("光暈")),
+        ("enableVignette", T("暈影")),
+        ("enableFog", T("霧化")),
+        ("enableSunShafts", T("太陽光束")),
+    )
+
+    def _effects_box(self):
+        box = QGroupBox(T("畫面效果（勾＝開；改完按「存回這張卡」）"))
+        h = QHBoxLayout(box)
+        self._fx = {}
+        for attr, cap in self.EFFECTS:
+            chk = QCheckBox(cap)
+            chk.setEnabled(False)
+            chk.toggled.connect(lambda on, a=attr: self._fx_changed(a, on))
+            self._fx[attr] = chk
+            h.addWidget(chk)
+        h.addStretch(1)
+        return box
+
+    def _fx_sync(self):
+        """讀卡後把開關對齊卡片裡的值。"""
+        for attr, chk in self._fx.items():
+            v = getattr(self.scene.sc, attr, None) if self.scene is not None else None
+            chk.blockSignals(True)
+            chk.setChecked(bool(v))
+            chk.setEnabled(isinstance(v, bool))
+            chk.blockSignals(False)
+
+    def _fx_changed(self, attr, on):
+        if self.scene is None or not isinstance(getattr(self.scene.sc, attr, None), bool):
+            return
+        if getattr(self.scene.sc, attr) == on:
+            return
+        setattr(self.scene.sc, attr, on)
+        n = self._fx_patch_env(attr, on)
+        if n:
+            self.log_line.emit(T("[ENV] 記號：%d 個一起改成「%s %s」（F7 播放時各段才不會又切回去）")
+                               % (n, dict(self.EFFECTS)[attr], T("開") if on else T("關")))
+        self._touch()
+
+    def _fx_patch_env(self, attr, on):
+        """合併過的卡，各段的畫面效果存在 [ENV] 記號資料夾的名稱裡，F7 播放時照它切換。
+        只改卡片本身的話，一播到那段又被記號改回去，所以記號要一起改。
+
+        v=3：短代號，跟固定預設一樣就不寫（例：景深 dp 預設 0 → 關掉就是把 dp=1 拿掉）
+        v=2 / 舊版（卡片值 + 差異）：長欄位名，直接寫 enableDepth=0/1
+        回傳改了幾個記號。"""
+        import re
+        import kkscenemerge as KM
+        short = KM.ENV_L2S.get(attr)
+        dflt = KM.ENV_DEF.get(attr)
+        if short is None:
+            return 0
+        val = "1" if on else "0"
+        n = 0
+        stack = [self.tree.topLevelItem(i) for i in range(self.tree.topLevelItemCount())]
+        while stack:
+            it = stack.pop()
+            stack.extend(it.child(i) for i in range(it.childCount()))
+            node = self._node(it) if it.data(0, SLOT_ROLE) is None else None
+            if node is None or node.get("type") != FOLDER_TYPE or it.data(0, DEAD_ROLE):
+                continue
+            name = it.text(0)
+            if not name.startswith(KM.ENV_PREFIX):
+                continue
+            v3 = re.search(r"(^|\s)v=3(\s|$)", name) is not None
+            key = short if v3 else attr
+            pat = re.compile(r"\s%s=\S*" % re.escape(key))
+            new = pat.sub("", name)
+            if not (v3 and val == dflt):
+                new = new.rstrip() + " %s=%s" % (key, val)
+            if new != name:
+                it.setText(0, new)          # 走 _item_changed → 節點名稱 / TreeNodeNaming 一起改
+                n += 1
+        return n
+
     # ---- transform ----
-    ROWS = ((T("位置"), "position", 0.0), (T("旋轉"), "rotation", 0.0), (T("縮放"), "scale", 1.0))
+    ROWS =((T("位置"), "position", 0.0), (T("旋轉"), "rotation", 0.0), (T("縮放"), "scale", 1.0))
 
     def _transform_box(self):
         """改 transform 只動節點自己的欄位，不新增也不刪節點，RANK 完全不變。"""
@@ -559,6 +642,7 @@ class TreeTab(QWidget):
         self.log_line.emit(msg)
         self.status.emit(msg)
         self._rebuild()
+        self._fx_sync()
         self._dirty = False
         self._update_state()
 

@@ -161,7 +161,7 @@ pulls dynamic bones that aren't in its list — hair made from accessories isn't
 another segment's character gets pulled away.
 
 After a merged card is loaded, F7 makes every collider affect only its own segment: every dynamic bone (including inactive ones) of characters / items
-in other segments is set to ignore it. Settings inside the same segment are untouched; only merged cards (a top-level "(CAM)" folder) are handled.
+in other segments is set to ignore it; inside its own segment only the bones the author explicitly enabled stay on (the same result as F6 "Repair collider bindings"). Dynamic bones that appear during playback are checked every 2 seconds. Only merged cards (a top-level "(CAM)" folder) are handled.
 No need for F6 "Repair collider bindings" or save-and-reload any more. Set `Isolate Merged Colliders` to false in the config to turn it off.
 
 ## Troubleshooting

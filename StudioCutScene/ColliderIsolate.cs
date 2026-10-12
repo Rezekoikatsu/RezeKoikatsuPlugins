@@ -21,7 +21,9 @@ namespace StudioCutScene
     /// 做法
     /// ----
     /// 載入場景卡、載入結束之後（再等一下讓 KKPE 讀完自己的資料），
-    /// 對每一顆碰撞器：**不在同一個最上層資料夾**的角色／物件，所有動骨（連沒啟用的）一律設成不吃。
+    /// 對每一顆碰撞器：**不在同一個最上層資料夾**的角色／物件，所有動骨（連沒啟用的）一律設成不吃；
+    /// 同一段裡只留作者在清單裡明確開啟的那幾根，其餘也設成不吃（跟 F6「一鍵修復」的結果一樣 ——
+    /// 同一段的飾品頭髮一樣沒被列進清單，一樣會被吸）。之後每 2 秒檢查一次播放中才冒出來的動骨。
     /// 用 KKPE 自己的 SetIgnoreDynamicBone，內部清單和 DynamicBone 身上的碰撞器清單會一起改，
     /// 存檔時也會照實寫進卡片。同一段裡的設定完全不動。
     ///
@@ -56,6 +58,8 @@ namespace StudioCutScene
             {
                 seenStamp = SceneLoadWatch.Stamp;
                 waiting = true;
+                guarding = false;
+                boneCache.Clear();
                 passes = 0;
                 doneLoadingAt = -1f;
             }
@@ -69,7 +73,22 @@ namespace StudioCutScene
             passes++;
             try { Run(); }
             catch (Exception e) { if (_log != null) _log.LogWarning("處理失敗：" + e.Message); }
-            if (passes >= 2) waiting = false;
+            if (passes >= 2) { waiting = false; guarding = true; nextGuard = Time.realtimeSinceStartup + 2f; }
+        }
+
+        // 讀完之後還會有新的動骨冒出來（飾品頭髮之類、播放中才建好或才啟用），
+        // KKPE 照樣可能把碰撞器掛上去。之後每 2 秒檢查一次：
+        // 只看「身上真的掛著碰撞器、而且不是作者明確開啟」的動骨，有才動手，平常幾乎不做事。
+        private bool guarding;
+        private float nextGuard;
+
+        void LateUpdate()
+        {
+            if (!guarding || !Enabled || SceneLoadWatch.IsLoading || waiting) return;
+            if (Time.realtimeSinceStartup < nextGuard) return;
+            nextGuard = Time.realtimeSinceStartup + 2f;
+            try { Apply(true); }
+            catch (Exception e) { guarding = false; if (_log != null) _log.LogWarning("檢查失敗，停止檢查：" + e.Message); }
         }
 
         // =============================================================
@@ -133,7 +152,15 @@ namespace StudioCutScene
         // =============================================================
         // 主流程
         // =============================================================
-        private static void Run()
+        private static void Run() { Apply(false); }
+
+        /// <summary>
+        /// 每顆碰撞器 × 每個 PoseController × 每根動骨：
+        ///   別段的 → 一律不吃；
+        ///   同一段的 → 作者在清單裡明確開啟（true）的照舊，其餘不吃（跟 F6「一鍵修復」用其他角色當範本的結果一樣）。
+        /// guardOnly：只處理「身上真的掛著這顆碰撞器」的動骨，給播放中的定期檢查用。
+        /// </summary>
+        private static void Apply(bool guardOnly)
         {
             Init();
             if (!available) return;
@@ -182,20 +209,26 @@ namespace StudioCutScene
                     foreach (object pc in pcs)
                     {
                         Studio.TreeNodeObject s = segOf[pc];
-                        if (s == null || s == colSeg) continue;       // 同一段、或不在任何一段：不動
-                        int n = IgnoreAll(editor, collider, pc, de.Value);
+                        if (s == null) continue;                       // 不在任何一段（例如 (CAM) 底下）：不動
+                        int n = IgnoreAll(editor, collider, pc, de.Value, s == colSeg, guardOnly);
                         if (n > 0) { nBones += n; nPc++; touched = true; }
                     }
                     if (touched) nCol++;
                 }
             }
-            LastReport = nCol == 0 ? "" :
-                string.Format("合併卡：{0} 顆碰撞器對別段的角色／物件設成不吃（{1} 筆，共 {2} 根動骨）", nCol, nPc, nBones);
-            if (nCol > 0 && _log != null) _log.LogInfo(LastReport);
+            if (nCol == 0) return;
+            LastReport = string.Format(guardOnly
+                ? "合併卡：播放中又有 {2} 根動骨被碰撞器掛上，已拿掉（{0} 顆碰撞器、{1} 筆）"
+                : "合併卡：{0} 顆碰撞器只留作者開啟的動骨，別段全部不吃（{1} 筆，共 {2} 根動骨）", nCol, nPc, nBones);
+            if (_log != null) _log.LogInfo(LastReport);
         }
 
         /// <summary>這顆碰撞器對這個 PoseController 底下每一根動骨（含沒啟用的）都設成不吃。回傳實際改掉的根數。</summary>
-        private static int IgnoreAll(object editor, object collider, object pc, object colliderData)
+        private static readonly Dictionary<object, List<object>> boneCache = new Dictionary<object, List<object>>();
+        private static float cacheTime;
+
+        private static int IgnoreAll(object editor, object collider, object pc, object colliderData,
+                                     bool sameSeg, bool guardOnly)
         {
             IDictionary inner = null;
             try
@@ -207,26 +240,38 @@ namespace StudioCutScene
             }
             catch { }
 
-            List<object> bones = new List<object>();
+            // 動骨清單：KKPE 記的 + 物件樹上實際有的（連沒啟用的）。後者每 10 秒才重抓一次。
+            if (Time.realtimeSinceStartup - cacheTime > 10f) { boneCache.Clear(); cacheTime = Time.realtimeSinceStartup; }
+            List<object> found;
+            if (!boneCache.TryGetValue(pc, out found))
+            {
+                found = new List<object>();
+                Component pcc = pc as Component;
+                if (pcc != null)
+                {
+                    AddComponents(found, pcc, tDynamicBone);
+                    AddComponents(found, pcc, tDynamicBoneVer02);
+                }
+                boneCache[pc] = found;
+            }
+            List<object> bones = new List<object>(found);
             if (inner != null)
                 foreach (DictionaryEntry e in inner) if (e.Key != null && !bones.Contains(e.Key)) bones.Add(e.Key);
-            Component pcc = pc as Component;
-            if (pcc != null)
-            {
-                AddComponents(bones, pcc, tDynamicBone);
-                AddComponents(bones, pcc, tDynamicBoneVer02);
-            }
 
             int changed = 0;
             foreach (object bone in bones)
             {
-                bool already = false;
+                if (bone == null || (bone is UnityEngine.Object && (UnityEngine.Object)bone == null)) continue;
+                bool listedOn = false, listedOff = false;
                 if (inner != null && inner.Contains(bone))
                 {
                     object v = inner[bone];
-                    already = v is bool && !(bool)v;
+                    listedOn = v is bool && (bool)v;
+                    listedOff = v is bool && !(bool)v;
                 }
-                if (already && !HasCollider(bone, collider)) continue;
+                if (sameSeg && listedOn) continue;              // 作者在這一段明確開啟的：照舊
+                bool attached = HasCollider(bone, collider);
+                if (guardOnly ? !attached : (listedOff && !attached)) continue;
                 try
                 {
                     mSetIgnore.Invoke(editor, new object[] { collider, pc, bone, true });

@@ -871,6 +871,11 @@ namespace StudioCutScene
                 + "跳過它讓後面的物件繼續載，不會整個場景載到一半就停。"
                 + "道具會用本體道具頂替並隱藏，物件順序不變。每一個都會寫進 log 的 [載入保護]").Value;
             LoadGuard.Install(new HarmonyLib.Harmony(GUID + ".loadguard"));
+            ColliderIsolate.Enabled = Config.Bind("General", "Isolate Merged Colliders", true,
+                "合併場景卡（kkscenebridge）讀進來後，KKPE 的碰撞器只作用在自己那一段的角色／物件。"
+                + "不開的話，別段角色用飾品做的頭髮會被這顆碰撞器吸走（飛天吸附）。"
+                + "只處理最上層有「(CAM)」資料夾的合併卡，一般場景卡不動").Value;
+            ColliderIsolate.Create(gameObject);
             Logger.LogInfo("[SceneLoadWatch] " + SceneLoadWatch.LastReport);
 
             // Studio 左邊工具列的按鈕（跟 Timeline 那顆同一排）。

@@ -3263,7 +3263,7 @@ def isolate_colliders(scene, warn, wraps=None):
             who += _T(" 等 {0} 個角色").format(len(partial))
         warn.append(_T("KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，"
                        "只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨"
-                       "卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」，存檔後重新讀取場景")
+                       "卡片裡沒有清單，補不到；裝了 F7 1.15.3 以上，讀卡時會自動處理；沒裝的話，載入後用 F6 的「一鍵修復碰撞器綁定」，存檔後重新讀取場景")
                     .format(who))
     if dup_hit or dup:
         warn.append(_T("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"

@@ -292,9 +292,9 @@ A('  KKPE 碰撞器：{0} 顆碰撞器補上 {1} 筆「別段的角色/物件不
 A(' 等 {0} 個角色',
   ' and others ({0} characters in total)',
   ' ほか（合計 {0} キャラ）')
-A('KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」，存檔後重新讀取場景',
-  'KKPE colliders: {0} use hair / clothes / accessories different from the characters the collider lists know about, so only the common dynamic bones (breasts, hips, skirt…) could be disabled; the card has no list of their own hair / accessory bones. If something is still pulled after loading, use F6 "Repair collider bindings", then save and reload the scene',
-  'KKPE コライダー：{0} は、コライダーのリストにデータがあるキャラと髪型／衣装／アクセサリーが違うため、共通の揺れ物（胸・尻・スカート…）しか無効にできません。固有の髪型／アクセサリーの揺れ物はカードに一覧が無いため追加できません。読み込み後にまだ引っ張られる箇所があれば、F6 の「コライダー結合を一括修復」を使い、保存してシーンを読み込み直してください')
+A('KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨卡片裡沒有清單，補不到；裝了 F7 1.15.3 以上，讀卡時會自動處理；沒裝的話，載入後用 F6 的「一鍵修復碰撞器綁定」，存檔後重新讀取場景',
+  'KKPE colliders: {0} use hair / clothes / accessories different from the characters the collider lists know about, so only the common dynamic bones (breasts, hips, skirt…) could be disabled; the card has no list of their own hair / accessory bones. F7 1.15.3 or later fixes this automatically when the card is loaded; without it, use F6 "Repair collider bindings" after loading, then save and reload the scene',
+  'KKPE コライダー：{0} は、コライダーのリストにデータがあるキャラと髪型／衣装／アクセサリーが違うため、共通の揺れ物（胸・尻・スカート…）しか無効にできません。固有の髪型／アクセサリーの揺れ物はカードに一覧が無いため追加できません。F7 1.15.3 以降なら読み込み時に自動で処理されます。無い場合は読み込み後に F6 の「コライダー結合を一括修復」を使い、保存してシーンを読み込み直してください')
 A('KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，這幾個沒有補；載入後如果碰撞器怪怪的，用 F6 的「一鍵修復碰撞器綁定」',
   'KKPE colliders: different characters / items share the same KKPE id (uniqueId); those were skipped. If colliders behave oddly after loading, use F6 "Repair collider bindings"',
   'KKPE コライダー：別のキャラ／アイテムが KKPE 内で同じ番号（uniqueId）を持っているため、それらには追加していません。読み込み後にコライダーの動きがおかしければ、F6 の「コライダー結合を一括修復」を使ってください')

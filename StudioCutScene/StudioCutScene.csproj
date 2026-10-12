@@ -74,6 +74,7 @@
     <Compile Include="ToolbarButton.cs" />
     <Compile Include="Icons.cs" />
     <Compile Include="LoadGuard.cs" />
+    <Compile Include="ColliderIsolate.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- 遊戲路徑改這裡就好 -->

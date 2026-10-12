@@ -154,6 +154,16 @@ Merged scene cards hit this most. Now the failing object is skipped and loading 
 Every case is logged as `[載入保護] dicKey=… —— action`. Search that dicKey in kkscenebridge's Organize tab to find and delete the object.
 Set `Load Guard` to false in the config to turn it off.
 
+## Colliders in merged cards only affect their own segment (since 1.15.3, on by default)
+
+In cards merged by kkscenebridge, segments that aren't playing are parked at the same far-away spot. A KKPE collider (e.g. a Dynamic Bone Collider item)
+pulls dynamic bones that aren't in its list — hair made from accessories isn't active yet when the card loads, so KKPE never lists it, and the hair of
+another segment's character gets pulled away.
+
+After a merged card is loaded, F7 makes every collider affect only its own segment: every dynamic bone (including inactive ones) of characters / items
+in other segments is set to ignore it. Settings inside the same segment are untouched; only merged cards (a top-level "(CAM)" folder) are handled.
+No need for F6 "Repair collider bindings" or save-and-reload any more. Set `Isolate Merged Colliders` to false in the config to turn it off.
+
 ## Troubleshooting
 
 **Transport buttons do nothing** — check the log line `[CutScene] Timeline 掃描：` and confirm

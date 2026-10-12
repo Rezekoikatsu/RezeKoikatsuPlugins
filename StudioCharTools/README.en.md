@@ -47,7 +47,7 @@ first choose how to handle the body:
 
 1. **Normal swap** — take the new card as is
 2. **Keep old body** — new card, but body shape and ABMX all stay as the original character
-3. **Lock height** — only height is locked to the original; everything else comes from the new card
+3. **Lock height** — only height is locked to the original (the Height slider plus the ABMX whole-body scale on cf_n_height / cf_j_root); everything else comes from the new card
 4. **Keep new body** — use the new card's body, but keep the ABMX bones that decide joint positions
    (limb lengths, height scale, …) so the existing pose doesn't drift
 

@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.1.2";
+        public const string Version = "1.1.3";
 
         internal static CharToolsPlugin Instance;
 
@@ -3411,13 +3411,15 @@ namespace StudioCharTools
         ///   KeepOldBody  100 根滑桿 + ABMX + 胸托基準全部帶回去。新卡等於只換了臉跟衣服。
         ///                胸圍差很多的兩張卡這樣換會穿模 —— 新卡的服裝、去碼、材質都是
         ///                照她自己的胸型做的，硬套舊胸型就破。
-        ///   LockHeight   只留 Height（驅動 cf_n_height 的那一根）。身高保住是為了不破壞
-        ///                場景裡的相對位置與姿勢，其他的讓新角色做自己。
+        ///   LockHeight   只留 Height（驅動 cf_n_height 的那一根），加上舊卡 ABMX 的
+        ///                cf_n_height / cf_j_root（整隻的縮放，見 AbmxFilter.HeightRules）。
+        ///                身高保住是為了不破壞場景裡的相對位置與姿勢，其他的讓新角色做自己。
         ///   KeepNewBody  只留會讓姿勢錯位的那幾根（見 ProportionShape），其餘 39 根用新卡的。
         ///   Plain        什麼都不留。
         ///
-        /// ABMX 只有 KeepOldBody 會帶回去。其餘三種刻意不留 —— 舊卡的骨架縮放
-        /// （含胸部骨）會把新卡自己的身材整個蓋掉，那就失去這三種模式的意義了。
+        /// ABMX 只有 KeepOldBody 整包帶回去；KeepNewBody 與 LockHeight 只帶規則內的幾根、
+        /// 其餘用新卡的；Plain 一根都不帶。舊卡的骨架縮放（含胸部骨）整包帶的話
+        /// 會把新卡自己的身材整個蓋掉，那就失去這幾種模式的意義了。
         /// </summary>
         void DoSwapCharacterAppearance(Studio.OCIChar ofem, string path, SwapMode mode)
         {
@@ -3514,7 +3516,8 @@ namespace StudioCharTools
                 // 「保留舊卡身材」整包帶回去；「維持新卡身材」也帶回去，但等一下
                 // 會照白名單把不要的移除（手腳/脖子的長度比例在 KK 的體型滑桿裡
                 // 根本沒有，只能靠 ABMX 留）。另外兩種模式一根都不留。
-                bool wantAbmx = keepFull || mode == SwapMode.KeepNewBody;
+                // 鎖身高也要：舊卡的 cf_n_height / cf_j_root 等一下要合併進新卡那包。
+                bool wantAbmx = keepFull || mode == SwapMode.KeepNewBody || mode == SwapMode.LockHeight;
                 ExtensibleSaveFormat.PluginData savedAbmx = null;
                 if (wantAbmx)
                 {
@@ -3635,21 +3638,27 @@ namespace StudioCharTools
                 // 以前是「舊卡整包寫回去再刪掉規則外的」，刪完剩下的是空白、不是新卡的 ——
                 // 新卡用 ABMX 修過的臉就不見了，場景原角色有 ABMX 的地圖換出來臉特別怪。
                 bool abmxMerged = false;
-                if (mode == SwapMode.KeepNewBody)
+                if (mode == SwapMode.KeepNewBody || mode == SwapMode.LockHeight)
                 {
+                    bool lockH = mode == SwapMode.LockHeight;
                     try
                     {
                         var newAbmx = ExtensibleSaveFormat.ExtendedSave.GetExtendedDataById(
                             ofem.charInfo.chaFile, "KKABMPlugin.ABMData");
                         bool mergeOk;
-                        var merged = AbmxFilter.Merge(savedAbmx, newAbmx, EffectiveKeepRules(), out mergeOk);
-                        Logger.LogInfo("[AbmxFilter] 合併舊卡骨架＋新卡臉：" + AbmxFilter.LastReport);
+                        var rules = lockH ? AbmxFilter.Parse(AbmxFilter.HeightRules) : EffectiveKeepRules();
+                        var merged = AbmxFilter.Merge(savedAbmx, newAbmx, rules, out mergeOk);
+                        Logger.LogInfo((lockH ? "[AbmxFilter] 鎖身高，帶舊卡整體縮放＋新卡其餘："
+                                              : "[AbmxFilter] 合併舊卡骨架＋新卡臉：") + AbmxFilter.LastReport);
                         if (mergeOk) { savedAbmx = merged; abmxMerged = true; }
                     }
                     catch (Exception exMerge)
                     {
                         Logger.LogWarning("[AbmxFilter] 合併失敗，改用舊做法: " + exMerge.Message);
                     }
+                    // 鎖身高合併失敗就別把舊卡整包寫回去 —— 那會變成「保留舊卡身材」。
+                    // 退回 1.1.2 的行為：新卡的 ABMX 原封不動。
+                    if (lockH && !abmxMerged) savedAbmx = null;
                 }
 
                 statusMsg = string.Format(Lang.T("⏳ 換人中（{0}）…"), SwapModeName(mode));

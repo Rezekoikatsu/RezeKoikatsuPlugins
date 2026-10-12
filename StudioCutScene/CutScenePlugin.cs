@@ -204,7 +204,7 @@ namespace StudioCutScene
     {
         public const string GUID = "reze.studio.cutscene";
         public const string NAME = "Studio CutScene";
-        public const string VERSION = "1.15.2";
+        public const string VERSION = "1.15.3";
 
         // 對應折線只擋「倒退」，不擋「陡」。
         // 斜率 = 該處的 1/timeScale：卡片把時間流速調到 0.03（近乎定格）時
@@ -866,6 +866,11 @@ namespace StudioCutScene
             // 聽「載入場景卡」這件事。掛得上的話自動載入就不用輪詢了；
             // 掛不上也只是退回原本每秒掃一次的做法，不會壞。
             SceneLoadWatch.Apply();
+            LoadGuard.Enabled = Config.Bind("General", "Load Guard", true,
+                "場景載入保護：某個物件載入時出錯（模組版本不同、KKS 的道具拿到 KK 讀…），"
+                + "跳過它讓後面的物件繼續載，不會整個場景載到一半就停。"
+                + "道具會用本體道具頂替並隱藏，物件順序不變。每一個都會寫進 log 的 [載入保護]").Value;
+            LoadGuard.Install(new HarmonyLib.Harmony(GUID + ".loadguard"));
             Logger.LogInfo("[SceneLoadWatch] " + SceneLoadWatch.LastReport);
 
             // Studio 左邊工具列的按鈕（跟 Timeline 那顆同一排）。

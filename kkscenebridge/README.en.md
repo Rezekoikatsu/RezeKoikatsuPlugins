@@ -63,6 +63,9 @@ The tool then does all of this:
   Characters that appear in several segments with the same hair / outfit / accessories are fully covered; for characters with
   different hair or accessories only the common bones can be listed (the card does not contain the bone list), these are named
   in the log — use F6 "Repair collider bindings" after loading if something is still pulled.
+  Since 1.1.9 the merge also turns off each collider's "Enable New Dynamic Bones": bones not in its list ignore it, so the unique
+  hair/accessories of other segments' characters are no longer pulled either (the warning above no longer appears). The collider's own
+  segment is unaffected, KKPE writes every one of its bones explicitly. Re-merge cards made with older versions to get this
 - (1.1.2) Merging cards that are themselves merged results works again. Before 1.1.2 every segment except the first of each
   input card ended up with two camera-chain keyframes at the same time, and Timeline drops such a track entirely on load
   ("only the first scene of each card has the right camera"). Delete the output made with the old version and merge the inputs again.
@@ -136,6 +139,7 @@ absolute path, or embedded in the card.
 
 - Drag, new folder, rename, visibility, position/rotation/scale — none of it affects Timeline or NC
 - **Delete**: items are only marked; on save they're deleted and every Timeline/NC reference is fixed
+- **Search**: type a dicKey or object name, Enter jumps to the next match. You can paste F7's whole `[載入保護] dicKey=…` log line to jump straight to that object
 - Items under a character's attach point can only move within that attach point
 - By default a `<card>.png.bak` backup is made before saving over the card
 - **Screen effects**: depth of field, ambient occlusion, bloom, vignette, fog and sun shafts can be switched on or off without

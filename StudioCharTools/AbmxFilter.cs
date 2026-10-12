@@ -185,6 +185,18 @@ namespace StudioCharTools
             + "cf_s_waist*,cf_s_siri*,cf_d_siri*,cf_s_thigh*,cf_s_leg*,cf_s_foot*,"
             + "cf_s_arm*,cf_s_forearm*,cf_s_elbo*,cf_s_shoulder*,cf_s_hand*,cf_s_wrist*";
 
+        /// <summary>
+        /// 「鎖身高」從舊卡帶過去的 ABMX 骨頭：只有整隻的縮放。
+        ///
+        /// 只鎖體型滑桿的 Height 不夠 —— 很多場景卡的身高是 ABMX 的
+        /// cf_n_height / cf_j_root 放大出來的（滑桿只有 0～1，再高就靠它們）。
+        /// 1.1.2 以前鎖身高一根 ABMX 都不帶，這種場景換完人整隻縮回原尺寸，
+        /// 看起來就是「換上來的人都變小很多」。
+        /// 新卡自己在這兩根上的 modifier 不會留（Merge 的規則就是這樣），
+        /// 舊卡沒改過的話合併完就是「沒有 modifier」，也就是原本的 1.0。
+        /// </summary>
+        public const string HeightRules = "cf_n_height,cf_j_root";
+
         // -----------------------------------------------------------------
         // 維持新卡身材：舊卡 + 新卡合併
         // -----------------------------------------------------------------

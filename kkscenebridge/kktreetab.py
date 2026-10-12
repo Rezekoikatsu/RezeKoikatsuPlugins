@@ -40,7 +40,8 @@ from PyQt6.QtGui import QBrush, QColor, QFont
 from PyQt6.QtWidgets import (
     QAbstractItemView, QCheckBox, QDoubleSpinBox, QFileDialog, QGridLayout,
     QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMessageBox,
-    QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
+    QPushButton, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
+    QVBoxLayout, QWidget,
 )
 
 RED = "#c0392b"
@@ -351,6 +352,29 @@ class TreeTab(QWidget):
         bl.addWidget(self.btn_load)
         root.addWidget(box)
 
+        # ---- 搜尋：dicKey 或名稱 ----
+        # F7 的載入保護會在 log 寫「[載入保護] dicKey=1203 …」，
+        # 整行貼進來也可以 —— 只要有 dicKey=數字就照編號找。
+        srow = QHBoxLayout()
+        srow.addWidget(QLabel(T("搜尋")))
+        self.ed_find = QLineEdit()
+        self.ed_find.setPlaceholderText(
+            T("dicKey 或物件名稱（Enter 找下一個；整行 log 貼進來也可以）"))
+        self.ed_find.setClearButtonEnabled(True)
+        self.ed_find.returnPressed.connect(lambda: self._find(1))
+        self.ed_find.textChanged.connect(self._find_reset)
+        srow.addWidget(self.ed_find, 1)
+        for txt, step in ((T("上一個"), -1), (T("下一個"), 1)):
+            fb = QPushButton(txt)
+            fb.clicked.connect(lambda _=False, s=step: self._find(s))
+            srow.addWidget(fb)
+        self.lbl_find = QLabel("")
+        self.lbl_find.setStyleSheet("color:%s" % GREY)
+        srow.addWidget(self.lbl_find)
+        root.addLayout(srow)
+        self._find_hits = []
+        self._find_pos = -1
+
         self.tree = Tree()
         self.tree.resolve = self._node
         self.tree.changed.connect(self._touch)
@@ -649,6 +673,7 @@ class TreeTab(QWidget):
     # ---- 建樹 ----
     def _rebuild(self):
         import kkscene2 as S
+        self._find_reset()
         self.tree.blockSignals(True)
         self.tree.clear()
         self._nodes = []
@@ -710,6 +735,54 @@ class TreeTab(QWidget):
             if node["data"].get("treeState", 1) == 0:
                 item.setExpanded(True)
         self.tree.blockSignals(False)
+
+    # ---- 搜尋 ----
+    def _find_reset(self, *_):
+        self._find_hits = []
+        self._find_pos = -1
+        self.lbl_find.setText("")
+
+    def _find_matches(self, text):
+        """回傳符合的 item（樹的順序）。有 dicKey=數字、或整串就是數字 → 照編號完全相同；
+        其他照名稱（不分大小寫、部分相符）。"""
+        import re
+        text = text.strip()
+        m = re.search(r"dicKey\s*[=:]\s*(\d+)", text, re.I) or re.fullmatch(r"(\d+)", text)
+        want_key = m.group(1) if m else None
+        low = text.lower()
+        out = []
+        it = QTreeWidgetItemIterator(self.tree)
+        while it.value() is not None:
+            item = it.value()
+            it += 1
+            if self._node(item) is None:          # 角色接點那種假列
+                continue
+            if want_key is not None:
+                if item.text(3) == want_key:
+                    out.append(item)
+            elif low in (item.data(0, LABEL_ROLE) or item.text(0) or "").lower():
+                out.append(item)
+        return out
+
+    def _find(self, step):
+        text = self.ed_find.text()
+        if not text.strip() or self.tree.topLevelItemCount() == 0:
+            return
+        if not self._find_hits:
+            self._find_hits = self._find_matches(text)
+            self._find_pos = -1 if step > 0 else 0
+        if not self._find_hits:
+            self.lbl_find.setText(T("找不到"))
+            return
+        self._find_pos = (self._find_pos + step) % len(self._find_hits)
+        item = self._find_hits[self._find_pos]
+        p = item.parent()
+        while p is not None:
+            p.setExpanded(True)
+            p = p.parent()
+        self.tree.setCurrentItem(item)
+        self.tree.scrollToItem(item, QAbstractItemView.ScrollHint.PositionAtCenter)
+        self.lbl_find.setText(T("第 {0} / {1} 個").format(self._find_pos + 1, len(self._find_hits)))
 
     # ---- 編輯 ----
     def _node(self, item):

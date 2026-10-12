@@ -283,6 +283,9 @@ A('(角色)',
 A('KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」',
   'KKPE colliders: different characters / items share the same KKPE id (uniqueId), so collider settings may land on the wrong one; use F6 "Repair collider bindings" after loading',
   'KKPE コライダー：別のキャラ／アイテムが KKPE 内で同じ番号（uniqueId）を持っているため、コライダーの設定が別の対象に適用される可能性があります。読み込み後に F6 の「コライダー結合を一括修復」を使ってください')
+A('  KKPE 碰撞器：{0} 個碰撞器關掉「Enable New Dynamic Bones」（清單沒寫到的動骨不吃這顆，別段角色獨有的頭髮/飾品才不會被吸走）',
+  '  KKPE colliders: turned off "Enable New Dynamic Bones" on {0} collider(s) (bones not in the list ignore it, so other segments\' unique hair/accessories are no longer pulled)',
+  '  KKPE コライダー：{0} 個のコライダーで「Enable New Dynamic Bones」をオフ（リストに無い揺れ物は無視するので、他シーンのキャラ独自の髪／アクセが吸われなくなります）')
 A('  KKPE 碰撞器：{0} 顆碰撞器補上 {1} 筆「別段的角色/物件不吃這顆」（不補的話別段的人整個會被它拉住）',
   '  KKPE colliders: added {1} "disabled for other segments" entries to {0} collider(s) (without them, characters of other segments get pulled by the collider)',
   '  KKPE コライダー：{0} 個のコライダーに「他のシーンのキャラ／アイテムには効かせない」項目を {1} 件追加しました（追加しないと他のシーンのキャラが引っ張られます）')
@@ -508,6 +511,14 @@ A('拿掉指錯節點的軌道（預設開）',
 A('只拿掉 objectIndex 指到錯誤種類或不存在節點的軌道。\n這種軌道會讓 Timeline 從第 0 秒整棵中斷；好的軌道不動。',
   'Only removes tracks whose objectIndex points at a wrong node type or no node.\nThose stop the whole Timeline from second 0; good tracks are untouched.',
   'objectIndex が違う種類のノードや存在しないノードを指すトラックだけ削除します。\nこうしたトラックは Timeline 全体を 0 秒から止めます。正常なトラックはそのまま。')
+A('搜尋', 'Search', '検索')
+A('dicKey 或物件名稱（Enter 找下一個；整行 log 貼進來也可以）',
+  'dicKey or object name (Enter = next; you can paste a whole log line)',
+  'dicKey またはオブジェクト名（Enter で次へ。ログの行をそのまま貼っても可）')
+A('上一個', 'Previous', '前へ')
+A('下一個', 'Next', '次へ')
+A('找不到', 'Not found', '見つかりません')
+A('第 {0} / {1} 個', '{0} / {1}', '{0} / {1} 件目')
 A('場景 shaderType',
   'Scene shaderType',
   'シーン shaderType')

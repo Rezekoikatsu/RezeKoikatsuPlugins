@@ -3181,7 +3181,7 @@ def isolate_colliders(scene, warn, wraps=None):
                         lst.append(r)
 
     # 第二輪：每顆碰撞器補上別段的控制器
-    n_col = n_add = 0
+    n_col = n_add = n_def = 0
     partial, dup_hit = {}, False
     out, last = [], 0
     over = False
@@ -3229,11 +3229,21 @@ def isolate_colliders(scene, warn, wraps=None):
             return cb[:-len("</collider>")] + "".join(add) + "</collider>"
 
         nb = RE_COLLIDER_BLOCK.sub(fix, blk)
+        # 「Enable New Dynamic Bones」關掉：清單裡沒寫到的動骨一律不吃這顆。
+        # 上面補的 enabled=false 只蓋得到「別張卡也有的骨頭路徑」；別段角色自己獨有的
+        # 髮型 / 飾品動骨不在任何清單裡，載入時 KKPE 會用這個預設值把它們加進來 ——
+        # 預設是 true，於是別段的頭髮被這顆（停在外太空的）碰撞器吸走。
+        # 這一段自己的角色不受影響：KKPE 存檔時每一根都明寫了 enabled。
+        nb2 = re.sub(r'(<collidersEditor\b[^>]*\baddNewDynamicBonesAsDefault=")true(")',
+                     r'\1false\2', nb)
+        if nb2 != nb:
+            n_def += 1
+            nb = nb2
         if nb != blk:
             out.append(body[last:m.start()])
             out.append(nb)
             last = m.end()
-    if not n_add:
+    if not n_add and not n_def:
         if dup_hit:
             warn.append(_T("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"
                            "碰撞器的設定可能套到別人身上；載入後請用 F6 的「一鍵修復碰撞器綁定」"))
@@ -3243,7 +3253,10 @@ def isolate_colliders(scene, warn, wraps=None):
 
     log(_T("  KKPE 碰撞器：{0} 顆碰撞器補上 {1} 筆「別段的角色/物件不吃這顆」"
            "（不補的話別段的人整個會被它拉住）").format(n_col, n_add))
-    if partial:
+    if n_def:
+        log(_T("  KKPE 碰撞器：{0} 個碰撞器關掉「Enable New Dynamic Bones」"
+               "（清單沒寫到的動骨不吃這顆，別段角色獨有的頭髮/飾品才不會被吸走）").format(n_def))
+    if partial and not n_def:
         who = _T("、").join("%s (%s)" % (_char_label(c["node"]), seg_name.get(c["seg"]) or "?")
                            for c in list(partial.values())[:6])
         if len(partial) > 6:

@@ -140,6 +140,20 @@ In VR, hold **grip + trigger** and that hand becomes this plugin's remote:
 | Stick up, held 1 s | Replay |
 | Stick down, held 1 s | Stop |
 
+## Scene load guard (since 1.15.3, on by default)
+
+When one object in a scene fails to load (different mod version, a Sunshine item read in Koikatsu, another plugin erroring…),
+Studio normally **stops loading the whole scene right there**: nothing after it is created, Timeline throws InvalidCastException and the camera hand-over breaks.
+Merged scene cards hit this most. Now the failing object is skipped and loading continues:
+
+- An item that can't be created is replaced by a base-game item, hidden and named "[載入失敗] ids", so the object order and Timeline indices stay correct.
+  The card's original item ids are kept, so saving again doesn't change them
+- An object that was created and then errored is kept, and its missing children are loaded
+- Any other kind that can't be created can only be skipped; objects after it shift by one
+
+Every case is logged as `[載入保護] dicKey=… —— action`. Search that dicKey in kkscenebridge's Organize tab to find and delete the object.
+Set `Load Guard` to false in the config to turn it off.
+
 ## Troubleshooting
 
 **Transport buttons do nothing** — check the log line `[CutScene] Timeline 掃描：` and confirm

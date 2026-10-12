@@ -3255,15 +3255,15 @@ def isolate_colliders(scene, warn, wraps=None):
            "（不補的話別段的人整個會被它拉住）").format(n_col, n_add))
     if n_def:
         log(_T("  KKPE 碰撞器：{0} 個碰撞器關掉「Enable New Dynamic Bones」"
-               "（清單沒寫到的動骨不吃這顆，別段角色獨有的頭髮/飾品才不會被吸走）").format(n_def))
-    if partial and not n_def:
+               "（清單沒寫到的動骨預設不吃這顆）").format(n_def))
+    if partial:
         who = _T("、").join("%s (%s)" % (_char_label(c["node"]), seg_name.get(c["seg"]) or "?")
                            for c in list(partial.values())[:6])
         if len(partial) > 6:
             who += _T(" 等 {0} 個角色").format(len(partial))
         warn.append(_T("KKPE 碰撞器：{0} 的髮型/衣服/飾品跟碰撞器清單裡有資料的角色不同，"
                        "只關得到共通的動骨（胸、臀、裙子…），它自己獨有的髮型/飾品動骨"
-                       "卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」")
+                       "卡片裡沒有清單，補不到；載入後如果還有被拉住的地方，用 F6 的「一鍵修復碰撞器綁定」，存檔後重新讀取場景")
                     .format(who))
     if dup_hit or dup:
         warn.append(_T("KKPE 碰撞器：有不同的角色/物件在 KKPE 裡的編號（uniqueId）相同，"

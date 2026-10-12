@@ -63,9 +63,9 @@ The tool then does all of this:
   Characters that appear in several segments with the same hair / outfit / accessories are fully covered; for characters with
   different hair or accessories only the common bones can be listed (the card does not contain the bone list), these are named
   in the log — use F6 "Repair collider bindings" after loading if something is still pulled.
-  Since 1.1.9 the merge also turns off each collider's "Enable New Dynamic Bones": bones not in its list ignore it, so the unique
-  hair/accessories of other segments' characters are no longer pulled either (the warning above no longer appears). The collider's own
-  segment is unaffected, KKPE writes every one of its bones explicitly. Re-merge cards made with older versions to get this
+  Since 1.1.9 the merge also turns off each collider's "Enable New Dynamic Bones" (bones not in its list ignore it by default).
+  **Hair of another segment's character can still be pulled in practice.** If it happens: press F6 "Repair collider bindings" → **save → reload the scene**.
+  Repairing without saving, or saving without repairing, is not enough — the repair writes every dynamic bone into the card, and the hair only settles after reloading
 - (1.1.2) Merging cards that are themselves merged results works again. Before 1.1.2 every segment except the first of each
   input card ended up with two camera-chain keyframes at the same time, and Timeline drops such a track entirely on load
   ("only the first scene of each card has the right camera"). Delete the output made with the old version and merge the inputs again.

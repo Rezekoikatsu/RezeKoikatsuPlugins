@@ -23,7 +23,11 @@ namespace StudioCutScene
     /// 載入場景卡、載入結束之後（再等一下讓 KKPE 讀完自己的資料），
     /// 對每一顆碰撞器：**不在同一個最上層資料夾**的角色／物件，所有動骨（連沒啟用的）一律設成不吃；
     /// 同一段裡只留作者在清單裡明確開啟的那幾根，其餘也設成不吃（跟 F6「一鍵修復」的結果一樣 ——
-    /// 同一段的飾品頭髮一樣沒被列進清單，一樣會被吸）。之後每 1 秒檢查一次播放中才冒出來的動骨。
+    /// 同一段的飾品頭髮一樣沒被列進清單，一樣會被吸）。
+    ///
+    /// 限制（實測）：讀卡當下頭髮可能已經被拉走，改完設定也不會自己回來；
+    /// 播放中定期檢查＋粒子歸位試過，也救不回來，所以拿掉了。
+    /// 改好的設定存檔時會寫進卡片 —— **存檔後重新讀取一次**，之後就正常。
     /// 用 KKPE 自己的 SetIgnoreDynamicBone，內部清單和 DynamicBone 身上的碰撞器清單會一起改，
     /// 存檔時也會照實寫進卡片。同一段裡的設定完全不動。
     ///
@@ -58,7 +62,6 @@ namespace StudioCutScene
             {
                 seenStamp = SceneLoadWatch.Stamp;
                 waiting = true;
-                guarding = false;
                 boneCache.Clear();
                 passes = 0;
                 doneLoadingAt = -1f;
@@ -73,23 +76,9 @@ namespace StudioCutScene
             passes++;
             try { Run(); }
             catch (Exception e) { if (_log != null) _log.LogWarning("處理失敗：" + e.Message); }
-            if (passes >= 2) { waiting = false; guarding = true; nextGuard = Time.realtimeSinceStartup + 1f; }
+            if (passes >= 2) waiting = false;
         }
 
-        // 讀完之後還會有新的動骨冒出來（飾品頭髮之類、播放中才建好或才啟用），
-        // KKPE 照樣可能把碰撞器掛上去。之後每 1 秒檢查一次：
-        // 只看「身上真的掛著碰撞器、而且不是作者明確開啟」的動骨，有才動手，平常幾乎不做事。
-        private bool guarding;
-        private float nextGuard;
-
-        void LateUpdate()
-        {
-            if (!guarding || !Enabled || SceneLoadWatch.IsLoading || waiting) return;
-            if (Time.realtimeSinceStartup < nextGuard) return;
-            nextGuard = Time.realtimeSinceStartup + 1f;
-            try { Apply(true); }
-            catch (Exception e) { guarding = false; if (_log != null) _log.LogWarning("檢查失敗，停止檢查：" + e.Message); }
-        }
 
         // =============================================================
         // 反射
@@ -158,7 +147,7 @@ namespace StudioCutScene
         /// 每顆碰撞器 × 每個 PoseController × 每根動骨：
         ///   別段的 → 一律不吃；
         ///   同一段的 → 作者在清單裡明確開啟（true）的照舊，其餘不吃（跟 F6「一鍵修復」用其他角色當範本的結果一樣）。
-        /// guardOnly：只處理「身上真的掛著這顆碰撞器」的動骨，給播放中的定期檢查用。
+        /// guardOnly：只處理「身上真的掛著這顆碰撞器」的動骨（目前沒用到，讀卡時一律 false）。
         /// </summary>
         private static void Apply(bool guardOnly)
         {
@@ -216,48 +205,14 @@ namespace StudioCutScene
                     if (touched) nCol++;
                 }
             }
-            int nReset = ResetBones();
             if (nCol == 0) return;
-            LastReport = string.Format(guardOnly
-                ? "合併卡：播放中又有 {2} 根動骨被碰撞器掛上，已拿掉（{0} 顆碰撞器、{1} 筆）"
-                : "合併卡：{0} 顆碰撞器只留作者開啟的動骨，別段全部不吃（{1} 筆，共 {2} 根動骨）", nCol, nPc, nBones)
-                + (nReset > 0 ? string.Format("；{0} 根被拉過的動骨已歸位", nReset) : "");
+            LastReport = string.Format(
+                "合併卡：{0} 顆碰撞器只留作者開啟的動骨，別段全部不吃（{1} 筆，共 {2} 根動骨）。"
+                + "頭髮還被拉著的話，存檔後重新讀取一次", nCol, nPc, nBones);
             if (_log != null) _log.LogInfo(LastReport);
         }
 
         /// <summary>這顆碰撞器對這個 PoseController 底下每一根動骨（含沒啟用的）都設成不吃。回傳實際改掉的根數。</summary>
-        // 被碰撞器拉過的動骨，拿掉碰撞器之後要把粒子歸位，不然頭髮會停在被甩出去的地方
-        // （存檔重讀之所以會好，就是因為重讀時動骨從頭建起）。
-        private static readonly List<object> toReset = new List<object>();
-        private static readonly Dictionary<Type, MethodInfo> resetMethod = new Dictionary<Type, MethodInfo>();
-
-        private static int ResetBones()
-        {
-            int n = 0;
-            foreach (object bone in toReset)
-            {
-                try
-                {
-                    Behaviour b = bone as Behaviour;
-                    if (b == null) continue;
-                    Type t = bone.GetType();
-                    MethodInfo m;
-                    if (!resetMethod.TryGetValue(t, out m))
-                    {
-                        m = t.GetMethod("ResetParticlesPosition",
-                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
-                        resetMethod[t] = m;
-                    }
-                    if (m == null) continue;
-                    m.Invoke(bone, null);
-                    n++;
-                }
-                catch { }
-            }
-            toReset.Clear();
-            return n;
-        }
-
         private static readonly Dictionary<object, List<object>> boneCache = new Dictionary<object, List<object>>();
         private static float cacheTime;
 
@@ -310,7 +265,6 @@ namespace StudioCutScene
                 {
                     mSetIgnore.Invoke(editor, new object[] { collider, pc, bone, true });
                     changed++;
-                    if (attached && !toReset.Contains(bone)) toReset.Add(bone);
                 }
                 catch { }
             }

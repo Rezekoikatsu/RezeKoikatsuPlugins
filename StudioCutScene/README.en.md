@@ -161,8 +161,8 @@ pulls dynamic bones that aren't in its list — hair made from accessories isn't
 another segment's character gets pulled away.
 
 After a merged card is loaded, F7 makes every collider affect only its own segment: every dynamic bone (including inactive ones) of characters / items
-in other segments is set to ignore it; inside its own segment only the bones the author explicitly enabled stay on (the same result as F6 "Repair collider bindings"). Dynamic bones that appear during playback are checked every second, and hair that was already pulled is put back, so no save-and-reload is needed. Only merged cards (a top-level "(CAM)" folder) are handled.
-No need for F6 "Repair collider bindings" or save-and-reload any more. Set `Isolate Merged Colliders` to false in the config to turn it off.
+in other segments is set to ignore it; inside its own segment only the bones the author explicitly enabled stay on (the same result as F6 "Repair collider bindings"). **The first time the card is loaded, hair may already have been pulled away** (fixing the settings doesn't bring it back): just save and reload once, and the card is fine from then on. Only merged cards (a top-level "(CAM)" folder) are handled.
+No need for F6 "Repair collider bindings" any more. Set `Isolate Merged Colliders` to false in the config to turn it off.
 
 ## Troubleshooting
 

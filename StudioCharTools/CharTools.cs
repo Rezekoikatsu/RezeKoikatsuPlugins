@@ -24,7 +24,7 @@ namespace StudioCharTools
     {
         public const string GUID = "reze.studio.chartools";
         public const string PluginName = "Studio Character Tools";
-        public const string Version = "1.1.3";
+        public const string Version = "1.1.4";
 
         internal static CharToolsPlugin Instance;
 
@@ -356,6 +356,12 @@ namespace StudioCharTools
             keepExpression = cfgKeepExpression.Value;
             keepOldHeadSize = cfgKeepOldHead.Value;
             abmxKeepBones = cfgAbmxKeepBones.Value ?? "";
+            // 1.1.3 以前的預設值 → 換成新預設（使用者自己改過的不動）
+            if (abmxKeepBones == AbmxFilter.LegacyKeepRules)
+            {
+                abmxKeepBones = AbmxFilter.DefaultKeepRules;
+                cfgAbmxKeepBones.Value = abmxKeepBones;
+            }
             showToolbarButton = cfgToolbarButton.Value;
         }
 

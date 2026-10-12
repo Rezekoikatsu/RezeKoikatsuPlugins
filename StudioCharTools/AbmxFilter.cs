@@ -179,8 +179,16 @@ namespace StudioCharTools
         ///   cf_j_ana 也排掉：它在 cf_j_ 底下，但跟比例無關。
         ///
         /// 在真實的 94 根名單上驗過：留 50、移 44，臉與胸一根都沒漏留。
+        ///
+        /// 1.1.4 起預設改成跟「鎖身高」一樣只帶整隻的縮放（加上頭的大小）：
+        /// 留四肢骨架的話，新卡自己靠 ABMX 調的腿長、手長都被舊卡蓋掉，
+        /// 換出來的高度、比例跟新卡差很多 —— 實際用起來比「姿勢稍微錯位」更難接受。
+        /// 舊的那一套留在 LegacyKeepRules，設定頁還是可以自己改回去。
         /// </summary>
-        public const string DefaultKeepRules =
+        public const string DefaultKeepRules = "cf_n_height,cf_j_root,cf_s_head,cf_j_head";
+
+        /// <summary>1.1.3 以前的預設（留整副骨架與四肢）。設定檔還是這一串的話，啟動時自動換成新預設。</summary>
+        public const string LegacyKeepRules =
             "cf_j_*,-cf_j_ana,cf_n_height,cf_s_head,cf_s_neck,"
             + "cf_s_waist*,cf_s_siri*,cf_d_siri*,cf_s_thigh*,cf_s_leg*,cf_s_foot*,"
             + "cf_s_arm*,cf_s_forearm*,cf_s_elbo*,cf_s_shoulder*,cf_s_hand*,cf_s_wrist*";

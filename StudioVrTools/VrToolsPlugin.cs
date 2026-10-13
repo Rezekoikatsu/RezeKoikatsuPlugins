@@ -29,7 +29,7 @@ namespace StudioVrTools
     {
         public const string GUID = "reze.studio.vrtools";
         public const string NAME = "Studio VR Tools";
-        public const string VERSION = "1.1.1";
+        public const string VERSION = "1.1.2";
 
         ConfigEntry<KeyCode> cfgPanelKey;
         ConfigEntry<int> cfgVrMode;
@@ -331,19 +331,74 @@ namespace StudioVrTools
             if (Mathf.Abs(Fit.Scale - cfgUiScale.Value) > 0.0001f) Fit.SetScale(cfgUiScale.Value);
 
             if (Input.GetKeyDown(cfgPanelKey.Value)) { show = !show; ToolbarButton.Sync(show); }
-            TickToolbar();
-            TickViewLink();
-            TickRealign();
-            TickCapture();
-            TickController();
-            TickScreen();
-            TickUiBacking();
-            TickFxMute();
+
+            // 桌面模式下手柄、重新對齊這些純 VR 的東西整段不跑（1.1.2）。
+            // 以前是每一項自己判斷「VR 沒開就算了」，但判斷之前已經先做了一輪反射查詢，
+            // 六個角色的場景裡 FPS Counter 量到這支插件每幀 4～6ms，桌面模式根本不該花這些。
+            bool vrOn = VrScreen.VrRunning();
+            Prof(0); TickToolbar();
+            Prof(1); TickViewLink();
+            Prof(2); if (vrOn) TickRealign();
+            Prof(3); TickCapture();
+            Prof(4); if (vrOn || VrCapture.Active) TickController();
+            Prof(5); TickScreen();
+            Prof(6); TickUiBacking();
+            Prof(7); TickFxMute();
+            Prof(8);
 
             // 這裡是三支插件共用的介面外觀設定來源。
             // 放在 Update 而不是 OnGUI：F9 的面板關著的時候也要公布，
             // 不然 F6 / F7 只有在 F9 面板開著時才跟得上，行為飄忽又難查。
             VrSkin.Publish(cfgVrSkin.Value, cfgVrSkinOnlyVr.Value);
+            Prof(9);
+            ProfEnd();
+        }
+
+        // ------------------------------------------------------------ 自我計時
+        //
+        // 每一段花多少時間記下來，每 10 秒平均一次；整支超過 0.5ms／幀才寫進 log。
+        // 用來回答「是哪一段在吃時間」，不必再猜。平常沒事就不會出現在 log 裡。
+
+        static readonly string[] profNames = { "工具列", "視角連動", "重新對齊", "按鍵設定", "手柄", "過場畫面", "介面黑底", "物件靜音", "外觀公布" };
+        readonly long[] profTicks = new long[9];
+        readonly System.Diagnostics.Stopwatch profSw = new System.Diagnostics.Stopwatch();
+        int profSection = -1, profFrames;
+        float profNextLog;
+
+        void Prof(int next)
+        {
+            if (profSection >= 0 && profSection < profTicks.Length)
+                profTicks[profSection] += profSw.ElapsedTicks;
+            profSection = next;
+            profSw.Reset();
+            profSw.Start();
+        }
+
+        void ProfEnd()
+        {
+            profSw.Stop();
+            profSection = -1;
+            profFrames++;
+            if (Time.realtimeSinceStartup < profNextLog) return;
+            profNextLog = Time.realtimeSinceStartup + 10f;
+            if (profFrames == 0) return;
+
+            double toMs = 1000.0 / System.Diagnostics.Stopwatch.Frequency / profFrames;
+            double total = 0;
+            for (int i = 0; i < profTicks.Length; i++) total += profTicks[i] * toMs;
+            if (total >= 0.5)
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.Append("[計時] 每幀平均 ").Append(total.ToString("F2")).Append(" ms：");
+                for (int i = 0; i < profTicks.Length; i++)
+                {
+                    double ms = profTicks[i] * toMs;
+                    if (ms >= 0.05) sb.Append(profNames[i]).Append(' ').Append(ms.ToString("F2")).Append("　");
+                }
+                Logger.LogInfo(sb.ToString());
+            }
+            for (int i = 0; i < profTicks.Length; i++) profTicks[i] = 0;
+            profFrames = 0;
         }
 
         // ------------------------------------------------------------ 工具列按鈕

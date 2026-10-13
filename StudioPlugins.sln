@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioCharTools.KKS", "Stud
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioCutScene.KKS", "StudioCutScene\StudioCutScene.KKS.csproj", "{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudioVrTools.KKS", "StudioVrTools\StudioVrTools.KKS.csproj", "{C4F2A917-6E3B-4D58-A1C9-0B7E5D2F8A64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9E27C40-3F58-4D1B-8C75-6B02D4F1E937}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4F2A917-6E3B-4D58-A1C9-0B7E5D2F8A64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4F2A917-6E3B-4D58-A1C9-0B7E5D2F8A64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4F2A917-6E3B-4D58-A1C9-0B7E5D2F8A64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4F2A917-6E3B-4D58-A1C9-0B7E5D2F8A64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

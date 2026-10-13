@@ -58,6 +58,8 @@ namespace StudioVrTools
                 "UnityEngine.VR.VRSettings, UnityEngine",
                 "UnityEngine.XR.XRSettings, UnityEngine",
                 "UnityEngine.XR.XRSettings, UnityEngine.XRModule",
+                "UnityEngine.XR.XRSettings, UnityEngine.VRModule",     // Koikatsu Sunshine（Unity 2019）
+                "UnityEngine.XR.XRDevice, UnityEngine.VRModule",
                 "UnityEngine.VR.VRDevice, UnityEngine",
                 "UnityEngine.XR.XRDevice, UnityEngine",
             };

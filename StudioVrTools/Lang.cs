@@ -2309,6 +2309,12 @@ namespace StudioVrTools
             A("VRGIN 的編號不可用，改用 SteamVR 的 Leftmost/Rightmost",
               "VRGIN's indices are unusable; using SteamVR's Leftmost/Rightmost",
               "VRGIN の番号が使えないため、SteamVR の Leftmost/Rightmost を使用");
+            A("手柄：VR 還沒啟動",
+              "Controllers: VR is not running yet",
+              "コントローラー：VR がまだ起動していません");
+            A("手柄：VRGIN 的控制模式還沒建好",
+              "Controllers: VRGIN control mode is not ready yet",
+              "コントローラー：VRGIN の操作モードがまだ準備できていません");
             A("手柄：一支都沒掃到",
               "Controllers: none found",
               "コントローラー：1 台も見つかりません");

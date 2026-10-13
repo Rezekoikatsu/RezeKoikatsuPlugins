@@ -55,6 +55,9 @@ namespace StudioVrTools
                 // （那個坑害搖桿和介面全滅過一次，詳見 ReflectUtil 的說明）。
                 driverType = ReflectUtil.Find("CameraSyncDriver");
                 if (driverType != null) return driverType;
+                // Koikatsu Sunshine：KKS_VR_TimelineCameraSync（外掛本體就是驅動，同樣有 RequestInitialAlignment(string)）
+                driverType = ReflectUtil.Find("KKS_VR_TimelineCameraSync.Plugin");
+                if (driverType != null) return driverType;
             }
             catch { }
             return null;
@@ -125,6 +128,37 @@ namespace StudioVrTools
                     { requestMethod = m; requestTakesReason = true; break; }
                 }
                 pendingField = t.GetField("_initialAlignmentPending", any);
+            }
+            catch { }
+        }
+
+        static MethodInfo notifyMove;
+        static bool notifyProbed;
+
+        /// <summary>
+        /// 告訴 KKS_VR_TimelineCameraSync「這是使用者自己移動的」。
+        ///
+        /// 它會把不是自己造成的 VR 原點位移當成外部干擾濾掉（Filter direct ExternalVR position），
+        /// 只認它自己掛勾到的 KKS_VR 移動方法。F9 的搖桿移動不在那裡面，
+        /// 不通知的話一播 Timeline 就可能被拉回去。KK 那邊的 CameraSync 沒有這個方法，直接略過。
+        /// </summary>
+        public static void NotifyManualMove(Vector3 beforePos, Quaternion beforeRot, Vector3 afterPos, Quaternion afterRot)
+        {
+            try
+            {
+                Type t = FindType();
+                if (t == null) return;
+                if (!notifyProbed)
+                {
+                    notifyProbed = true;
+                    notifyMove = t.GetMethod("NotifyManualOriginMove",
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+                        null, new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Quaternion) }, null);
+                }
+                if (notifyMove == null) return;
+                object d = FindDriver();
+                if (d == null) return;
+                notifyMove.Invoke(d, new object[] { beforePos, beforeRot, afterPos, afterRot });
             }
             catch { }
         }

@@ -277,8 +277,20 @@ namespace StudioVrTools
             }
 
             user = nextUser;
-            origin.rotation = o2.r;
-            origin.position = o2.p;
+            SetOrigin(origin, o2.p, o2.r);
+        }
+
+        /// <summary>
+        /// 移動 VR 原點。統一走這裡，順便告訴 KKS 的 Timeline 相機同步
+        /// 「這是使用者自己移的」，免得它把這一步當成外部干擾拉回去（KK 那邊沒有這個機制，等於不做事）。
+        /// </summary>
+        static void SetOrigin(Transform origin, Vector3 pos, Quaternion rot)
+        {
+            Vector3 bp = origin.position;
+            Quaternion br = origin.rotation;
+            origin.rotation = rot;
+            origin.position = pos;
+            CameraSyncBridge.NotifyManualMove(bp, br, origin.position, origin.rotation);
         }
 
         /// <summary>有沒有 NaN / 無限大。四元數長度異常也算壞。</summary>
@@ -304,8 +316,7 @@ namespace StudioVrTools
 
             float was = user.p.magnitude;
             Pose b = Compose(OriginPose(origin), Inverse(user));
-            origin.rotation = b.r;
-            origin.position = b.p;
+            SetOrigin(origin, b.p, b.r);
             user = Pose.Identity;
             LastReport = Lang.T("已退回相機視角（原本偏離 ") + was.ToString("F2") + Lang.T(" m）");
             return true;
@@ -521,8 +532,7 @@ namespace StudioVrTools
             Pose nextUser = Compose(Inverse(b), target);
             if (!Bad(nextUser)) user = nextUser;
 
-            origin.rotation = target.r;
-            origin.position = target.p;
+            SetOrigin(origin, target.p, target.r);
 
             LastReport = Lang.T("已回到記住的視角（這一下移動了 ")
                          + (target.p - now.p).magnitude.ToString("F2") + Lang.T(" m）");
@@ -573,8 +583,7 @@ namespace StudioVrTools
             Pose nextUser = Compose(Inverse(b), target);
             if (!Bad(nextUser)) user = nextUser;
 
-            origin.rotation = target.r;
-            origin.position = target.p;
+            SetOrigin(origin, target.p, target.r);
 
             // 存進來的點也當成「記住的視角」，這樣扳機＋Y 立刻就能回到它，
             // 不用等你自己再按一次記住。

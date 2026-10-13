@@ -29,7 +29,7 @@ namespace StudioVrTools
     {
         public const string GUID = "reze.studio.vrtools";
         public const string NAME = "Studio VR Tools";
-        public const string VERSION = "1.0.1";
+        public const string VERSION = "1.1.0";
 
         ConfigEntry<KeyCode> cfgPanelKey;
         ConfigEntry<int> cfgVrMode;

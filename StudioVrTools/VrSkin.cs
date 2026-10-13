@@ -146,7 +146,8 @@ public static class VrSkin
             // Unity 5.6 是 UnityEngine.VR.VRSettings，之後改名 XRSettings，兩個都試
             foreach (string n in new[] {
                          "UnityEngine.VR.VRSettings, UnityEngine",
-                         "UnityEngine.XR.XRSettings, UnityEngine" })
+                         "UnityEngine.XR.XRSettings, UnityEngine",
+                         "UnityEngine.XR.XRSettings, UnityEngine.VRModule" })   // Koikatsu Sunshine
             {
                 Type t = null;
                 try { t = Type.GetType(n, false); }

@@ -64,6 +64,14 @@ namespace StudioVrTools
         static PropertyInfo piMode, piLeft, piRight;
         static FieldInfo fiTracking, fiIndex;
 
+        // KKS（IllusionMods 的 KKS_VR，VRGIN_OpenXR）沒有舊版的 SteamVR_Controller，
+        // 改由每支 VRGIN Controller 的 Input 屬性（DeviceLegacyAdapter）提供同一組
+        // GetPress / GetPressDown / GetAxis(EVRButtonId)，按鍵編號也一樣（0/1/2/7/32/33）。
+        // 這種情況下 leftDev / rightDev 存的是那個轉接器，姿勢直接拿手柄物件的 transform。
+        static bool adapterMode;
+        static PropertyInfo piCtlInput, piCtlTracking;
+        static object leftCtl, rightCtl;
+
         // 一律走 ReflectUtil.Find —— 直接用 Assembly.GetTypes() 會把
         // VRGIN_KKCS 這種「部分型別載不起來」的組件整個跳過，
         // 那正是先前搖桿／介面全部靜悄悄失效的原因。詳見 ReflectUtil。
@@ -141,12 +149,35 @@ namespace StudioVrTools
                     fiTracking = tController.GetField("Tracking",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
+                if (tSteamVrController == null && tController != null)
+                {
+                    const BindingFlags inst = BindingFlags.Public | BindingFlags.NonPublic
+                                              | BindingFlags.Instance;
+                    piCtlInput = tController.GetProperty("Input", inst);
+                    piCtlTracking = tController.GetProperty("IsTracking", inst);
+                    Type tAdapter = piCtlInput == null ? null : piCtlInput.PropertyType;
+                    if (tAdapter != null)
+                    {
+                        adapterMode = true;
+                        tDevice = tAdapter;
+                        miGetPress = PickButtonMethod(tAdapter, inst, "GetPress", out pressTakesMask);
+                        miGetPressDown = PickButtonMethod(tAdapter, inst, "GetPressDown", out downTakesMask);
+                        foreach (MethodInfo m in tAdapter.GetMethods(inst))
+                        {
+                            if (m.Name != "GetAxis") continue;
+                            ParameterInfo[] ps = m.GetParameters();
+                            if (ps.Length == 1 && ps[0].ParameterType.IsEnum) { miGetAxis = m; break; }
+                        }
+                    }
+                }
+
                 Type tracked = Find("SteamVR_TrackedObject");
                 if (tracked != null)
                     fiIndex = tracked.GetField("index",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-                LastReport = tSteamVrController == null
+                LastReport = adapterMode ? "手柄介面已接上（KKS_VR）"
+                    : tSteamVrController == null
                     ? "找不到 SteamVR_Controller —— 這一版 VR 插件不是 VRGIN 系，或還沒載入"
                     : "手柄介面已接上";
             }
@@ -204,6 +235,8 @@ namespace StudioVrTools
             nextResolve = Time.realtimeSinceStartup + 0.5f;
 
             leftDev = rightDev = null;
+            leftCtl = rightCtl = null;
+            if (adapterMode) { ResolveAdapter(); return; }
             if (miInput == null) return;
 
             try
@@ -258,6 +291,53 @@ namespace StudioVrTools
             {
                 LastReport = Lang.T("找手柄失敗：") + e.Message;
             }
+        }
+
+        /// <summary>
+        /// KKS_VR：VR.Mode.Left / Right 就是左右手（OpenXR 那邊左右是對的），
+        /// 各自的 Input 屬性就是讀按鍵的轉接器。
+        /// </summary>
+        static void ResolveAdapter()
+        {
+            try
+            {
+                if (!VrScreen.VrRunning()) { LastReport = Lang.T("手柄：VR 還沒啟動"); return; }
+                object mode = null;
+                try { if (piMode != null) mode = piMode.GetValue(null, null); }
+                catch { }
+                if (mode == null) { LastReport = Lang.T("手柄：VRGIN 的控制模式還沒建好"); return; }
+                leftCtl = LiveCtl(piLeft == null ? null : piLeft.GetValue(mode, null));
+                rightCtl = LiveCtl(piRight == null ? null : piRight.GetValue(mode, null));
+                leftDev = AdapterOf(leftCtl);
+                rightDev = AdapterOf(rightCtl);
+                LastReport = leftDev != null || rightDev != null
+                    ? Lang.T("走 VRGIN 的 Mode.Left/Right") : Lang.T("手柄：一支都沒掃到");
+            }
+            catch (Exception e)
+            {
+                LastReport = Lang.T("找手柄失敗：") + e.Message;
+            }
+        }
+
+        static object LiveCtl(object controller)
+        {
+            var uo = controller as UnityEngine.Object;
+            return uo == null ? null : controller;
+        }
+
+        static object AdapterOf(object controller)
+        {
+            try
+            {
+                if (controller == null || piCtlInput == null) return null;
+                if (piCtlTracking != null)
+                {
+                    object t = piCtlTracking.GetValue(controller, null);
+                    if (t is bool && !(bool)t) return null;
+                }
+                return piCtlInput.GetValue(controller, null);
+            }
+            catch { return null; }
         }
 
         /// <summary>
@@ -501,6 +581,15 @@ namespace StudioVrTools
                 object d = Dev(left);
                 if (d == null || tDevice == null) return false;
 
+                if (adapterMode)
+                {
+                    var c = (left ? leftCtl : rightCtl) as Component;
+                    if (c == null) return false;
+                    pos = c.transform.position;
+                    rot = c.transform.rotation;
+                    return true;
+                }
+
                 if (piDevTransform == null)
                     piDevTransform = tDevice.GetProperty("transform",
                         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -545,7 +634,7 @@ namespace StudioVrTools
         {
             Resolve();
             var sb = new StringBuilder();
-            if (tSteamVrController == null) return LastReport;
+            if (tSteamVrController == null && !adapterMode) return LastReport;
 
             for (int h = 0; h < 2; h++)
             {

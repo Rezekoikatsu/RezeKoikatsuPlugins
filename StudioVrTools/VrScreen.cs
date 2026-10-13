@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -132,6 +133,40 @@ namespace StudioVrTools
         /// 用元件的型別名稱比對而不是參照 VRGIN.dll：版本換了、改用別的 VR 插件
         /// （只要同樣是 VRGIN 系）都還能對上，csproj 也不必多一個參照。
         /// </summary>
+        static List<Type> vrginTypes;
+        static int vrginAsmCount = -1;
+        static float vrginTypesNext;
+
+        /// <summary>
+        /// 目前已載入的 VRCamera / SteamVR_Camera 型別。
+        /// 組件數量變了才重找（VR 插件可能比我們晚載入），平常就是讀快取。
+        /// </summary>
+        static List<Type> VrginTypes()
+        {
+            if (vrginTypes != null && Time.realtimeSinceStartup < vrginTypesNext) return vrginTypes;
+            vrginTypesNext = Time.realtimeSinceStartup + 10f;      // 組件數就算一直變，最多十秒重找一次
+            Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
+            if (vrginTypes != null && asms.Length == vrginAsmCount) return vrginTypes;
+            vrginAsmCount = asms.Length;
+            vrginTypes = new List<Type>();
+            foreach (Assembly a in asms)
+            {
+                if (a is System.Reflection.Emit.AssemblyBuilder) continue;   // Harmony 之類動態生的，沒有我們要的型別
+                Type[] ts;
+                try { ts = a.GetTypes(); }
+                catch (ReflectionTypeLoadException e) { ts = e.Types; }
+                catch { continue; }
+                if (ts == null) continue;
+                foreach (Type t in ts)
+                {
+                    if (t == null) continue;
+                    if ((t.Name == "VRCamera" || t.Name == "SteamVR_Camera") && typeof(Component).IsAssignableFrom(t))
+                        vrginTypes.Add(t);
+                }
+            }
+            return vrginTypes;
+        }
+
         static Camera PickVrgin()
         {
             try
@@ -148,14 +183,22 @@ namespace StudioVrTools
                     }
                 }
 
-                // 有些版本 VRCamera 掛在父物件上，真正的 Camera 在子物件
-                foreach (MonoBehaviour mb in UnityEngine.Object.FindObjectsOfType<MonoBehaviour>())
+                // 有些版本 VRCamera 掛在父物件上，真正的 Camera 在子物件。
+                //
+                // 以前這裡是 FindObjectsOfType<MonoBehaviour>() 再逐個比型別名稱 ——
+                // 桌面模式下前面那段一定找不到，於是每秒都把整個場景的 MonoBehaviour
+                // 翻一遍（角色多的場景是好幾萬個，還每個都 GetType().Name 生字串），
+                // 結果就是播放時每秒頓一下。改成先把型別找出來，只問 Unity 要那個型別的物件；
+                // 根本沒載入 VRGIN / SteamVR 的話直接跳過。
+                foreach (Type t in VrginTypes())
                 {
-                    if (mb == null) continue;
-                    string n = mb.GetType().Name;
-                    if (n != "VRCamera" && n != "SteamVR_Camera") continue;
-                    Camera c = mb.GetComponentInChildren<Camera>();
-                    if (c != null && c.isActiveAndEnabled && c.cullingMask != 0) return c;
+                    foreach (UnityEngine.Object o in UnityEngine.Object.FindObjectsOfType(t))
+                    {
+                        Component mb = o as Component;
+                        if (mb == null) continue;
+                        Camera c = mb.GetComponentInChildren<Camera>();
+                        if (c != null && c.isActiveAndEnabled && c.cullingMask != 0) return c;
+                    }
                 }
             }
             catch { }

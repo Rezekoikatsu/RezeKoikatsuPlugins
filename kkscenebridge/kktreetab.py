@@ -38,9 +38,9 @@ from PyQt6.QtCore import (QMetaObject, QObject, Qt, QThread,
                           pyqtSignal, pyqtSlot)
 from PyQt6.QtGui import QBrush, QColor, QFont
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QCheckBox, QDoubleSpinBox, QFileDialog, QGridLayout,
-    QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMessageBox,
-    QPushButton, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
+    QAbstractItemView, QCheckBox, QDialog, QDoubleSpinBox, QFileDialog, QGridLayout,
+    QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QMessageBox,
+    QPlainTextEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
     QVBoxLayout, QWidget,
 )
 
@@ -420,6 +420,16 @@ class TreeTab(QWidget):
         self.btn_saveas.clicked.connect(lambda: self.save(True))
         row2.addWidget(self.btn_saveas)
         root.addLayout(row2)
+
+        row3 = QHBoxLayout()
+        b_fs = QPushButton(T("批次：資料夾縮放重設為 1, 1, 1…"))
+        b_fs.setToolTip(T("處理 Better Scaling 的「Scaled folders found in old scene」：\n"
+                          "舊場景裡資料夾的縮放值原本沒作用，Better Scaling 開著「Scale folders」時會突然生效、讓東西跑位。\n"
+                          "可以一次選很多張卡或整個資料夾。"))
+        b_fs.clicked.connect(self._folder_scale_dialog)
+        row3.addWidget(b_fs)
+        row3.addStretch(1)
+        root.addLayout(row3)
 
         root.addWidget(self._effects_box())
         root.addWidget(self._transform_box())
@@ -1237,6 +1247,16 @@ class TreeTab(QWidget):
         self.lbl_state.setTextFormat(Qt.TextFormat.RichText)
         self.lbl_state.setText(txt)
 
+    def _folder_scale_dialog(self):
+        dlg = FolderScaleDialog(self, self.settings, self.ed_card.text().strip(),
+                                self.chk_backup.isChecked())
+        dlg.log_line.connect(self.log_line.emit)
+        dlg.exec()
+        dlg.shutdown()
+        cur = self.ed_card.text().strip()
+        if self.scene is not None and cur and cur in dlg.fixed and not self._dirty:
+            self.load()                      # 目前開著的這張被改了 → 重讀，畫面才跟檔案一致
+
     def save_state(self):
         """把這一頁的狀態寫進共用的 settings —— 主視窗按「儲存設定」時會叫這個。"""
         self.settings.update({
@@ -1248,3 +1268,252 @@ class TreeTab(QWidget):
     def shutdown(self):
         self.thread.quit()
         self.thread.wait(3000)
+
+
+# ------------------------------------------------------------------ 批次：資料夾縮放重設為 1
+
+class FolderScaleWorker(QObject):
+    line = pyqtSignal(str)
+    one = pyqtSignal(object)                 # 每張卡的結果（kkfolderscale.process 的 dict）
+    done = pyqtSignal(int, int, int, int)    # 改了 / 需要改 / 略過 / 失敗
+
+    def __init__(self):
+        super().__init__()
+        self.paths, self.apply, self.force, self.backup = [], False, False, True
+        self.stop = False
+
+    @pyqtSlot()
+    def run(self):
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        import kkfolderscale as FS
+        fixed = would = skipped = failed = 0
+        for i, p in enumerate(self.paths, 1):
+            if self.stop:
+                self.line.emit(T("已停止"))
+                break
+            self.line.emit("[%d/%d] %s" % (i, len(self.paths), p))
+            try:
+                r = FS.process(p, apply=self.apply, force=self.force, backup=self.backup)
+            except Exception:
+                r = {"path": p, "status": "error", "flag": None, "folders": [],
+                     "message": traceback.format_exc()}
+            st = r["status"]
+            if st == "fixed":
+                fixed += 1
+            elif st == "would":
+                would += 1
+            elif st == "skip_flag":
+                skipped += 1
+            elif st == "error":
+                failed += 1
+            self.one.emit(r)
+        self.done.emit(fixed, would, skipped, failed)
+
+
+class FolderScaleDialog(QDialog):
+    """批次把場景卡裡資料夾的縮放重設為 1, 1, 1。邏輯在 kkfolderscale.py。"""
+    log_line = pyqtSignal(str)
+    _go = pyqtSignal()
+
+    def __init__(self, parent, settings, current_card, backup):
+        super().__init__(parent)
+        self.setWindowTitle(T("批次：資料夾縮放重設為 1, 1, 1"))
+        self.resize(900, 640)
+        self.settings = settings
+        self.fixed = set()
+        v = QVBoxLayout(self)
+
+        tip = QLabel(T(
+            "Better Scaling 載入舊場景時提示「Scaled folders found in old scene」，是因為卡裡有資料夾的縮放不是 1, 1, 1。"
+            "原版工作室的資料夾不能縮放，那些值本來就沒作用；Better Scaling 開著「Scale folders」時會突然生效，東西就跑位。<br>"
+            "這裡只把<b>資料夾</b>的縮放改回 1, 1, 1，位置、旋轉、其他物件都不動，timeline 和 NC 不受影響 —— "
+            "改完之後 Scale folders 開或關，看起來都跟作者原本做的一樣。<br>"
+            "<span style='color:%s'>Better Scaling 標記為「在資料夾可縮放的環境下存的」那種卡，縮放可能是故意的，預設略過。</span>") % RED)
+        tip.setWordWrap(True)
+        tip.setTextFormat(Qt.TextFormat.RichText)
+        v.addWidget(tip)
+
+        self.lst = QListWidget()
+        self.lst.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        v.addWidget(self.lst, 1)
+        self.lbl_n = QLabel("")
+        self.lbl_n.setStyleSheet("color:%s" % GREY)
+
+        r = QHBoxLayout()
+        for txt, fn in ((T("加入場景卡…"), self._add_files),
+                        (T("加入資料夾…"), self._add_dir),
+                        (T("移除選取"), self._remove_sel),
+                        (T("清空"), self._clear)):
+            b = QPushButton(txt)
+            b.clicked.connect(fn)
+            r.addWidget(b)
+        self.chk_sub = QCheckBox(T("資料夾包含子資料夾"))
+        self.chk_sub.setChecked(bool(settings.get("fs_recursive", True)))
+        r.addWidget(self.chk_sub)
+        r.addStretch(1)
+        r.addWidget(self.lbl_n)
+        v.addLayout(r)
+
+        r2 = QHBoxLayout()
+        self.chk_force = QCheckBox(T("連 Better Scaling 標記為故意縮放的也改（不建議）"))
+        r2.addWidget(self.chk_force)
+        self.chk_bak = QCheckBox(T("備份 .bak"))
+        self.chk_bak.setChecked(backup)
+        self.chk_bak.setToolTip(T("改之前先把原檔複製成 <卡名>.png.bak（已經有 .bak 就不再覆蓋）"))
+        r2.addWidget(self.chk_bak)
+        r2.addStretch(1)
+        self.btn_check = QPushButton(T("只檢查"))
+        self.btn_check.setToolTip(T("列出每張卡有哪些資料夾的縮放不是 1, 1, 1，不改檔案"))
+        self.btn_check.clicked.connect(lambda: self._start(False))
+        r2.addWidget(self.btn_check)
+        self.btn_apply = QPushButton(T("開始重設"))
+        self.btn_apply.clicked.connect(lambda: self._start(True))
+        r2.addWidget(self.btn_apply)
+        self.btn_stop = QPushButton(T("停止"))
+        self.btn_stop.clicked.connect(self._stop)
+        r2.addWidget(self.btn_stop)
+        v.addLayout(r2)
+
+        self.out = QPlainTextEdit()
+        self.out.setReadOnly(True)
+        v.addWidget(self.out, 1)
+
+        self.worker = FolderScaleWorker()
+        self.thread = QThread(self)
+        self.worker.moveToThread(self.thread)
+        self.worker.line.connect(self._say)
+        self.worker.one.connect(self._on_one)
+        self.worker.done.connect(self._on_done)
+        self._go.connect(self.worker.run)
+        self.thread.start()
+
+        self.setAcceptDrops(True)
+        if current_card and os.path.isfile(current_card):
+            self._add([current_card])
+        self._busy(False)
+
+    # ---- 清單 ----
+    def _paths(self):
+        return [self.lst.item(i).text() for i in range(self.lst.count())]
+
+    def _add(self, paths):
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        import kkfolderscale as FS
+        have = set(self._paths())
+        for p in FS.collect(paths, recursive=self.chk_sub.isChecked()):
+            if p not in have:
+                self.lst.addItem(p)
+                have.add(p)
+        self.lbl_n.setText(T("共 %d 張") % self.lst.count())
+
+    def _add_files(self):
+        start = self.settings.get("fs_last_dir", "") or ""
+        files, _ = QFileDialog.getOpenFileNames(self, T("選場景卡"), start, "PNG (*.png)")
+        if files:
+            self.settings["fs_last_dir"] = os.path.dirname(files[0])
+            self._add(files)
+
+    def _add_dir(self):
+        start = self.settings.get("fs_last_dir", "") or ""
+        d = QFileDialog.getExistingDirectory(self, T("選資料夾"), start)
+        if d:
+            self.settings["fs_last_dir"] = d
+            self._add([d])
+
+    def _remove_sel(self):
+        for it in self.lst.selectedItems():
+            self.lst.takeItem(self.lst.row(it))
+        self.lbl_n.setText(T("共 %d 張") % self.lst.count())
+
+    def _clear(self):
+        self.lst.clear()
+        self.lbl_n.setText("")
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls():
+            e.acceptProposedAction()
+
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls():
+            e.acceptProposedAction()
+
+    def dropEvent(self, e):
+        self._add([u.toLocalFile() for u in e.mimeData().urls() if u.isLocalFile()])
+
+    # ---- 執行 ----
+    def _busy(self, busy):
+        for w in (self.btn_check, self.btn_apply, self.lst, self.chk_force, self.chk_bak, self.chk_sub):
+            w.setEnabled(not busy)
+        self.btn_stop.setEnabled(busy)
+
+    def _say(self, s):
+        self.out.appendPlainText(s)
+
+    def _start(self, apply):
+        paths = self._paths()
+        if not paths:
+            self._say(T("清單是空的：先加入場景卡或資料夾"))
+            return
+        if apply:
+            ok = QMessageBox.question(
+                self, T("開始重設"),
+                T("要把 %d 張卡裡縮放不是 1, 1, 1 的資料夾改回 1, 1, 1，直接存回原檔%s。確定嗎？")
+                % (len(paths), T("（會先備份 .bak）") if self.chk_bak.isChecked() else T("（不備份）")))
+            if ok != QMessageBox.StandardButton.Yes:
+                return
+        self.settings["fs_recursive"] = self.chk_sub.isChecked()
+        self.out.clear()
+        w = self.worker
+        w.paths, w.apply, w.force, w.backup = paths, apply, self.chk_force.isChecked(), self.chk_bak.isChecked()
+        w.stop = False
+        self._busy(True)
+        self._go.emit()
+
+    def _stop(self):
+        self.worker.stop = True
+
+    def _on_one(self, r):
+        import kkfolderscale as FS
+        st = r["status"]
+        flag = r.get("flag")
+        tag = {None: "", True: T("（Better Scaling 標記：資料夾可縮放）"),
+               False: T("（Better Scaling 標記：資料夾不可縮放）")}[flag]
+        n = len(r["folders"])
+        if st == "clean":
+            self._say(T("    沒有要改的") + tag)
+        elif st == "would":
+            self._say(T("    有 %d 個資料夾要改%s：") % (n, tag))
+        elif st == "fixed":
+            self._say(T("    已改 %d 個資料夾%s：") % (n, tag))
+            self.fixed.add(r["path"])
+            self.log_line.emit(T("資料夾縮放重設：%s（%d 個資料夾）") % (r["path"], n))
+        elif st == "skip_flag":
+            self._say(T("    略過：Better Scaling 標記這張是在資料夾可縮放的環境下存的，%d 個資料夾的縮放可能是故意的") % n)
+        else:
+            self._say(T("    失敗：") + (r.get("message") or ""))
+        if st in ("would", "fixed", "skip_flag"):
+            for fp, sc in r["folders"][:30]:
+                self._say("      %s  %s" % (FS.fmt_scale(sc), fp))
+            if n > 30:
+                self._say(T("      …還有 %d 個") % (n - 30))
+
+    def _on_done(self, fixed, would, skipped, failed):
+        self._busy(False)
+        self._say("")
+        self._say(T("完成：改了 %d 張、需要改 %d 張、略過 %d 張、失敗 %d 張")
+                  % (fixed, would, skipped, failed))
+        if would:
+            self._say(T("（剛才只是檢查，要改請按「開始重設」）"))
+
+    def closeEvent(self, e):
+        self.worker.stop = True
+        super().closeEvent(e)
+
+    def shutdown(self):
+        self.worker.stop = True
+        self.thread.quit()
+        self.thread.wait()        # 正在處理的那一張做完才會停（最多等一張卡的時間），不能硬砍

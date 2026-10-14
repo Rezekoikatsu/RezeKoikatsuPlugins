@@ -141,6 +141,9 @@ absolute path, or embedded in the card.
 - By default a `<card>.png.bak` backup is made before saving over the card
 - **Screen effects**: depth of field, ambient occlusion, bloom, vignette, fog and sun shafts can be switched on or off without
   opening the game. In merged cards every segment's `[ENV]` marker is changed too, so F7 doesn't switch it back per segment
+- **Batch: reset folder scale to 1, 1, 1**: fixes Better Scaling's "Scaled folders found in old scene" on load. Vanilla Studio can't scale folders, so those values in old scenes never did anything,
+  but with Better Scaling's "Scale folders" on they suddenly apply and things get displaced. Add many cards or whole folders, "Check only" to list them, then "Reset now";
+  only folder scale is changed, Timeline and NC are unaffected. Cards Better Scaling marked as saved with folder scaling on are skipped by default
 
 ## Chara card merge (formerly kkbridge)
 
@@ -278,4 +281,5 @@ python kkmerge.py --help        command-line version of the chara card merge (ad
 | `kkbridgetab.py` / `kkmerge.py` / `kklang.py` | Chara card merge tab (the former kkbridge), its merge engine and its translation table |
 | `kkaudiotab.py` / `kkvnsound.py` | VNGE audio tab |
 | `kktreetab.py` | Organize tab |
+| `kkfolderscale.py` | Organize tab's "reset folder scale to 1" (also runs on its own from the command line) |
 | `kkffmpeg.py` | Finds ffmpeg (the `ffmpeg\` folder next to the exe → PATH) and keeps it from flashing console windows |

@@ -134,6 +134,9 @@ KKPE 的碰撞器（1.1.3 起）：場景裡的「Dynamic Bone Collider」物件
 - 存回這張卡前預設會先備份成 `<卡名>.png.bak`
 - **畫面效果**：景深、環境遮擋、光暈、暈影、霧化、太陽光束的開關，不用開遊戲就能改。合併過的卡裡每段的 `[ENV]` 記號會一起改，
   F7 播放時各段才不會又切回去
+- **批次：資料夾縮放重設為 1, 1, 1**：處理 Better Scaling 載入時的「Scaled folders found in old scene」。原版工作室的資料夾不能縮放，舊場景裡那些縮放值本來沒作用，
+  Better Scaling 開著「Scale folders」時會突然生效、讓東西跑位。可以一次加很多張卡或整個資料夾，先「只檢查」列出來再「開始重設」；
+  只改資料夾的縮放，Timeline 和 NC 不受影響。Better Scaling 標記為「在資料夾可縮放的環境下存的」卡預設略過
 
 ## 人物卡合卡（原本的 kkbridge）
 
@@ -269,4 +272,5 @@ python kkmerge.py --help        人物卡合卡的命令列版（附加飾品／
 | `kkbridgetab.py` / `kkmerge.py` / `kklang.py` | 人物卡合卡分頁（原本的 kkbridge）、合卡核心、它的翻譯表 |
 | `kkaudiotab.py` / `kkvnsound.py` | VNGE音頻分頁 |
 | `kktreetab.py` | 整理分頁 |
+| `kkfolderscale.py` | 整理分頁的「資料夾縮放重設為 1」（也可以單獨在命令列跑） |
 | `kkffmpeg.py` | 找 ffmpeg（exe 旁的 `ffmpeg\` 資料夾 → PATH），並讓它不閃主控台視窗 |

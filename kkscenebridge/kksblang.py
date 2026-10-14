@@ -2463,7 +2463,100 @@ A('原本的 kkbridge：人物卡附加飾品、移植整套換裝、修卡。\n
   'Formerly kkbridge: add accessories to a character card, transplant whole outfits, repair cards.\nF6 (StudioCharTools) "Add accessories" and "Swap keeping outfit" need this program open with "Watch jobs" on this tab running.',
   '旧 kkbridge：キャラカードへのアクセサリ追加、衣装まるごと移植、カード修復。\nF6（StudioCharTools）の「アクセサリ追加」「衣装を保ったまま入れ替え」は、このプログラムを開いてこのタブの「ジョブ監視」を動かしておく必要があります。')
 
+# ---- 整理 → 批次：資料夾縮放重設為 1（kkfolderscale）----
+A('批次：資料夾縮放重設為 1, 1, 1…',
+  'Batch: reset folder scale to 1, 1, 1…',
+  '一括：フォルダのスケールを 1, 1, 1 に戻す…')
+A('處理 Better Scaling 的「Scaled folders found in old scene」：\n舊場景裡資料夾的縮放值原本沒作用，Better Scaling 開著「Scale folders」時會突然生效、讓東西跑位。\n可以一次選很多張卡或整個資料夾。',
+  'Fixes Better Scaling\'s "Scaled folders found in old scene":\nfolder scales in old scenes never had any effect, but with Better Scaling\'s "Scale folders" on they suddenly apply and things get displaced.\nYou can pick many cards or whole folders at once.',
+  'Better Scaling の「Scaled folders found in old scene」への対処：\n古いシーンのフォルダのスケールは本来効果がありませんが、Better Scaling の「Scale folders」がオンだと急に効いて位置がずれます。\n複数のカードやフォルダをまとめて選べます。')
+A('已停止',
+  'Stopped',
+  '停止しました')
+A('批次：資料夾縮放重設為 1, 1, 1',
+  'Batch: reset folder scale to 1, 1, 1',
+  '一括：フォルダのスケールを 1, 1, 1 に戻す')
+A("Better Scaling 載入舊場景時提示「Scaled folders found in old scene」，是因為卡裡有資料夾的縮放不是 1, 1, 1。原版工作室的資料夾不能縮放，那些值本來就沒作用；Better Scaling 開著「Scale folders」時會突然生效，東西就跑位。<br>這裡只把<b>資料夾</b>的縮放改回 1, 1, 1，位置、旋轉、其他物件都不動，timeline 和 NC 不受影響 —— 改完之後 Scale folders 開或關，看起來都跟作者原本做的一樣。<br><span style='color:%s'>Better Scaling 標記為「在資料夾可縮放的環境下存的」那種卡，縮放可能是故意的，預設略過。</span>",
+  'Better Scaling shows "Scaled folders found in old scene" when a card has folders whose scale is not 1, 1, 1. Vanilla Studio cannot scale folders, so those values never did anything; with Better Scaling\'s "Scale folders" on they suddenly apply and things get displaced.<br>This only resets the scale of <b>folders</b> to 1, 1, 1 — positions, rotations and other objects are untouched, and timeline / NC are not affected. Afterwards the scene looks the way the author made it whether Scale folders is on or off.<br><span style=\'color:%s\'>Cards that Better Scaling marked as saved with folder scaling on may be scaled on purpose, so they are skipped by default.</span>',
+  "Better Scaling が「Scaled folders found in old scene」と表示するのは、カード内にスケールが 1, 1, 1 でないフォルダがあるためです。標準のスタジオではフォルダをスケールできないので、その値は本来効果がありません。Better Scaling の「Scale folders」がオンだと急に効いて位置がずれます。<br>ここでは<b>フォルダ</b>のスケールだけを 1, 1, 1 に戻します。位置・回転・他のオブジェクトは変更せず、timeline と NC にも影響しません。変更後は Scale folders のオン／オフに関係なく、作者が作ったとおりに見えます。<br><span style='color:%s'>Better Scaling が「フォルダのスケールが有効な状態で保存」と記録したカードは、意図的なスケールの可能性があるため、既定ではスキップします。</span>")
+A('加入場景卡…',
+  'Add scene cards…',
+  'シーンカードを追加…')
+A('資料夾包含子資料夾',
+  'Include subfolders',
+  'サブフォルダも含める')
+A('連 Better Scaling 標記為故意縮放的也改（不建議）',
+  'Also change cards Better Scaling marked as intentionally scaled (not recommended)',
+  'Better Scaling が意図的なスケールと記録したカードも変更（非推奨）')
+A('改之前先把原檔複製成 <卡名>.png.bak（已經有 .bak 就不再覆蓋）',
+  'Copy the original to <card>.png.bak before changing it (an existing .bak is not overwritten)',
+  '変更前に元ファイルを <カード名>.png.bak にコピー（既存の .bak は上書きしません）')
+A('只檢查',
+  'Check only',
+  'チェックのみ')
+A('列出每張卡有哪些資料夾的縮放不是 1, 1, 1，不改檔案',
+  'List the folders in each card whose scale is not 1, 1, 1, without changing files',
+  '各カードでスケールが 1, 1, 1 でないフォルダを一覧表示（ファイルは変更しません）')
+A('開始重設',
+  'Reset now',
+  'リセット開始')
+A('停止',
+  'Stop',
+  '停止')
+A('共 %d 張',
+  '%d cards',
+  '計 %d 枚')
+A('選場景卡',
+  'Pick scene cards',
+  'シーンカードを選択')
+A('選資料夾',
+  'Pick folder',
+  'フォルダを選択')
+A('清單是空的：先加入場景卡或資料夾',
+  'The list is empty: add scene cards or folders first',
+  'リストが空です：先にシーンカードかフォルダを追加してください')
+A('要把 %d 張卡裡縮放不是 1, 1, 1 的資料夾改回 1, 1, 1，直接存回原檔%s。確定嗎？',
+  'Reset folders whose scale is not 1, 1, 1 in %d cards to 1, 1, 1 and save over the originals%s. Continue?',
+  '%d 枚のカードで、スケールが 1, 1, 1 でないフォルダを 1, 1, 1 に戻して元ファイルに上書き保存します%s。よろしいですか？')
+A('（會先備份 .bak）',
+  ' (a .bak is made first)',
+  '（先に .bak を作成）')
+A('（不備份）',
+  ' (no backup)',
+  '（バックアップなし）')
+A('（Better Scaling 標記：資料夾可縮放）',
+  ' (Better Scaling flag: folder scaling on)',
+  '（Better Scaling 記録：フォルダのスケール有効）')
+A('（Better Scaling 標記：資料夾不可縮放）',
+  ' (Better Scaling flag: folder scaling off)',
+  '（Better Scaling 記録：フォルダのスケール無効）')
+A('    沒有要改的',
+  '    Nothing to change',
+  '    変更なし')
+A('    有 %d 個資料夾要改%s：',
+  '    %d folders need changing%s:',
+  '    変更が必要なフォルダ %d 個%s：')
+A('    已改 %d 個資料夾%s：',
+  '    Changed %d folders%s:',
+  '    %d 個のフォルダを変更しました%s：')
+A('資料夾縮放重設：%s（%d 個資料夾）',
+  'Folder scale reset: %s (%d folders)',
+  'フォルダのスケールをリセット：%s（%d 個）')
+A('    略過：Better Scaling 標記這張是在資料夾可縮放的環境下存的，%d 個資料夾的縮放可能是故意的',
+  '    Skipped: Better Scaling marked this card as saved with folder scaling on; the scale of %d folders may be intentional',
+  '    スキップ：Better Scaling がフォルダのスケール有効で保存されたと記録しているため、%d 個のフォルダのスケールは意図的な可能性があります')
+A('      …還有 %d 個',
+  '      …and %d more',
+  '      …ほか %d 個')
+A('完成：改了 %d 張、需要改 %d 張、略過 %d 張、失敗 %d 張',
+  'Done: changed %d, need changing %d, skipped %d, failed %d',
+  '完了：変更 %d 枚、要変更 %d 枚、スキップ %d 枚、失敗 %d 枚')
+A('（剛才只是檢查，要改請按「開始重設」）',
+  '(That was only a check — press "Reset now" to apply)',
+  '（今のはチェックのみです。変更するには「リセット開始」を押してください）')
+
 # ---------------------------------------------------------------- 檢查
+
 _PH = re.compile(r"\{(\d+)(![rsa])?(:[^}]*)?\}")
 _PCT = re.compile(r"%[-+ #0]*\d*(?:\.\d+)?[sdfgrx%]")
 

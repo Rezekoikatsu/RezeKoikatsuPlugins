@@ -161,6 +161,52 @@ def main(path, out=None):
         import traceback
         w("（地圖分析失敗：%s）" % traceback.format_exc())
 
+    # ---- 全場：timeline 軌道、NodesConstraints 的對象（用路徑表示）----
+    try:
+        import re
+        keys = sorted(S.node_dickeys(sc.objects))
+        bypath = {}
+        path = {}
+        for n, _d, parent in S.iter_nodes(sc.objects):
+            nm = str((n.get("data") or {}).get("name") or "")
+            path[id(n)] = (path.get(id(parent), "") if parent is not None else "") + "/" + (nm or ("#%s" % n["data"].get("dicKey")))
+            bypath[n["data"].get("dicKey")] = path[id(n)]
+        def rp(r):
+            try:
+                return bypath.get(keys[r], "?")
+            except (IndexError, TypeError):
+                return "?(RANK %s)" % r
+
+        w("== timeline 軌道（依物件）==")
+        tx = sc.timeline_xml() or ""
+        cnt = collections.Counter()
+        for m in re.finditer(r"<interpolable\b[^>]*>", tx):
+            h = m.group(0)
+            oi = re.search(r'objectIndex="(-?\d+)"', h)
+            ow = re.search(r'owner="([^"]*)"', h)
+            iid = re.search(r'\bid="([^"]*)"', h)
+            tgt = rp(int(oi.group(1))) if oi else "(全域)"
+            cnt[(tgt, ow.group(1) if ow else "?", iid.group(1) if iid else "?")] += 1
+        for (tgt, ow, iid), c in sorted(cnt.items()):
+            w("  %-70s %-22s %s%s" % (tgt[-70:], ow, iid, "" if c == 1 else " ×%d" % c))
+        w("")
+
+        w("== NodesConstraints（parent → child）==")
+        vb = sc.kkex.get("nodesConstraints", "constraints")
+        xml = unpack(vb) if vb is not None else ""
+        for m in re.finditer(r"<constraint\b[^>]*?(?:/>|>.*?</constraint>)", xml or "", re.S):
+            blk = m.group(0)
+            g = lambda k: (re.search(r'\b%s="([^"]*)"' % k, blk) or [None, ""])[1]
+            pi, ci = g("parentObjectIndex"), g("childObjectIndex")
+            w("  %s [%s] → %s [%s]　pos=%s rot=%s scale=%s" % (
+                rp(int(pi)) if pi.lstrip("-").isdigit() else pi, g("parentTransform"),
+                rp(int(ci)) if ci.lstrip("-").isdigit() else ci, g("childTransform"),
+                g("position"), g("rotation"), g("scale")))
+        w("")
+    except Exception:                                       # noqa: BLE001
+        import traceback
+        w("（timeline / NC 分析失敗：%s）" % traceback.format_exc())
+
     w("== 幾個小外掛的原始資料 ==")
     for g in ("RSkoi_ComponentUtil", "org.krypto5863.ObjectMap", "keelhauled.itemlayeredit",
               "com.deathweasel.bepinex.studioscenesettings"):

@@ -129,6 +129,15 @@ def main(path, out=None):
                     "  " * depth, TYPE_NAME.get(n.get("type"), n.get("type")), dd.get("name") or "",
                     dd.get("dicKey"), rank.get(dd.get("dicKey")), v3(dd.get("position")), v3(dd.get("rotation")),
                     v3(dd.get("scale")), "" if dd.get("visible", True) else "　（隱藏）"))
+                if n.get("type") == 1:
+                    bones = dd.get("bones") or {}
+                    w("%s    道具 group=%s category=%s no=%s　FK=%s（%d 根骨頭有存值）　動畫 pattern=%s speed=%s time=%s　動態骨骼=%s" % (
+                        "  " * depth, dd.get("group"), dd.get("category"), dd.get("no"), dd.get("enable_fk"),
+                        len(bones), dd.get("anime_pattern"), dd.get("anime_speed"), dd.get("anime_normalized_time"),
+                        dd.get("enable_dynamic_bone")))
+                    if dd.get("enable_fk") and bones:
+                        for bk in list(bones.keys())[:8]:
+                            w("%s      FK %s：%s" % ("  " * depth, bk, str(bones[bk])[:160]))
             w("")
         ranks = {rank[k] for k in mapnodes if k in rank}
 

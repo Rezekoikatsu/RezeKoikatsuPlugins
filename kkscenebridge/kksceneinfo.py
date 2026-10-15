@@ -59,6 +59,11 @@ def main(path, out=None):
     w("== 擴充資料（外掛 GUID：大小）==")
     for g, _ver, val in sc.kkex.items:
         w("  %-60s %8d bytes" % (g, len(val) if isinstance(val, (bytes, bytearray)) else -1))
+        try:
+            for k, kb, vb in sc.kkex.payload_items(g) or []:
+                w("      · %-40s %8d bytes" % (k, len(vb)))
+        except Exception:                                   # noqa: BLE001
+            pass
     w("")
 
     try:
@@ -101,6 +106,76 @@ def main(path, out=None):
             w("  %-50s group=%s category=%s ×%d" % (mid, grp, cat, c))
     except Exception as e:                                  # noqa: BLE001
         w("（讀不到：%s）" % e)
+
+    # ---- 地圖那一支：完整子樹、誰在動它（NodesConstraints / timeline）----
+    try:
+        import re
+        keys = sorted(S.node_dickeys(sc.objects))
+        rank = {k: i for i, k in enumerate(keys)}
+        roots = [n for n, _d, _p in S.iter_nodes(sc.objects)
+                 if n.get("type") == 3 and re.match(r"^\(?map\)?", str((n.get("data") or {}).get("name") or ""), re.I)]
+        top = []
+        for r in roots:                                     # 只留最外層的那幾個
+            sub = {id(x) for x, _, _ in S.iter_nodes([r])}
+            if not any(id(r) in {id(x) for x, _, _ in S.iter_nodes([o])} for o in roots if o is not r):
+                top.append(r)
+        mapnodes = []
+        for r in top:
+            w("== 地圖子樹：%s ==" % (r["data"].get("name")))
+            for n, depth, _p in S.iter_nodes([r]):
+                dd = n.get("data") or {}
+                mapnodes.append(dd.get("dicKey"))
+                w("%s[%s] %s　dicKey=%s RANK=%s　pos %s　rot %s　scale %s%s" % (
+                    "  " * depth, TYPE_NAME.get(n.get("type"), n.get("type")), dd.get("name") or "",
+                    dd.get("dicKey"), rank.get(dd.get("dicKey")), v3(dd.get("position")), v3(dd.get("rotation")),
+                    v3(dd.get("scale")), "" if dd.get("visible", True) else "　（隱藏）"))
+            w("")
+        ranks = {rank[k] for k in mapnodes if k in rank}
+
+        w("== NodesConstraints 裡跟地圖有關的 ==")
+        vb = sc.kkex.get("nodesConstraints", "constraints")
+        xml = unpack(vb) if vb is not None else ""
+        hit = 0
+        for m in re.finditer(r"<constraint\b[^>]*?(?:/>|>.*?</constraint>)", xml or "", re.S):
+            blk = m.group(0)
+            pi = re.search(r'parentObjectIndex="(-?\d+)"', blk)
+            ci = re.search(r'childObjectIndex="(-?\d+)"', blk)
+            if (pi and int(pi.group(1)) in ranks) or (ci and int(ci.group(1)) in ranks):
+                hit += 1
+                w("  " + re.sub(r"\s+", " ", blk)[:600])
+        w("  共 %d 條" % hit)
+        w("")
+
+        w("== timeline 裡動到地圖的軌道 ==")
+        tx = sc.timeline_xml() or ""
+        hit = 0
+        for m in re.finditer(r"<interpolable\b[^>]*>", tx):
+            h = m.group(0)
+            oi = re.search(r'objectIndex="(-?\d+)"', h)
+            if oi and int(oi.group(1)) in ranks:
+                hit += 1
+                w("  " + h[:400])
+        w("  共 %d 條" % hit)
+        w("")
+    except Exception as e:                                  # noqa: BLE001
+        import traceback
+        w("（地圖分析失敗：%s）" % traceback.format_exc())
+
+    w("== 幾個小外掛的原始資料 ==")
+    for g in ("RSkoi_ComponentUtil", "org.krypto5863.ObjectMap", "keelhauled.itemlayeredit",
+              "com.deathweasel.bepinex.studioscenesettings"):
+        try:
+            for k, _kb, vb in sc.kkex.payload_items(g) or []:
+                v = unpack(vb)
+                if isinstance(v, (bytes, bytearray)):
+                    try:
+                        v = unpack(bytes(v))
+                    except Exception:                       # noqa: BLE001
+                        pass
+                w("  %s / %s：%s" % (g, k, str(v)[:800]))
+        except Exception as e:                              # noqa: BLE001
+            w("  %s：讀不到（%s）" % (g, e))
+    w("")
 
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(L) + "\n")
